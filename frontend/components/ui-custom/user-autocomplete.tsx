@@ -86,17 +86,17 @@ export function UserAutocomplete({
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
         data-testid={testId ?? "user-autocomplete-input"}
-        className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+        className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-3 focus:ring-ring/20"
       />
       {open && (
         <div
           data-testid={`${testId ?? "user-autocomplete"}-results`}
-          className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg"
+          className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg"
         >
           {loading ? (
-            <div className="p-3 text-center text-xs text-gray-500">검색 중…</div>
+            <div className="p-3 text-center text-xs text-muted-foreground">검색 중…</div>
           ) : items.length === 0 ? (
-            <div className="p-3 text-center text-xs text-gray-500">
+            <div className="p-3 text-center text-xs text-muted-foreground">
               일치하는 멤버가 없습니다.
             </div>
           ) : (
@@ -107,13 +107,13 @@ export function UserAutocomplete({
                     type="button"
                     onClick={() => select(m)}
                     data-testid={`user-autocomplete-option-${m.sub}`}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                    className="w-full rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-muted"
                   >
-                    <span className="block font-medium text-gray-900">
+                    <span className="block font-medium">
                       {m.name ?? m.email}
                     </span>
                     {m.name && (
-                      <span className="block text-xs text-gray-500">{m.email}</span>
+                      <span className="block text-xs text-muted-foreground">{m.email}</span>
                     )}
                   </button>
                 </li>
