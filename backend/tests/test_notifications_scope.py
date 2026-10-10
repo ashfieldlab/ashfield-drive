@@ -13,23 +13,23 @@ ALICE = "u-scope-alice"
 
 
 async def _seed(db):
-    from app.models.company import Company
     from app.models.notification import Notification
     from app.models.user import User
+    from app.models.workspace import Workspace
 
-    db.add(Company(id=CO, name="Scope Co"))
+    db.add(Workspace(id=CO, name="Scope Co"))
     db.add(User(id=ALICE, email="alice@x"))
     await db.flush()
     node_id, event_id = str(uuid.uuid4()), str(uuid.uuid4())
     db.add(
         Notification(
-            id=node_id, recipient_sub=ALICE, company_id=CO, actor_sub=None,
+            id=node_id, recipient_sub=ALICE, workspace_id=CO, actor_sub=None,
             type="node_shared", entity_type="node", entity_id="n1", payload={},
         )
     )
     db.add(
         Notification(
-            id=event_id, recipient_sub=ALICE, company_id=CO, actor_sub=None,
+            id=event_id, recipient_sub=ALICE, workspace_id=CO, actor_sub=None,
             type="event_invited", entity_type="event", entity_id="e1", payload={},
         )
     )
@@ -44,7 +44,7 @@ async def test_mark_all_read_scoped_to_entity_types(
     from app.models.notification import Notification
 
     node_id, event_id = await _seed(db_session)
-    headers = auth_headers(ALICE, groups=[CO], active_company=CO)
+    headers = auth_headers(ALICE, groups=[CO], active_workspace=CO)
 
     # 파일 앱 스코프: node 만 읽음 처리
     r = await client.post(
@@ -66,18 +66,18 @@ async def test_list_pagination_and_entity_scope(
     client: AsyncClient, auth_headers, db_session
 ):
     """offset 페이지네이션 + entity_types 앱 스코프 + has_more 플래그."""
-    from app.models.company import Company
     from app.models.notification import Notification
     from app.models.user import User
+    from app.models.workspace import Workspace
 
-    db_session.add(Company(id=CO, name="Scope Co"))
+    db_session.add(Workspace(id=CO, name="Scope Co"))
     db_session.add(User(id=ALICE, email="alice@x"))
     await db_session.flush()
     # node 5건 + event 2건
     for i in range(5):
         db_session.add(
             Notification(
-                id=str(uuid.uuid4()), recipient_sub=ALICE, company_id=CO,
+                id=str(uuid.uuid4()), recipient_sub=ALICE, workspace_id=CO,
                 actor_sub=None, type="node_shared", entity_type="node",
                 entity_id=f"n{i}", payload={},
             )
@@ -85,13 +85,13 @@ async def test_list_pagination_and_entity_scope(
     for i in range(2):
         db_session.add(
             Notification(
-                id=str(uuid.uuid4()), recipient_sub=ALICE, company_id=CO,
+                id=str(uuid.uuid4()), recipient_sub=ALICE, workspace_id=CO,
                 actor_sub=None, type="event_invited", entity_type="event",
                 entity_id=f"e{i}", payload={},
             )
         )
     await db_session.flush()
-    headers = auth_headers(ALICE, groups=[CO], active_company=CO)
+    headers = auth_headers(ALICE, groups=[CO], active_workspace=CO)
 
     # node 스코프 첫 페이지(limit=3) → 3건 + has_more
     r = await client.get(
@@ -119,7 +119,7 @@ async def test_mark_all_read_no_filter_marks_all(
     from app.models.notification import Notification
 
     node_id, event_id = await _seed(db_session)
-    headers = auth_headers(ALICE, groups=[CO], active_company=CO)
+    headers = auth_headers(ALICE, groups=[CO], active_workspace=CO)
 
     r = await client.post("/api/v1/notifications/mark-all-read", headers=headers)
     assert r.status_code == 200

@@ -122,7 +122,7 @@ async def patch_smtp(
 
     await write_audit(
         db,
-        company_id=None,  # 시스템 레벨: D-1 이후 NULL 허용
+        workspace_id=None,  # 시스템 레벨: D-1 이후 NULL 허용
         actor=actor,
         action="create" if is_new else "update",
         entity_type="system_smtp_config",

@@ -12,7 +12,7 @@ ACME = "tenant-a"
 async def test_create_and_access_link_without_password(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     up = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "a.pdf", "size": 1, "mime": None},
@@ -45,7 +45,7 @@ async def test_create_and_access_link_without_password(
 async def test_password_required_and_verified(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     up = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "secret.bin", "size": 1, "mime": None},
@@ -75,7 +75,7 @@ async def test_password_required_and_verified(
 async def test_revoked_and_expired_links_return_404(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     up = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "x.bin", "size": 1, "mime": None},
@@ -111,8 +111,8 @@ async def test_revoked_and_expired_links_return_404(
 async def test_non_owner_cannot_create_link(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    bob = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    bob = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     up = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "x.bin", "size": 1, "mime": None},

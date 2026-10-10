@@ -12,9 +12,9 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.jobs.dispatch_relay import dispatch_pending
-from app.models.company import Company
 from app.models.notification import Notification
 from app.models.user import User
+from app.models.workspace import Workspace
 
 
 @pytest_asyncio.fixture
@@ -40,7 +40,7 @@ async def patched(db_session, monkeypatch):
 
 
 async def _seed(db: AsyncSession) -> None:
-    db.add(Company(id="c-a", name="C"))
+    db.add(Workspace(id="c-a", name="C"))
     db.add(User(id="u-a", email="a@x"))
     db.add(User(id="u-b", email="b@x"))
     await db.flush()
@@ -50,7 +50,7 @@ def _notif(nid: str, minutes_ago: int, emailed: bool = False) -> Notification:
     return Notification(
         id=nid,
         recipient_sub="u-b",
-        company_id="c-a",
+        workspace_id="c-a",
         actor_sub="u-a",
         type="node_shared",
         entity_type="node",

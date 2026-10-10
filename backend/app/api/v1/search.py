@@ -13,7 +13,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import UserContext
-from app.auth.dependencies import get_current_user, require_active_company
+from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.db import get_db
 from app.models.node import Node
 from app.schemas.node import NodeResponse
@@ -72,14 +72,14 @@ async def search(
     modified_from: datetime | None = Query(None, description="수정일 >= (파일)"),
     modified_to: datetime | None = Query(None, description="수정일 < (파일)"),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
     pattern = f"%{q}%"
 
     # 이름 매치 후보 → effective_permission 사후 필터 (ADR-0020)
     node_conds = [
-        Node.company_id == company_id,
+        Node.workspace_id == workspace_id,
         Node.deleted_at.is_(None),
         Node.name.ilike(pattern),
     ]
@@ -105,7 +105,7 @@ async def search(
         if category and n.kind == "folder":
             continue  # 종류 필터는 파일 전용
         perm = await effective_permission(
-            db, n, user=user, company_id=company_id
+            db, n, user=user, workspace_id=workspace_id
         )
         if perm > 0:
             nodes.append(n)

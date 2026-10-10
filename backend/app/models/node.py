@@ -1,7 +1,7 @@
 """Node: 파일/폴더 단일 트리 (ADR-0006).
 
 scope=personal: owner_id 본인만 접근 (Phase 1).
-scope=shared: 같은 company 멤버 모두 접근.
+scope=shared: 같은 workspace 멤버 모두 접근.
 status=pending: presigned upload URL 발급됐지만 complete 호출 전.
 status=ready: 업로드 확인됨.
 """
@@ -37,8 +37,8 @@ class Node(Base, TimestampMixin):
     parent_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("nodes.id", ondelete="CASCADE"), nullable=True
     )
-    company_id: Mapped[str] = mapped_column(
-        String(128), ForeignKey("companies.id"), nullable=False, index=True
+    workspace_id: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.id"), nullable=False, index=True
     )
     owner_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("users.id"), nullable=False, index=True
@@ -87,6 +87,6 @@ class Node(Base, TimestampMixin):
         UniqueConstraint(
             "parent_id", "name", "deleted_at", name="uq_nodes_parent_name_deleted"
         ),
-        Index("ix_nodes_company_scope_parent", "company_id", "scope", "parent_id"),
+        Index("ix_nodes_workspace_scope_parent", "workspace_id", "scope", "parent_id"),
         Index("ix_nodes_deleted_at", "deleted_at"),
     )

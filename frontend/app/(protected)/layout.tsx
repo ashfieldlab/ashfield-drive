@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { ActiveCompanyGate } from "@/components/layout/active-company-gate"
+import { ActiveWorkspaceGate } from "@/components/layout/active-workspace-gate"
 import { AppShell } from "@/components/layout/app-shell"
 import { getServerSession } from "@/lib/auth/session"
 
@@ -28,10 +28,10 @@ export const metadata: Metadata = {
 }
 
 // 인증 가드: proxy.ts(세션 쿠키 존재, 복귀 주소 보존) → 여기서 Better Auth 세션 유효성 재확인
-// (만료·로그아웃된 쿠키면 /login). 앱 신원·회사는 /api/v1/me.
+// (만료·로그아웃된 쿠키면 /login). 앱 신원·워크스페이스는 /api/v1/me.
 //
-// ActiveCompanyGate: activeCompanyId 부트스트랩 끝나야 children 렌더. 안 그러면
-// useApiGet 가 X-Active-Company-Id 헤더 없이 발사돼 422.
+// ActiveWorkspaceGate: activeWorkspaceId 부트스트랩 끝나야 children 렌더. 안 그러면
+// useApiGet 가 X-Active-Workspace-Id 헤더 없이 발사돼 422.
 export default async function ProtectedLayout({
   children,
 }: {
@@ -43,7 +43,7 @@ export default async function ProtectedLayout({
   return (
     <div data-testid="protected-main">
       <AppShell>
-        <ActiveCompanyGate>{children}</ActiveCompanyGate>
+        <ActiveWorkspaceGate>{children}</ActiveWorkspaceGate>
       </AppShell>
     </div>
   )

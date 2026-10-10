@@ -16,7 +16,7 @@ async def _make_folder(client, h, name="secret"):
 async def test_create_vault_and_get_key(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     folder = await _make_folder(client, h)
     r = await client.post(
         "/api/v1/e2e/vaults",
@@ -38,7 +38,7 @@ async def test_create_vault_and_get_key(
 async def test_vault_must_be_empty_folder(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     folder = await _make_folder(client, h)
     # 자식 추가 → 더는 빈 폴더 아님
     await client.post(
@@ -55,8 +55,8 @@ async def test_vault_must_be_empty_folder(
 async def test_non_member_cannot_get_key(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     folder = await _make_folder(client, a)
     await client.post(
         "/api/v1/e2e/vaults",
@@ -71,8 +71,8 @@ async def test_non_member_cannot_get_key(
 async def test_share_adds_member(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     folder = await _make_folder(client, a)
     await client.post(
         "/api/v1/e2e/vaults",
@@ -103,7 +103,7 @@ async def test_vault_file_carries_wrapped_dek(
     client: AsyncClient, auth_headers, mock_storage
 ):
     """vault 파일 업로드 시 wrapped_dek 가 노드에 저장되고 응답에 실린다."""
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     folder = await _make_folder(client, h)
     await client.post(
         "/api/v1/e2e/vaults",
@@ -131,8 +131,8 @@ async def test_vault_file_carries_wrapped_dek(
 async def test_non_member_cannot_add_member(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     folder = await _make_folder(client, a)
     await client.post(
         "/api/v1/e2e/vaults",

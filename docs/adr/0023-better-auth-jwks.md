@@ -5,7 +5,7 @@
 
 ## 배경
 
-로그인을 외부 인증 게이트웨이(세션 쿠키 → 백엔드가 게이트웨이 `/auth/me` 조회)와 Keycloak 그룹/외부 디렉터리(회사 소속)에 맡겨 왔다. 개인 오픈소스로 단독 배포하려면 외부 시스템 없이 앱만으로 로그인·소속이 돌아가야 한다. 요구: Google·GitHub 소셜 로그인, 허용 이메일 목록, 백엔드(FastAPI)는 지금처럼 Bearer JWT 로 자체 검증.
+로그인을 외부 인증 게이트웨이(세션 쿠키 → 백엔드가 게이트웨이 `/auth/me` 조회)와 Keycloak 그룹/외부 디렉터리(워크스페이스 소속)에 맡겨 왔다. 개인 오픈소스로 단독 배포하려면 외부 시스템 없이 앱만으로 로그인·소속이 돌아가야 한다. 요구: Google·GitHub 소셜 로그인, 허용 이메일 목록, 백엔드(FastAPI)는 지금처럼 Bearer JWT 로 자체 검증.
 
 ## 결정
 
@@ -20,8 +20,8 @@
    - `AUTH_ISSUER`·`AUTH_AUDIENCE` 는 필수 (`BETTER_AUTH_URL`). 비어 있으면 503 이지 "검증 생략"이 아니다. dev 우회 키·세션 헤더 경로는 없다.
 3. **사용자·소속은 로컬 DB 가 원천 (임시 설계).**
    - 첫 인증 요청에서 `users` 를 JWT `sub` 로 upsert (email·name·image).
-   - 소속은 `user_company_memberships` 만 본다. 하나도 없으면 개인 워크스페이스(`companies.id = personal-{sub}`, "{이름}의 워크스페이스")를 만들고 admin 으로 넣는다. ID 가 결정적이고 `ON CONFLICT DO NOTHING` 이라 동시 첫 요청에도 하나만 생긴다.
-   - 그 밖의 소속은 회사 admin 이 이메일로 추가/제거(`POST/DELETE /api/v1/companies/{id}/members`, 대상은 한 번 이상 로그인한 사용자).
+   - 소속은 `user_workspace_memberships` 만 본다. 하나도 없으면 개인 워크스페이스(`workspaces.id = personal-{sub}`, "{이름}의 워크스페이스")를 만들고 admin 으로 넣는다. ID 가 결정적이고 `ON CONFLICT DO NOTHING` 이라 동시 첫 요청에도 하나만 생긴다.
+   - 그 밖의 소속은 워크스페이스 admin 이 이메일로 추가/제거(`POST/DELETE /api/v1/workspaces/{id}/members`, 대상은 한 번 이상 로그인한 사용자).
    - System Admin = `users.is_system_admin` OR `SYSTEM_ADMIN_EMAILS`.
 
 ## 대안

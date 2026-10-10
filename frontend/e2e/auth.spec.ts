@@ -4,7 +4,7 @@ import {
   createWorkspaceWithInvite,
   fillAccountSignIn,
   me,
-  personalCompanyId,
+  personalWorkspaceId,
   signIn,
   signOutAppOnly,
 } from "./auth"
@@ -38,11 +38,11 @@ test.describe("인증 (Ashfield 계정 서버 SSO)", () => {
     // 계정 서버가 가입 때 만든 개인 워크스페이스가 토큰 workspaces 클레임으로 들어와 있다.
     const body = await me(page)
     expect(body.email).toBe(user.email)
-    const personal = await personalCompanyId(page, user)
-    expect(body.companies).toEqual([
+    const personal = await personalWorkspaceId(page, user)
+    expect(body.workspaces).toEqual([
       { id: personal, name: "새사용자의 워크스페이스", account_workspace_id: personal },
     ])
-    expect(body.company_roles[personal]).toBe("admin") // owner → admin
+    expect(body.workspace_roles[personal]).toBe("admin") // owner → admin
 
     // 계정 서버에서 워크스페이스를 만들면 다음 토큰(재로그인)에 반영된다: SSO 라 비밀번호 폼 없음.
     const team = await createWorkspaceWithInvite(page, `E2E 팀 ${Date.now()}`)
@@ -50,11 +50,11 @@ test.describe("인증 (Ashfield 계정 서버 SSO)", () => {
     expect(await signIn(page, user)).toBe(false)
     const after = await me(page)
     expect(after.groups).toEqual(expect.arrayContaining([personal, team.id]))
-    expect(after.company_roles[team.id]).toBe("admin")
+    expect(after.workspace_roles[team.id]).toBe("admin")
 
     // 멤버 화면: 관리 링크가 계정 서버 워크스페이스로
-    await page.goto(`/settings/company/${encodeURIComponent(team.id)}/members`)
-    await expect(page.getByTestId("company-members-manage-link")).toHaveAttribute(
+    await page.goto(`/settings/workspace/${encodeURIComponent(team.id)}/members`)
+    await expect(page.getByTestId("workspace-members-manage-link")).toHaveAttribute(
       "href",
       `${ACCOUNT_URL}/workspaces/${encodeURIComponent(team.id)}`,
     )

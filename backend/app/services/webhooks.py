@@ -43,7 +43,7 @@ def sign(secret: str, body: bytes) -> str:
 async def enqueue_for_event(
     db: AsyncSession,
     *,
-    company_id: str,
+    workspace_id: str,
     event_type: str,
     payload: dict,
 ) -> list[str]:
@@ -53,7 +53,7 @@ async def enqueue_for_event(
     """
     stmt = select(WebhookEndpoint).where(
         and_(
-            WebhookEndpoint.company_id == company_id,
+            WebhookEndpoint.workspace_id == workspace_id,
             WebhookEndpoint.active.is_(True),
         )
     )

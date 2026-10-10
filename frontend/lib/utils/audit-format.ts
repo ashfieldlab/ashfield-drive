@@ -20,9 +20,9 @@ const ENTITY_LABEL: Record<string, string> = {
   external_link: "외부 공유 링크",
   notification: "알림",
   webhook: "Webhook",
-  company_membership: "회사 멤버",
+  workspace_membership: "워크스페이스 멤버",
   system_smtp_config: "전역 SMTP 설정",
-  company_quota: "회사 quota",
+  workspace_quota: "워크스페이스 quota",
   file_access: "열람",
   file_version: "파일 버전",
 }

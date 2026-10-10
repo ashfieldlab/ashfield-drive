@@ -40,7 +40,7 @@ class VaultMemberOut(BaseModel):
 
 class VaultOut(BaseModel):
     node_id: str
-    company_id: str
+    workspace_id: str
     created_by: str
     # 요청자가 이 vault 의 멤버인지: 클라이언트가 접근 가능 여부를 미리 표시.
     is_member: bool = False

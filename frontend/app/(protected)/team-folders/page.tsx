@@ -14,7 +14,7 @@ import type { TeamFolderItem } from "@/lib/types/api"
 const TEAM_FOLDERS_ENABLED = false
 
 export default function TeamFoldersPage() {
-  const { isCompanyAdmin } = useAppContext()
+  const { isWorkspaceAdmin } = useAppContext()
   const { data, error, isLoading } = useApiGet<TeamFolderItem[]>(
     "/api/v1/team-folders",
   )
@@ -30,7 +30,7 @@ export default function TeamFoldersPage() {
       <section className="min-w-0 flex-1 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900">부서 폴더</h1>
-          {TEAM_FOLDERS_ENABLED && isCompanyAdmin && (
+          {TEAM_FOLDERS_ENABLED && isWorkspaceAdmin && (
             <button
               onClick={() => setCreating(true)}
               data-testid="team-folders-create-button"

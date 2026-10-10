@@ -24,7 +24,7 @@ export interface NodeResponse {
   kind: NodeKind
   name: string
   parent_id: string | null
-  company_id: string
+  workspace_id: string
   owner_id: string
   scope: NodeScope
   size_bytes: number | null
@@ -137,16 +137,16 @@ export interface EmailPreferenceResponse {
   email_categories: Record<string, boolean>
 }
 
-// --- Phase 4: company members ---
+// --- Phase 4: workspace members ---
 
-export interface CompanyMember {
+export interface WorkspaceMember {
   sub: string
   email: string
   name: string | null
 }
 
-export interface CompanyMembersResponse {
-  members: CompanyMember[]
+export interface WorkspaceMembersResponse {
+  members: WorkspaceMember[]
 }
 
 // 그룹 공유 / 부서 폴더 (docs/group-sharing.html)
@@ -154,8 +154,8 @@ export interface GroupDept {
   department_id: string
   department: string
   parent: string | null
-  company: string
-  company_name: string
+  workspace: string
+  workspace_name: string
   is_group: number
   member_count: number
 }

@@ -9,11 +9,11 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.auth.jwks as jwks_mod
-from app.auth.provisioning import Identity, Workspace, provision_user
+from app.auth.provisioning import Identity, WorkspaceClaim, provision_user
 from app.core.config import settings
-from app.models.company import Company
 from app.models.user import User
-from app.models.user_company_membership import UserCompanyMembership
+from app.models.user_workspace_membership import UserWorkspaceMembership
+from app.models.workspace import Workspace
 from tests.conftest import (
     OTHER_PRIVATE_PEM,
     TEST_AUDIENCE,
@@ -206,15 +206,15 @@ async def test_small_clock_skew_tolerated(client):
 
 
 # ---------------------------------------------------------------------------
-# workspaces 클레임 → 로컬 회사·멤버십 동기화
+# workspaces 클레임 → 로컬 워크스페이스·멤버십 동기화
 # ---------------------------------------------------------------------------
 
 
 async def _memberships(db: AsyncSession, sub: str) -> dict[str, str]:
     rows = (
         await db.execute(
-            select(UserCompanyMembership.company_id, UserCompanyMembership.role).where(
-                UserCompanyMembership.user_sub == sub
+            select(UserWorkspaceMembership.workspace_id, UserWorkspaceMembership.role).where(
+                UserWorkspaceMembership.user_sub == sub
             )
         )
     ).all()
@@ -222,7 +222,7 @@ async def _memberships(db: AsyncSession, sub: str) -> dict[str, str]:
 
 
 @pytest.mark.asyncio
-async def test_workspaces_claim_creates_companies_and_memberships(client, db_session):
+async def test_workspaces_claim_creates_workspaces_and_memberships(client, db_session):
     token = mint_jwt(
         "acc-user-1",
         seed=False,
@@ -236,33 +236,33 @@ async def test_workspaces_claim_creates_companies_and_memberships(client, db_ses
     body = (await client.get("/api/v1/me", headers=bearer(token))).json()
 
     assert sorted(body["groups"]) == ["wsPersonal1", "wsTeamA", "wsTeamB"]
-    assert body["company_roles"] == {
+    assert body["workspace_roles"] == {
         "wsPersonal1": "admin",  # owner → admin
         "wsTeamA": "admin",
         "wsTeamB": "member",
     }
-    names = {c["id"]: (c["name"], c["account_workspace_id"]) for c in body["companies"]}
+    names = {c["id"]: (c["name"], c["account_workspace_id"]) for c in body["workspaces"]}
     assert names["wsTeamA"] == ("팀 A", "wsTeamA")
     assert names["wsPersonal1"] == ("홍길동의 워크스페이스", "wsPersonal1")
 
-    company = await db_session.get(Company, "wsTeamB")
-    assert company is not None and company.account_workspace_id == "wsTeamB"
+    workspace = await db_session.get(Workspace, "wsTeamB")
+    assert workspace is not None and workspace.account_workspace_id == "wsTeamB"
 
-    # 활성 회사로 실제 도메인 API 사용 가능, 클레임에 없는 회사는 403
+    # 활성 워크스페이스로 실제 도메인 API 사용 가능, 클레임에 없는 워크스페이스는 403
     res = await client.get(
-        "/api/v1/me/company/members", headers={**bearer(token), "X-Active-Company-Id": "wsTeamB"}
+        "/api/v1/me/workspace/members", headers={**bearer(token), "X-Active-Workspace-Id": "wsTeamB"}
     )
     assert res.status_code == 200
     res = await client.get(
-        "/api/v1/me/company/members",
-        headers={**bearer(token), "X-Active-Company-Id": "someone-else"},
+        "/api/v1/me/workspace/members",
+        headers={**bearer(token), "X-Active-Workspace-Id": "someone-else"},
     )
     assert res.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_no_personal_company_auto_created(client, db_session):
-    """개인 워크스페이스는 계정 서버가 만든다: 앱은 소속 없는 사용자에게 회사를 만들지 않는다."""
+async def test_no_personal_workspace_auto_created(client, db_session):
+    """개인 워크스페이스는 계정 서버가 만든다: 앱은 소속 없는 사용자에게 워크스페이스를 만들지 않는다."""
     token = mint_jwt("acc-empty", seed=False, workspaces=[])
     body = (await client.get("/api/v1/me", headers=bearer(token))).json()
     assert body["groups"] == []
@@ -300,17 +300,17 @@ async def test_workspace_removed_from_claim_drops_membership(client, db_session)
     body = (await client.get("/api/v1/me", headers=bearer(token))).json()
     assert body["groups"] == ["wsKeep"]
     assert await _memberships(db_session, "acc-rm") == {"wsKeep": "member"}
-    # 회사 행 자체는 남는다 (다른 멤버·데이터가 있을 수 있음)
-    assert await db_session.get(Company, "wsLeave") is not None
+    # 워크스페이스 행 자체는 남는다 (다른 멤버·데이터가 있을 수 있음)
+    assert await db_session.get(Workspace, "wsLeave") is not None
 
     res = await client.get(
-        "/api/v1/me/company/members", headers={**bearer(token), "X-Active-Company-Id": "wsLeave"}
+        "/api/v1/me/workspace/members", headers={**bearer(token), "X-Active-Workspace-Id": "wsLeave"}
     )
     assert res.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_workspace_rename_updates_company(client, db_session):
+async def test_account_workspace_rename_updates_workspace(client, db_session):
     await client.get(
         "/api/v1/me",
         headers=bearer(mint_jwt("acc-ren", seed=False, workspaces=[ws("wsRen", name="옛 이름")])),
@@ -323,12 +323,12 @@ async def test_workspace_rename_updates_company(client, db_session):
             ),
         )
     ).json()
-    assert body["companies"] == [{"id": "wsRen", "name": "새 이름", "account_workspace_id": "wsRen"}]
+    assert body["workspaces"] == [{"id": "wsRen", "name": "새 이름", "account_workspace_id": "wsRen"}]
 
 
 @pytest.mark.asyncio
 async def test_legacy_local_memberships_untouched(client, auth_headers, db_session):
-    """계정 서버 도입 전 로컬 회사(account_workspace_id NULL) 멤버십은 동기화가 지우지 않는다."""
+    """계정 서버 도입 전 로컬 워크스페이스(account_workspace_id NULL) 멤버십은 동기화가 지우지 않는다."""
     await client.get("/api/v1/me", headers=auth_headers("acc-legacy", groups=["legacy-co"]))
     token = mint_jwt("acc-legacy", seed=False, workspaces=[ws("wsNew", "owner")])
     body = (await client.get("/api/v1/me", headers=bearer(token))).json()
@@ -336,15 +336,15 @@ async def test_legacy_local_memberships_untouched(client, auth_headers, db_sessi
 
 
 @pytest.mark.asyncio
-async def test_existing_company_linked_by_account_workspace_id(client, db_session):
-    """운영자가 레거시 회사에 account_workspace_id 를 채워 두면 그 회사(로컬 id)로 연결된다."""
-    db_session.add(Company(id="acme-legacy", name="Acme", account_workspace_id="wsAcme"))
+async def test_existing_workspace_linked_by_account_workspace_id(client, db_session):
+    """운영자가 레거시 워크스페이스에 account_workspace_id 를 채워 두면 그 워크스페이스(로컬 id)로 연결된다."""
+    db_session.add(Workspace(id="acme-legacy", name="Acme", account_workspace_id="wsAcme"))
     await db_session.flush()
     token = mint_jwt("acc-link", seed=False, workspaces=[ws("wsAcme", "admin", "Acme")])
     body = (await client.get("/api/v1/me", headers=bearer(token))).json()
     assert body["groups"] == ["acme-legacy"]
-    assert body["company_roles"] == {"acme-legacy": "admin"}
-    assert await db_session.get(Company, "wsAcme") is None
+    assert body["workspace_roles"] == {"acme-legacy": "admin"}
+    assert await db_session.get(Workspace, "wsAcme") is None
 
 
 @pytest.mark.asyncio
@@ -402,12 +402,12 @@ async def test_malformed_workspace_entries_ignored(client, db_session):
     )
     body = (await client.get("/api/v1/me", headers=bearer(token))).json()
     # 모르는 역할은 최소 권한(member)
-    assert body["company_roles"] == {"wsGood": "member"}
+    assert body["workspace_roles"] == {"wsGood": "member"}
 
 
 @pytest.mark.asyncio
 async def test_concurrent_first_sync_race_safe():
-    """같은 사용자의 동시 첫 요청: 별개 트랜잭션들이 동시에 동기화해도 회사·멤버십은 하나씩."""
+    """같은 사용자의 동시 첫 요청: 별개 트랜잭션들이 동시에 동기화해도 워크스페이스·멤버십은 하나씩."""
     sub = f"race-{uuid4().hex[:12]}"
     wsid = f"wsRace{uuid4().hex[:8]}"
     ident = Identity(
@@ -415,22 +415,22 @@ async def test_concurrent_first_sync_race_safe():
         email=f"{sub}@test.local",
         name="경합",
         image=None,
-        workspaces=(Workspace(id=wsid, name="경합 팀", role="admin"),),
+        workspaces=(WorkspaceClaim(id=wsid, name="경합 팀", role="admin"),),
     )
 
     async def first_request() -> list[str]:
         async with AsyncSession(bind=test_engine, expire_on_commit=False) as s:
             async with s.begin():
-                return (await provision_user(s, ident)).company_ids
+                return (await provision_user(s, ident)).workspace_ids
 
     try:
         results = await asyncio.gather(first_request(), first_request(), first_request())
         assert results == [[wsid], [wsid], [wsid]]
         async with AsyncSession(bind=test_engine) as s:
-            assert await s.scalar(select(func.count()).where(Company.id == wsid)) == 1
+            assert await s.scalar(select(func.count()).where(Workspace.id == wsid)) == 1
             assert (
                 await s.scalar(
-                    select(func.count()).where(UserCompanyMembership.user_sub == sub)
+                    select(func.count()).where(UserWorkspaceMembership.user_sub == sub)
                 )
                 == 1
             )
@@ -438,9 +438,9 @@ async def test_concurrent_first_sync_race_safe():
         async with AsyncSession(bind=test_engine) as s:
             async with s.begin():
                 await s.execute(
-                    delete(UserCompanyMembership).where(UserCompanyMembership.user_sub == sub)
+                    delete(UserWorkspaceMembership).where(UserWorkspaceMembership.user_sub == sub)
                 )
-                await s.execute(delete(Company).where(Company.id == wsid))
+                await s.execute(delete(Workspace).where(Workspace.id == wsid))
                 await s.execute(delete(User).where(User.id == sub))
 
 
@@ -455,11 +455,11 @@ async def test_system_admin_emails(client, monkeypatch):
     token = mint_jwt("ba-root", seed=False, email="root@example.com")
     body = (await client.get("/api/v1/me", headers=bearer(token))).json()
     assert body["is_system_admin"] is True
-    res = await client.get("/api/v1/admin/companies", headers=bearer(token))
+    res = await client.get("/api/v1/admin/workspaces", headers=bearer(token))
     assert res.status_code == 200
 
     other = mint_jwt("ba-plain", seed=False, email="plain@example.com")
-    assert (await client.get("/api/v1/admin/companies", headers=bearer(other))).status_code == 403
+    assert (await client.get("/api/v1/admin/workspaces", headers=bearer(other))).status_code == 403
 
 
 @pytest.mark.asyncio

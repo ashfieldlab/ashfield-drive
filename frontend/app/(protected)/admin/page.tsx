@@ -6,7 +6,7 @@ import { Activity, Building2, Mail } from "lucide-react"
 import { useAppContext } from "@/components/providers/app-context"
 
 const SECTIONS = [
-  { href: "/admin/companies", title: "회사 관리", icon: Building2 },
+  { href: "/admin/workspaces", title: "워크스페이스 관리", icon: Building2 },
   { href: "/admin/smtp", title: "전역 SMTP 설정", icon: Mail },
   { href: "/admin/jobs", title: "작업 모니터링", icon: Activity },
 ]

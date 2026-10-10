@@ -3,18 +3,18 @@
 import { useEffect, useRef, useState } from "react"
 
 import { api } from "@/lib/api-client"
-import type { CompanyMember, CompanyMembersResponse } from "@/lib/types/api"
+import type { WorkspaceMember, WorkspaceMembersResponse } from "@/lib/types/api"
 
 interface Props {
   /** 선택된 sub */
   value: string
-  onChange: (sub: string, member: CompanyMember | null) => void
+  onChange: (sub: string, member: WorkspaceMember | null) => void
   placeholder?: string
   testId?: string
 }
 
 /**
- * 회사 멤버 자동완성: 디바운스 200ms.
+ * 워크스페이스 멤버 자동완성: 디바운스 200ms.
  *
  * 표시 ↔ 값 분리:
  *   - 입력 박스에는 사람이 보는 문자열(name·email)
@@ -29,7 +29,7 @@ export function UserAutocomplete({
 }: Props) {
   const [text, setText] = useState("")
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState<CompanyMember[]>([])
+  const [items, setItems] = useState<WorkspaceMember[]>([])
   const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -43,8 +43,8 @@ export function UserAutocomplete({
     setLoading(true)
     timer.current = setTimeout(async () => {
       try {
-        const r = await api<CompanyMembersResponse>(
-          `/api/v1/me/company/members?q=${encodeURIComponent(text)}&limit=10`,
+        const r = await api<WorkspaceMembersResponse>(
+          `/api/v1/me/workspace/members?q=${encodeURIComponent(text)}&limit=10`,
         )
         setItems(r.members)
       } catch {
@@ -67,7 +67,7 @@ export function UserAutocomplete({
     return () => window.removeEventListener("mousedown", onClick)
   }, [open])
 
-  function select(m: CompanyMember) {
+  function select(m: WorkspaceMember) {
     setText(m.name ? `${m.name} (${m.email})` : m.email)
     setOpen(false)
     onChange(m.sub, m)

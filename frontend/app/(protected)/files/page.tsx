@@ -34,7 +34,7 @@ export default function FilesPage() {
   // 부서 폴더 메뉴를 통해 진입했는지: 빵부스러기/사이드바를 "부서 폴더"로 표기.
   const fromTeam = sp.get("from") === "team-folders"
 
-  // ActiveCompanyGate 가 activeCompanyId ready 보장. race 차단 layout 차원.
+  // ActiveWorkspaceGate 가 activeWorkspaceId ready 보장. race 차단 layout 차원.
   const apiPath = trash
     ? "/api/v1/nodes/trash"
     : sharedWithMe
@@ -158,7 +158,7 @@ export default function FilesPage() {
           ) : (
             <div className="min-w-0 space-y-1">
               <h1 className="text-2xl font-bold text-gray-900">
-                {fromTeam ? "부서 폴더" : scope === "personal" ? "내 파일" : "회사 공유"}
+                {fromTeam ? "부서 폴더" : scope === "personal" ? "내 파일" : "워크스페이스"}
               </h1>
               {folderId && (
                 <FilesBreadcrumb scope={scope} folderId={folderId} unlocked={e2eUnlocked} teamFolder={fromTeam} />

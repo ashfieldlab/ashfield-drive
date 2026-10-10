@@ -1,4 +1,4 @@
-"""SMTP 설정 resolver: 회사 override → 전역 DB → env (C-4 가 회사 단계 추가).
+"""SMTP 설정 resolver: 워크스페이스 override → 전역 DB → env (C-4 가 워크스페이스 단계 추가).
 
 호출자: services/email.py 의 send_for_event.
 """
@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.crypto import decrypt
-from app.models.smtp_config import CompanySmtpOverride, SystemSmtpConfig
+from app.models.smtp_config import SystemSmtpConfig, WorkspaceSmtpOverride
 
 
 @dataclass(frozen=True)
@@ -31,7 +31,7 @@ class SmtpRuntime:
     tls_mode: str
     from_addr: str
     from_name: str
-    source: str  # "company" | "system" | "env": 로그용
+    source: str  # "workspace" | "system" | "env": 로그용
 
 
 def _decrypt_safe(enc: str) -> str:
@@ -44,15 +44,15 @@ def _decrypt_safe(enc: str) -> str:
 
 
 async def resolve(
-    db: AsyncSession, *, company_id: str | None = None
+    db: AsyncSession, *, workspace_id: str | None = None
 ) -> SmtpRuntime | None:
     """SMTP 설정 한 건을 반환. 어디서도 못 찾으면 None.
 
-    우선순위: company override → system DB → env.
+    우선순위: workspace override → system DB → env.
     """
-    # 1) Company override (있는 경우만)
-    if company_id:
-        ov = await db.get(CompanySmtpOverride, company_id)
+    # 1) Workspace override (있는 경우만)
+    if workspace_id:
+        ov = await db.get(WorkspaceSmtpOverride, workspace_id)
         if ov is not None:
             return SmtpRuntime(
                 host=ov.host,
@@ -62,7 +62,7 @@ async def resolve(
                 tls_mode=ov.tls_mode,
                 from_addr=ov.from_addr,
                 from_name=ov.from_name,
-                source="company",
+                source="workspace",
             )
 
     # 2) System DB row

@@ -2,7 +2,7 @@
 
 권한 모델 (ADR-0008):
   - personal: owner 만 접근. FileShare 로 명시적 부여 가능.
-  - shared: 같은 회사 멤버 모두 접근.
+  - shared: 같은 워크스페이스 멤버 모두 접근.
   - 폴더 share 는 자손에 자동 상속 (재귀 CTE).
 
 업로드/다운로드 (ADR-0005):
@@ -11,7 +11,7 @@
   - 50MB+: multipart: /upload-url 응답에 upload_id, /parts/{n}/url 로 per-part PUT, /complete-multipart.
   - 다운로드: presigned GET(30s). 폴더 zip 만 백엔드가 합쳐서 반환.
 
-다른 회사 리소스는 403 이 아니라 404 로 마스킹.
+다른 워크스페이스 리소스는 403 이 아니라 404 로 마스킹.
 """
 
 from datetime import UTC, datetime
@@ -23,7 +23,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import UserContext
-from app.auth.dependencies import get_current_user, require_active_company
+from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.config import settings
 from app.core.db import get_db
 from app.core.logging import logger
@@ -146,13 +146,13 @@ def _to_response(node: Node) -> NodeResponse:
     responses={
         400: {"description": "parent_id 가 폴더가 아니거나 scope 가 부모와 불일치"},
         403: {"description": "부모 폴더 write 권한 없음"},
-        404: {"description": "parent_id 가 존재하지 않거나 다른 회사 (마스킹)"},
+        404: {"description": "parent_id 가 존재하지 않거나 다른 워크스페이스 (마스킹)"},
     },
 )
 async def create_folder(
     body: FolderCreate,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NodeResponse:
     """루트 또는 다른 폴더 아래에 새 폴더 생성.
@@ -166,7 +166,7 @@ async def create_folder(
         parent_id=body.parent_id,
         scope=body.scope,
         user=user,
-        company_id=company_id,
+        workspace_id=workspace_id,
     )
     name = await resolve_name_conflict(db, parent_id=body.parent_id, name=body.name)
     node = Node(
@@ -174,7 +174,7 @@ async def create_folder(
         kind="folder",
         name=name,
         parent_id=body.parent_id,
-        company_id=company_id,
+        workspace_id=workspace_id,
         owner_id=user.sub,
         scope=body.scope,
         status="ready",
@@ -182,7 +182,7 @@ async def create_folder(
     db.add(node)
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="create",
         entity_type="node",
@@ -219,22 +219,22 @@ async def get_tree(
         description="True 면 scope 전체 서브트리(모든 깊이) 평탄 반환: desktop sync 용. parent_id 무시.",
     ),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> TreeResponse:
     """폴더 한 단계 자식만 반환 (웹). recursive=true 면 전체 서브트리 (desktop sync).
 
-    루트 + scope=personal 은 본인 소유 노드만. shared 는 회사 멤버 전부 동일 결과.
+    루트 + scope=personal 은 본인 소유 노드만. shared 는 워크스페이스 멤버 전부 동일 결과.
     공유받은 외부 노드는 `/shared-with-me` 에서.
     """
     if recursive:
         nodes = await list_subtree(
-            db, company_id=company_id, user=user, scope=scope  # type: ignore[arg-type]
+            db, workspace_id=workspace_id, user=user, scope=scope  # type: ignore[arg-type]
         )
     else:
         nodes = await list_children(
             db,
-            company_id=company_id,
+            workspace_id=workspace_id,
             user=user,
             parent_id=parent_id,
             scope=scope,  # type: ignore[arg-type]
@@ -249,14 +249,14 @@ async def get_tree(
 )
 async def get_trash(
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> TreeResponse:
-    """본인 personal soft-deleted + 회사 shared soft-deleted 를 한 번에.
+    """본인 personal soft-deleted + 워크스페이스 shared soft-deleted 를 한 번에.
 
     Phase 3 후속: N일 이상 묵으면 자동 청소. 지금은 영구.
     """
-    nodes = await list_trash(db, company_id=company_id, user=user)
+    nodes = await list_trash(db, workspace_id=workspace_id, user=user)
     return TreeResponse(nodes=[_to_response(n) for n in nodes])
 
 
@@ -272,17 +272,17 @@ class TrashEmptyResponse(BaseModel):
 )
 async def empty_trash(
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> TrashEmptyResponse:
-    """본인 personal soft-deleted + 회사 shared soft-deleted 노드를 hard delete + S3 object 제거.
+    """본인 personal soft-deleted + 워크스페이스 shared soft-deleted 노드를 hard delete + S3 object 제거.
 
     부모만 휴지통에 들어간 폴더의 자손 파일들도 RECURSIVE CTE 로 펼쳐 S3 object 까지 제거.
     DB row 는 FK ondelete=CASCADE 로 부모 hard-delete 시 자동 정리.
 
-    회사 공유 폴더/파일도 누구든 비울 수 있다 (휴지통은 회사 단위 공통).
+    워크스페이스 폴더/파일도 누구든 비울 수 있다 (휴지통은 워크스페이스 단위 공통).
     """
-    nodes = await list_trash(db, company_id=company_id, user=user)
+    nodes = await list_trash(db, workspace_id=workspace_id, user=user)
     if not nodes:
         return TrashEmptyResponse(purged=0)
 
@@ -293,7 +293,7 @@ async def empty_trash(
 
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="empty_trash",
         entity_type="node",
@@ -311,14 +311,14 @@ async def empty_trash(
 )
 async def get_shared_with_me(
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> TreeResponse:
     """본인이 직접 grantee 인 `FileShare` 의 노드 (ancestor 상속은 제외: 거기엔 자손이 함께 노출되므로 중복).
 
     expired share 는 제외.
     """
-    nodes = await list_shared_with_me(db, company_id=company_id, user=user)
+    nodes = await list_shared_with_me(db, workspace_id=workspace_id, user=user)
     return TreeResponse(nodes=[_to_response(n) for n in nodes])
 
 
@@ -334,13 +334,13 @@ async def get_changes(
     since: datetime,
     limit: int = Query(default=500, ge=1, le=2000),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> ChangesResponse:
     """Desktop sync 클라이언트 의 delta polling endpoint (ADR-0015).
 
     `audit_logs` 의 entity_type='node' 변경을 since 이후로 가져옴.
-    권한 layer: scope=shared (회사 멤버 모두) / scope=personal owner / FileShare direct grantee.
+    권한 layer: scope=shared (워크스페이스 멤버 모두) / scope=personal owner / FileShare direct grantee.
     Ancestor share 상속은 Phase 4 (지금은 direct share 만).
 
     limit 초과 시 has_more=true: 클라이언트가 마지막 occurred_at 으로 다시 호출.
@@ -354,7 +354,7 @@ async def get_changes(
             (FileShare.node_id == Node.id) & (FileShare.grantee_sub == user.sub),
         )
         .where(
-            AuditLog.company_id == company_id,
+            AuditLog.workspace_id == workspace_id,
             AuditLog.entity_type == "node",
             AuditLog.created_at > since,
             # node 권한: node 가 살아있을 때만 의미. hard-delete 면 audit 만 (어차피
@@ -399,9 +399,9 @@ async def get_changes(
 )
 async def node_events(
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
 ) -> StreamingResponse:
-    """활성 회사의 node 변경을 Redis pub/sub 로 받아 SSE 로 push.
+    """활성 워크스페이스의 node 변경을 Redis pub/sub 로 받아 SSE 로 push.
 
     payload 없이 'change' 신호만: 클라이언트가 신호 받으면 `/changes?since=` 로
     실제 delta 를 가져온다. polling 의 실시간 대체 (polling 은 fallback 으로 유지).
@@ -412,7 +412,7 @@ async def node_events(
     async def stream():
         redis = get_redis()
         pubsub = redis.pubsub()
-        await pubsub.subscribe(f"node_events:{company_id}")
+        await pubsub.subscribe(f"node_events:{workspace_id}")
         try:
             yield ": connected\n\n"
             while True:
@@ -425,7 +425,7 @@ async def node_events(
                     yield ": ping\n\n"  # heartbeat: 연결 유지
         finally:
             try:
-                await pubsub.unsubscribe(f"node_events:{company_id}")
+                await pubsub.unsubscribe(f"node_events:{workspace_id}")
                 await pubsub.aclose()
             except Exception:
                 pass
@@ -455,17 +455,17 @@ class AncestorsResponse(BaseModel):
     "/{node_id}/ancestors",
     response_model=AncestorsResponse,
     summary="조상 체인: root 부터 leaf 까지 순서",
-    responses={404: {"description": "노드 없음 또는 다른 회사"}},
+    responses={404: {"description": "노드 없음 또는 다른 워크스페이스"}},
 )
 async def get_ancestors(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> AncestorsResponse:
     """브레드크럼용. leaf 자신 포함, root → leaf 순서."""
     rows = await list_ancestors(
-        db, leaf_id=node_id, company_id=company_id, user=user
+        db, leaf_id=node_id, workspace_id=workspace_id, user=user
     )
     return AncestorsResponse(
         ancestors=[AncestorItem(**r) for r in rows]
@@ -477,19 +477,19 @@ async def get_ancestors(
     response_model=NodeResponse,
     summary="노드 메타 조회",
     responses={
-        404: {"description": "다른 회사 또는 권한 없는 personal (마스킹)"},
+        404: {"description": "다른 워크스페이스 또는 권한 없는 personal (마스킹)"},
         403: {"description": "shared/share 권한 있으나 deleted 등"},
     },
 )
 async def get_node(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NodeResponse:
     """단건 메타 조회. 본문은 별도 `/download-url` 로."""
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     return _to_response(node)
 
 
@@ -507,7 +507,7 @@ async def patch_node(
     node_id: str,
     body: NodePatch,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
     if_match: str | None = Header(default=None, alias="If-Match"),
 ) -> NodeResponse:
@@ -516,7 +516,7 @@ async def patch_node(
     Desktop sync 클라이언트가 If-Match 헤더 보내면 etag 비교: mismatch 시 412.
     """
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="write")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="write")
     _check_if_match(node, if_match)
 
     fields = body.model_dump(exclude_unset=True)
@@ -532,7 +532,7 @@ async def patch_node(
             parent_id=new_parent_id,
             scope=node.scope,
             user=user,
-            company_id=company_id,
+            workspace_id=workspace_id,
         )
         if node.kind == "folder" and new_parent_id is not None:
             await assert_no_parent_cycle(
@@ -553,7 +553,7 @@ async def patch_node(
         touch_etag(node)
         await write_audit(
             db,
-            company_id=company_id,
+            workspace_id=workspace_id,
             actor=user,
             action="update",
             entity_type="node",
@@ -577,7 +577,7 @@ async def _hard_delete_vault_node(
     node: Node,
     *,
     user: UserContext,
-    company_id: str,
+    workspace_id: str,
 ) -> None:
     """vault 노드 즉시 영구 삭제: 자손 file 의 S3 객체 제거 + 노드 row 삭제(CASCADE).
     휴지통을 거치지 않음 (보안 폴더 정책)."""
@@ -592,7 +592,7 @@ async def _hard_delete_vault_node(
     await db.delete(node)  # 자손 row 는 FK ondelete=CASCADE 로 자동 정리
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="delete",
         entity_type="node",
@@ -618,7 +618,7 @@ async def _hard_delete_vault_node(
 async def delete_node(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
     if_match: str | None = Header(default=None, alias="If-Match"),
 ) -> None:
@@ -628,7 +628,7 @@ async def delete_node(
     Desktop sync 의 If-Match 헤더 검증.
     """
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="write")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="write")
     _check_if_match(node, if_match)
     if node.deleted_at is not None:
         return
@@ -636,7 +636,7 @@ async def delete_node(
     # 보안 폴더(vault) 내용은 휴지통을 거치지 않고 즉시 영구 삭제 (ADR-0016).
     # 공유 휴지통에 암호문 이름으로 새는 경계 침해 방지 + "보안 삭제" 의미.
     if await is_vault_content(db, node.id):
-        await _hard_delete_vault_node(db, node, user=user, company_id=company_id)
+        await _hard_delete_vault_node(db, node, user=user, workspace_id=workspace_id)
         return
 
     # 진행 중 multipart 가 있으면 S3 측 abort (실패해도 soft-delete 는 계속)
@@ -657,13 +657,13 @@ async def delete_node(
     descendant_count = 0
     if node.kind == "folder":
         for desc in await collect_descendants(
-            db, company_id=company_id, root_id=node.id
+            db, workspace_id=workspace_id, root_id=node.id
         ):
             soft_delete(desc)
             descendant_count += 1
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="delete",
         entity_type="node",
@@ -689,12 +689,12 @@ async def delete_node(
 async def restore_node(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NodeResponse:
     """이미 active 인 노드면 그대로 반환 (멱등). 동명 충돌 시 자동 rename."""
     node = await get_node_or_404(db, node_id)
-    if node.company_id != company_id:
+    if node.workspace_id != workspace_id:
         raise HTTPException(404, "Node not found")
     if node.scope == "personal" and node.owner_id != user.sub:
         raise HTTPException(403, "Forbidden")
@@ -705,7 +705,7 @@ async def restore_node(
     restore(node)
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="restore",
         entity_type="node",
@@ -735,7 +735,7 @@ async def restore_node(
 async def create_upload_url(
     body: UploadUrlRequest,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> UploadUrlResponse:
     """`size` 가 50MB(`multipart_threshold_bytes`) 이상이면 multipart 흐름으로 분기.
@@ -752,20 +752,20 @@ async def create_upload_url(
         parent_id=body.parent_id,
         scope=body.scope,
         user=user,
-        company_id=company_id,
+        workspace_id=workspace_id,
     )
-    # 회사 + 업로더 개인 스토리지 quota 검증: 초과 시 413 (D-3).
+    # 워크스페이스 + 업로더 개인 스토리지 quota 검증: 초과 시 413 (D-3).
     from app.services.quotas import ensure_capacity, ensure_user_capacity
 
     await ensure_capacity(
-        db, company_id=company_id, additional_bytes=body.size
+        db, workspace_id=workspace_id, additional_bytes=body.size
     )
     await ensure_user_capacity(
-        db, company_id=company_id, user_sub=user.sub, additional_bytes=body.size
+        db, workspace_id=workspace_id, user_sub=user.sub, additional_bytes=body.size
     )
     name = await resolve_name_conflict(db, parent_id=body.parent_id, name=body.name)
     node_id = new_node_id()
-    storage_key = storage_key_for(company_id, node_id)
+    storage_key = storage_key_for(workspace_id, node_id)
 
     is_multipart = body.size >= settings.multipart_threshold_bytes
     upload_id: str | None = None
@@ -777,7 +777,7 @@ async def create_upload_url(
         kind="file",
         name=name,
         parent_id=body.parent_id,
-        company_id=company_id,
+        workspace_id=workspace_id,
         owner_id=user.sub,
         scope=body.scope,
         storage_key=storage_key,
@@ -820,7 +820,7 @@ async def get_part_url(
     node_id: str,
     part_number: int,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> PartUrlResponse:
     """클라이언트가 파일을 part_size 단위로 잘라 PUT 한 후 응답 헤더의 ETag 를 수집.
@@ -829,7 +829,7 @@ async def get_part_url(
     (status=ready + pending_storage_key 대상) 둘 다 지원.
     """
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="write")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="write")
     target_key = node.pending_storage_key or (
         node.storage_key if node.status == "pending" else None
     )
@@ -860,7 +860,7 @@ async def complete_multipart(
     node_id: str,
     body: CompleteMultipartRequest,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NodeResponse:
     """parts = [{PartNumber, ETag}, ...]: 모든 파트 PUT 후 호출.
@@ -868,7 +868,7 @@ async def complete_multipart(
     실패 시 S3 측 multipart abort 시도 후 400. status → ready 로 전이 + audit row.
     """
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="write")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="write")
     if (
         node.kind != "file"
         or node.status != "pending"
@@ -905,7 +905,7 @@ async def complete_multipart(
     file_versions.mark_content(node, saved_by=user.sub, saved_at=datetime.now(UTC))
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="create",
         entity_type="node",
@@ -936,11 +936,11 @@ async def complete_multipart(
 async def complete_upload(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NodeResponse:
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="write")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="write")
     if node.kind != "file":
         raise HTTPException(400, "Not a file")
     if node.status == "ready":
@@ -958,7 +958,7 @@ async def complete_upload(
     file_versions.mark_content(node, saved_by=user.sub, saved_at=datetime.now(UTC))
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="create",
         entity_type="node",
@@ -985,14 +985,14 @@ async def complete_upload(
         403: {"description": "write 권한 없음"},
         404: {"description": "노드 없음 또는 삭제됨"},
         412: {"description": "If-Match 의 etag 가 현재와 불일치 (동시 수정 충돌)"},
-        413: {"description": "회사 스토리지 quota 초과"},
+        413: {"description": "워크스페이스 스토리지 quota 초과"},
     },
 )
 async def create_overwrite_url(
     node_id: str,
     body: OverwriteUrlRequest,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
     if_match: str | None = Header(default=None, alias="If-Match"),
 ) -> UploadUrlResponse:
@@ -1006,7 +1006,7 @@ async def create_overwrite_url(
     cron 정리 대상, 기능 영향 없음).
     """
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="write")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="write")
     if node.kind != "file":
         raise HTTPException(400, "Not a file")
     if node.deleted_at is not None:
@@ -1019,17 +1019,17 @@ async def create_overwrite_url(
 
     _delta = max(0, body.size - (node.size_bytes or 0))
     await ensure_capacity(
-        db, company_id=company_id, additional_bytes=_delta
+        db, workspace_id=workspace_id, additional_bytes=_delta
     )
     # 파일 소유자(업로더 아님) 개인 한도 기준: 사용량은 소유자에게 귀속.
     await ensure_user_capacity(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         user_sub=node.owner_id,
         additional_bytes=_delta,
     )
 
-    pending_key = f"{storage_key_for(company_id, node.id)}.{new_node_id()}"
+    pending_key = f"{storage_key_for(workspace_id, node.id)}.{new_node_id()}"
     is_multipart = body.size >= settings.multipart_threshold_bytes
     if is_multipart:
         node.multipart_upload_id = await create_multipart_upload(
@@ -1070,12 +1070,12 @@ async def complete_overwrite(
     node_id: str,
     body: OverwriteCompleteRequest,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NodeResponse:
     """단일 PUT 은 body 없이, multipart 는 parts 리스트와 함께 호출."""
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="write")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="write")
     pending_key = node.pending_storage_key
     if node.kind != "file" or not pending_key:
         raise HTTPException(409, "No overwrite in progress")
@@ -1119,7 +1119,7 @@ async def complete_overwrite(
     file_versions.mark_content(node, saved_by=user.sub, saved_at=now)
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="update",
         entity_type="node",
@@ -1156,11 +1156,11 @@ async def create_download_url(
         pattern="^(download|preview)$",
     ),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> DownloadUrlResponse:
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     if node.deleted_at is not None:
         raise HTTPException(404, "Node not found")
     if node.kind != "file":
@@ -1196,7 +1196,7 @@ async def create_download_url(
 async def download_folder_zip(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """폴더 + 자손 파일 트리를 zip 으로 묶어 다운로드.
@@ -1204,7 +1204,7 @@ async def download_folder_zip(
     cap: settings.zip_max_total_bytes / zip_max_files. pending 파일은 skip.
     """
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     await record_file_access(db, node, actor=user, kind="zip_download")
     if node.kind != "folder":
         raise HTTPException(400, "Not a folder")
@@ -1248,11 +1248,11 @@ def _share_to_response(share, user_row, group_name=None) -> FileShareResponse:
 async def list_node_shares(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> FileShareList:
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     rows = await list_shares_for_node(db, node_id=node.id)
     return FileShareList(shares=[_share_to_response(s, u) for s, u in rows])
 
@@ -1272,29 +1272,29 @@ async def create_node_share(
     node_id: str,
     body: FileShareCreate,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> FileShareResponse:
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     await assert_can_manage_shares(db, node, user=user)
 
     # 그룹(= 디렉터리 부서) 공유: 개인 공유와 분기. (docs/group-sharing.html)
-    # 개인 공유처럼 owner/manage 면 가능 (scope 제한 없음). shared 는 이미 회사 전원이
+    # 개인 공유처럼 owner/manage 면 가능 (scope 제한 없음). shared 는 이미 워크스페이스 전원이
     # 접근하므로 그룹 공유 의미가 없고, 의미 있는 건 personal 폴더를 부서에 여는 것 = 팀 폴더.
     if body.grantee_group_id:
         if not departments.groups_enabled():
             raise HTTPException(400, departments.GROUPS_DISABLED_DETAIL)
         if await is_vault_content(db, node.id):
             raise HTTPException(400, "보안 폴더는 그룹 공유를 지원하지 않습니다.")
-        # 부서가 이 회사에 실재하는지 검증 + 표시명 확보.
-        depts = await departments.list_departments(user, company_id)
+        # 부서가 이 워크스페이스에 실재하는지 검증 + 표시명 확보.
+        depts = await departments.list_departments(user, workspace_id)
         match = next(
             (
                 d
                 for d in depts
                 if d.get("department_id") == body.grantee_group_id
-                and d.get("company") == company_id
+                and d.get("workspace") == workspace_id
             ),
             None,
         )
@@ -1310,7 +1310,7 @@ async def create_node_share(
         )
         await write_audit(
             db,
-            company_id=company_id,
+            workspace_id=workspace_id,
             actor=user,
             action="share",
             entity_type="node",
@@ -1335,7 +1335,7 @@ async def create_node_share(
     )
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="share",
         entity_type="node",
@@ -1347,7 +1347,7 @@ async def create_node_share(
         db,
         pending,
         recipient_sub=body.grantee_sub,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor_sub=user.sub,
         type_="node_shared",
         entity_type="node",
@@ -1378,11 +1378,11 @@ async def delete_node_share(
     node_id: str,
     share_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     await assert_can_manage_shares(db, node, user=user)
     share = await get_share_or_404(db, share_id)
     if share.node_id != node.id:
@@ -1390,7 +1390,7 @@ async def delete_node_share(
     await db.delete(share)
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="unshare",
         entity_type="node",
@@ -1429,11 +1429,11 @@ def _link_to_response(link: ExternalLink) -> ExternalLinkResponse:
 async def list_external_links(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> ExternalLinkList:
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     await assert_can_manage_shares(db, node, user=user)
     from sqlalchemy import select as _select
 
@@ -1460,11 +1460,11 @@ async def create_external_link(
     node_id: str,
     body: ExternalLinkCreate,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> ExternalLinkResponse:
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     await assert_can_manage_shares(db, node, user=user)
     link = ExternalLink(
         id=new_link_id(),
@@ -1478,7 +1478,7 @@ async def create_external_link(
     db.add(link)
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="share",
         entity_type="node",
@@ -1503,12 +1503,12 @@ async def revoke_external_link(
     node_id: str,
     link_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> None:
 
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="read")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     await assert_can_manage_shares(db, node, user=user)
     link = await db.get(ExternalLink, link_id)
     if link is None or link.node_id != node.id:
@@ -1516,7 +1516,7 @@ async def revoke_external_link(
     link.revoked_at = datetime.now(UTC)
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="unshare",
         entity_type="node",

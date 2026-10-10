@@ -1,6 +1,6 @@
 """WebhookEndpoint / WebhookDelivery: 외부 서비스 알림 fan-out.
 
-회사 단위로 등록. notification.type 화이트리스트(events) 와 일치하면 dispatch.
+워크스페이스 단위로 등록. notification.type 화이트리스트(events) 와 일치하면 dispatch.
 서명: X-Workspace-Signature = HMAC-SHA256(secret, body): 수신측 검증용.
 """
 
@@ -17,8 +17,8 @@ class WebhookEndpoint(Base, TimestampMixin):
     __tablename__ = "webhook_endpoints"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    company_id: Mapped[str] = mapped_column(
-        String(128), ForeignKey("companies.id"), nullable=False, index=True
+    workspace_id: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.id"), nullable=False, index=True
     )
     url: Mapped[str] = mapped_column(String(2048), nullable=False)
     secret: Mapped[str] = mapped_column(String(128), nullable=False)

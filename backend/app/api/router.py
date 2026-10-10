@@ -6,14 +6,10 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     activity,
-    admin_companies,
     admin_jobs,
     admin_smtp,
+    admin_workspaces,
     audit,
-    company,
-    company_members,
-    company_quota,
-    company_smtp,
     e2e,
     file_versions,
     groups,
@@ -23,6 +19,10 @@ from app.api.v1 import (
     search,
     team_folders,
     webhooks,
+    workspace,
+    workspace_members,
+    workspace_quota,
+    workspace_smtp,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -34,14 +34,14 @@ api_router.include_router(notifications.router)
 api_router.include_router(webhooks.router)
 api_router.include_router(search.router)
 api_router.include_router(activity.router)
-api_router.include_router(company.router)
-api_router.include_router(admin_companies.router)
+api_router.include_router(workspace.router)
+api_router.include_router(admin_workspaces.router)
 api_router.include_router(admin_jobs.router)
 api_router.include_router(admin_smtp.router)
-api_router.include_router(company_smtp.router)
-api_router.include_router(company_members.router)
-api_router.include_router(company_quota.view_router)
-api_router.include_router(company_quota.admin_router)
+api_router.include_router(workspace_smtp.router)
+api_router.include_router(workspace_members.router)
+api_router.include_router(workspace_quota.view_router)
+api_router.include_router(workspace_quota.admin_router)
 api_router.include_router(e2e.router)
 api_router.include_router(groups.router)
 api_router.include_router(team_folders.router)

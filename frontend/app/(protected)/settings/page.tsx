@@ -19,7 +19,7 @@ const EMAIL_CATEGORIES = [
 
 export default function SettingsPage() {
   const { toast } = useToast()
-  const { activeCompanyId, isCompanyAdmin, isSystemAdmin } = useAppContext()
+  const { activeWorkspaceId, isWorkspaceAdmin, isSystemAdmin } = useAppContext()
   const { data, mutate, isLoading } = useApiGet<EmailPreferenceResponse>(
     "/api/v1/notifications/preferences",
   )
@@ -54,8 +54,8 @@ export default function SettingsPage() {
     void patchPref({ email_categories: { [key]: !current } })
   }
 
-  const companyBase = activeCompanyId
-    ? `/settings/company/${encodeURIComponent(activeCompanyId)}`
+  const workspaceBase = activeWorkspaceId
+    ? `/settings/workspace/${encodeURIComponent(activeWorkspaceId)}`
     : null
 
   return (
@@ -119,10 +119,10 @@ export default function SettingsPage() {
           </header>
           <ul className="divide-y divide-gray-100">
             <SettingsRow
-              href="/admin/companies"
+              href="/admin/workspaces"
               icon={<Building2 size={16} />}
-              title="회사 관리"
-              testid="settings-link-admin-companies"
+              title="워크스페이스 관리"
+              testid="settings-link-admin-workspaces"
             />
             <SettingsRow
               href="/admin/smtp"
@@ -146,16 +146,16 @@ export default function SettingsPage() {
         </section>
       )}
 
-      {isCompanyAdmin && companyBase && (
+      {isWorkspaceAdmin && workspaceBase && (
         <section className="rounded-lg border border-gray-200 bg-white">
           <header className="border-b border-gray-100 px-5 py-3">
             <h2 className="text-sm font-semibold text-gray-900">
-              회사 관리 ({activeCompanyId})
+              워크스페이스 관리 ({activeWorkspaceId})
             </h2>
           </header>
           <ul className="divide-y divide-gray-100">
             <SettingsRow
-              href={`${companyBase}/members`}
+              href={`${workspaceBase}/members`}
               icon={<Users size={16} />}
               title="멤버"
               testid="settings-link-members"
@@ -164,10 +164,10 @@ export default function SettingsPage() {
               href="/audit"
               icon={<ScrollText size={16} />}
               title="감사 로그"
-              testid="settings-link-company-audit"
+              testid="settings-link-workspace-audit"
             />
             <SettingsRow
-              href={`${companyBase}/smtp`}
+              href={`${workspaceBase}/smtp`}
               icon={<Mail size={16} />}
               title="SMTP 설정"
               testid="settings-link-smtp"

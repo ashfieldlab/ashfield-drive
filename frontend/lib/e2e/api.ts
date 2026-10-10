@@ -14,7 +14,7 @@ export interface KeyBundle {
 
 export interface VaultOut {
   node_id: string
-  company_id: string
+  workspace_id: string
   created_by: string
   /** 요청자가 이 vault 의 멤버인지 (접근 가능 여부) */
   is_member: boolean

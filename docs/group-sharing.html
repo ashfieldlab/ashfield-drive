@@ -33,7 +33,7 @@
 
 <div class="ok">
 <b>인증 검증됨</b>: workspace가 유저의 Keycloak 토큰을 <code>Authorization: Bearer</code>로 외부 디렉터리에 포워딩 →
-외부 디렉터리 <code>validate_bearer_token</code>이 검증 → <code>directory_api</code>가 그 유저 회사 스코프로 응답.
+외부 디렉터리 <code>validate_bearer_token</code>이 검증 → <code>directory_api</code>가 그 유저 워크스페이스 스코프로 응답.
 <b>게이트웨이·서비스키 불필요.</b> 개발 환경에서 <code>list_departments</code> 200 + 실제 부서트리 확인.
 (응답의 <code>sid=Guest</code> 쿠키는 stateless 토큰 인증의 정상 동작: 본문 데이터가 인증 증거)
 </div>
@@ -44,19 +44,19 @@
 <tr><td>1</td><td>적용 범위</td><td><b>일반 공유 폴더만</b> (shared scope)</td><td>서버 authz만으로 동작. E2E vault는 키 재-wrap 필요 → 차후 별도.</td></tr>
 <tr><td>2</td><td>그룹 source</td><td><b>외부 디렉터리 Department</b> (directory_api)</td><td>실제 조직도 재사용. 자체 그룹 테이블 이중관리 회피. 트리·인원수·멤버 다 제공.</td></tr>
 <tr><td>3</td><td>인증 (workspace→외부 디렉터리)</td><td><b>B · 리소스 서버</b>: 유저 토큰 포워딩</td><td>oauth2-proxy 방향(엣지 인증 + 백엔드 리소스서버)과 일치. 서비스키·임퍼소네이션 없음. 검증 완료.</td></tr>
-<tr><td>4</td><td>멤버십 판정</td><td><b>어댑터 + 캐시</b> (웹훅 무효화는 나중)</td><td>directory_api 조회를 회사별 캐시. 멤버십 변경 반영 지연은 추후 외부 디렉터리 웹훅으로 invalidate.</td></tr>
+<tr><td>4</td><td>멤버십 판정</td><td><b>어댑터 + 캐시</b> (웹훅 무효화는 나중)</td><td>directory_api 조회를 워크스페이스별 캐시. 멤버십 변경 반영 지연은 추후 외부 디렉터리 웹훅으로 invalidate.</td></tr>
 <tr><td>5</td><td>상위 부서 공유 범위</td><td><b>부서 + 모든 하위 (subtree)</b></td><td>"본부에 공유 = 산하 전원". directory_api가 parent/is_group 제공 → 트리 재구성해 subtree 판정.</td></tr>
 </table>
 
 <h2>외부 디렉터리 쪽: 이미 준비됨 (호출 검증 완료)</h2>
 <div class="card">
-<code>directory_api</code> (관리자 게이트 없음, 호출자 회사 스코프):
+<code>directory_api</code> (관리자 게이트 없음, 호출자 워크스페이스 스코프):
 <table>
 <tr><th>API</th><th>용도</th><th>리턴(핵심)</th></tr>
-<tr><td><code>list_departments()</code></td><td>그룹 카탈로그(드롭다운·트리)</td><td><code>department_id, department, parent, company, is_group, member_count</code></td></tr>
-<tr><td><code>search_colleagues(department, company)</code></td><td>부서별 멤버 해석</td><td>직원(= user) 목록, 회사 스코프</td></tr>
+<tr><td><code>list_departments()</code></td><td>그룹 카탈로그(드롭다운·트리)</td><td><code>department_id, department, parent, workspace, is_group, member_count</code></td></tr>
+<tr><td><code>search_colleagues(department, workspace)</code></td><td>부서별 멤버 해석</td><td>직원(= user) 목록, 워크스페이스 스코프</td></tr>
 </table>
-둘 다 <b>유저 토큰 포워딩</b>으로 호출. 회사 인자 없이 호출자 회사로 스코핑.
+둘 다 <b>유저 토큰 포워딩</b>으로 호출. 워크스페이스 인자 없이 호출자 워크스페이스로 스코핑.
 </div>
 
 <h2>workspace 쪽: 새로 만들 것</h2>
@@ -67,7 +67,7 @@
   call(method, user_access_token):
      GET {base}/api/method/{method}
      Authorization: Bearer {user_access_token}
-  list_departments(token)         → 캐시(회사별)
+  list_departments(token)         → 캐시(워크스페이스별)
   members_of(dept_id, token)      → search_colleagues 기반, 캐시
 * user_access_token: NextAuth 세션의 access_token 을 backend 호출에 전달.
 * 캐시 무효화: 초기엔 TTL, 추후 외부 디렉터리 웹훅.</pre>
@@ -96,7 +96,7 @@
                          │  Authorization: Bearer {user access_token}
                          ▼
                       [외부 디렉터리] validate_bearer_token → set_user(email)
-                         │  directory_api (그 유저 회사 스코프)
+                         │  directory_api (그 유저 워크스페이스 스코프)
                          ▼
                       부서/멤버 응답
 ※ 미래 oauth2-proxy 전환 시: 엣지에서 인증 + 토큰 패스스루 → 외부 디렉터리는 그대로 리소스서버.</pre>
@@ -107,7 +107,7 @@
 <li><b>access_token 노출</b>: NextAuth 세션의 access_token 을 backend 의 외부 디렉터리 호출에 전달하는 경로 확보(서버 측).</li>
 <li><b>캐시 무효화</b>: 초기 TTL → 추후 외부 디렉터리 웹훅(부서/직원 변경 시).</li>
 <li><b>DIRECTORY_URL</b>: workspace backend → 외부 디렉터리 직접 도달 주소(클러스터 내부 서비스 or 공개).</li>
-<li><b>회사 경계</b>: 활성 회사 부서만 노출·해석. 멀티테넌트 격리 유지.</li>
+<li><b>워크스페이스 경계</b>: 활성 워크스페이스 부서만 노출·해석. 멀티테넌트 격리 유지.</li>
 <li><b>토큰 만료</b>: 1시간 수명. backend 호출 시 유효 토큰 확보(갱신 흐름).</li>
 </ul>
 </div>
@@ -115,33 +115,33 @@
 <h2>4단계: 팀 폴더 (Team folders, 옵션 B 확정)</h2>
 <div class="ok">
 <b>표현 = shared scope + 팀폴더 바인딩 + ACL 오버라이드 (vault 패턴 그대로).</b>
-"회사 전원 write"를 끄고 부서 ACL 로 대체. 주인 없음 → orphan 없음. 회사 공용 자산.
+"워크스페이스 전원 write"를 끄고 부서 ACL 로 대체. 주인 없음 → orphan 없음. 워크스페이스 공용 자산.
 </div>
 
 <h3>데이터</h3>
 <pre>team_folders                      # vaults 테이블과 평행
   node_id        PK, FK nodes      # 팀폴더 루트 (shared scope)
-  company_id     FK companies
+  workspace_id     FK workspaces
   department_id  str               # 디렉터리 부서 (이 폴더가 누구 것인지)
   created_by
   created_at</pre>
 
 <h3>접근: effective_permission (shared 분기에 추가)</h3>
 <pre>shared 노드의 조상 중 team_folders 가 있으면 (vault 처럼 재귀 CTE):
-   회사 전원 write 대신 →
+   워크스페이스 전원 write 대신 →
    부서 ∈ 유저 접근집합(access_department_ids, 3단계 캐시) ? write : 0
-   (creator/회사 admin → manage)
+   (creator/워크스페이스 admin → manage)
 * 즉 팀폴더 = "그 부서(+하위)만 접근하는 shared 서브트리". vault 의 부서판.</pre>
 
 <h3>API</h3>
-<pre>POST   /api/v1/team-folders   {department_id, name}   # 회사 admin 전용
+<pre>POST   /api/v1/team-folders   {department_id, name}   # 워크스페이스 admin 전용
          → shared 폴더 노드 + team_folders 행 생성
 GET    /api/v1/team-folders                            # 내가 멤버인 팀폴더 목록
          (유저 접근집합 ∋ 바인딩 부서)
 DELETE /api/v1/team-folders/{node_id}                  # admin (폴더+바인딩 제거)</pre>
 
 <h3>목록 분리</h3>
-<p>팀폴더 루트는 좌측 <b>"Team folders"</b> 섹션에만 노출. 일반 "회사 공유"(shared 루트) 목록에선 <b>제외</b>(team_folders 에 있는 node 빼기): 중복/혼선 방지. (sync 의 vault 제외와 동일 결)</p>
+<p>팀폴더 루트는 좌측 <b>"Team folders"</b> 섹션에만 노출. 일반 "워크스페이스"(shared 루트) 목록에선 <b>제외</b>(team_folders 에 있는 node 빼기): 중복/혼선 방지. (sync 의 vault 제외와 동일 결)</p>
 
 <h3>모델 A 와의 공존</h3>
 <p>3단계의 <code>FileShare.grantee_group_id</code> = <b>"내 개인 폴더를 팀에 임시 공유"</b>(ad-hoc). 팀 폴더(B) = <b>상설 부서 공용 공간</b>(바인딩 기반). 둘은 다른 UX 라 공존.</p>

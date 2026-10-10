@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import UserContext
-from app.auth.dependencies import get_current_user, require_active_company
+from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.db import get_db
 from app.models.e2e_key import E2EUserKey
 from app.models.node import Node
@@ -137,7 +137,7 @@ async def get_public_key(
 async def create_vault(
     body: VaultCreate,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> VaultOut:
     """vault_key 는 클라이언트가 생성 + 본인 공개키로 wrap 해서 보냄.
@@ -145,7 +145,7 @@ async def create_vault(
     빈 폴더만 가능: 기존 파일은 평문이라 재암호화 문제 회피 (ADR-0016).
     """
     node = await get_node_or_404(db, body.node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission="write")
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="write")
     if node.kind != "folder":
         raise HTTPException(400, "Vault must be a folder")
     if await db.get(Vault, node.id):
@@ -164,7 +164,7 @@ async def create_vault(
     if child_count > 0:
         raise HTTPException(400, "Vault folder must be empty")
 
-    db.add(Vault(node_id=node.id, company_id=company_id, created_by=user.sub))
+    db.add(Vault(node_id=node.id, workspace_id=workspace_id, created_by=user.sub))
     db.add(
         VaultMember(
             id=new_node_id(),
@@ -175,22 +175,22 @@ async def create_vault(
     )
     await db.commit()
     return VaultOut(
-        node_id=node.id, company_id=company_id, created_by=user.sub, is_member=True
+        node_id=node.id, workspace_id=workspace_id, created_by=user.sub, is_member=True
     )
 
 
 @router.get(
     "/vaults",
     response_model=list[VaultOut],
-    summary="활성 회사의 vault 목록: 클라이언트가 암호화 폴더 식별",
+    summary="활성 워크스페이스의 vault 목록: 클라이언트가 암호화 폴더 식별",
 )
 async def list_vaults(
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> list[VaultOut]:
     rows = (
-        await db.execute(select(Vault).where(Vault.company_id == company_id))
+        await db.execute(select(Vault).where(Vault.workspace_id == workspace_id))
     ).scalars().all()
     # 요청자가 멤버인 vault 집합: 비멤버 폴더는 클라이언트가 "접근 권한 없음" 표시.
     member_ids = set(
@@ -206,14 +206,14 @@ async def list_vaults(
     for v in rows:
         node = await db.get(Node, v.node_id)
         rank = (
-            await effective_permission(db, node, user=user, company_id=company_id)
+            await effective_permission(db, node, user=user, workspace_id=workspace_id)
             if node is not None
             else 0
         )
         out.append(
             VaultOut(
                 node_id=v.node_id,
-                company_id=v.company_id,
+                workspace_id=v.workspace_id,
                 created_by=v.created_by,
                 is_member=v.node_id in member_ids,
                 my_permission=_RANK_NAME.get(rank),
@@ -231,7 +231,7 @@ async def list_vaults(
 async def get_vault_key(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    _: str = Depends(require_active_company),
+    _: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> WrappedKeyOut:
     m = await _require_member(db, node_id, user.sub)
@@ -246,7 +246,7 @@ async def get_vault_key(
 async def list_vault_members(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    _: str = Depends(require_active_company),
+    _: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> list[VaultMemberOut]:
     await _require_member(db, node_id, user.sub)
@@ -274,7 +274,7 @@ async def add_vault_member(
     node_id: str,
     body: VaultMemberCreate,
     user: UserContext = Depends(get_current_user),
-    _: str = Depends(require_active_company),
+    _: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> VaultMemberOut:
     """기존 멤버만 추가 가능: vault_key 를 가진 사람이 대상 공개키로 re-wrap.
@@ -320,7 +320,7 @@ async def remove_vault_member(
     node_id: str,
     member_sub: str,
     user: UserContext = Depends(get_current_user),
-    _: str = Depends(require_active_company),
+    _: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """철회는 신규 접근만 차단: 이미 받아간 평문/키는 회수 불가 (ADR-0016 결정 4)."""

@@ -13,7 +13,7 @@ backend/   ← FastAPI + SQLAlchemy + Alembic (규칙: backend/CLAUDE.md)
 ## 절대 규칙
 
 - **인증 = Ashfield 계정 서버(OIDC) SSO** (ADR-0024, 계약은 ashfield-account `docs/adr/0001`). 프론트 Better Auth 는 계정 서버의 `genericOAuth` 클라이언트(provider `ashfield`)일 뿐: 세션·계정 토큰 테이블은 Postgres 스키마 `auth` (`make auth-migrate`). BFF 가 계정 서버 액세스 토큰(만료 전 refresh)을 `Authorization: Bearer` 로 백엔드에 전달, 백엔드는 `AUTH_JWKS_URL`(계정 서버 JWKS)·iss·aud 로 검증. 로그인 수단·허용 이메일·DEV 비밀번호는 계정 서버 설정. 인증 우회 모드 없음.
-- **회사(워크스페이스) 소속의 원천은 계정 서버**: 앱은 토큰 `workspaces` 클레임으로 로컬 `companies`·`user_company_memberships` 를 동기화(캐시)한다. 앱에서 멤버를 추가·제거하지 않는다 (계정 서버 `/workspaces/{id}` 링크).
+- **워크스페이스 소속의 원천은 계정 서버**: 앱은 토큰 `workspaces` 클레임으로 로컬 `workspaces`·`user_workspace_memberships` 를 동기화(캐시)한다. 앱에서 멤버를 추가·제거하지 않는다 (계정 서버 `/workspaces/{id}` 링크).
 - **로컬 포트**: Account 3300 · Calendar 3100/8100 · Drive 3200/8200 (3000·19000 은 쓰지 말 것). 표는 docs/local-dev.md.
 - **프록시가 붙이는 신원 헤더(`X-Forwarded-User` 등)를 보안 판단에 쓰지 말 것**: 권위는 백엔드가 JWKS 로 검증한 JWT.
 - **Alembic 마이그레이션 파일 직접 수정 금지**: fix-forward (새 revision으로만 변경).

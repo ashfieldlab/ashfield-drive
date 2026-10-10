@@ -18,8 +18,8 @@ import { logger } from "@/lib/utils/logger"
  */
 export async function signOutAction(): Promise<string> {
   const c = await cookies()
-  // 다음 사용자 로그인 시 이전 회사로 X-Active-Company-Id 보내 403 나는 것 방지.
-  c.delete(COOKIES.activeCompany)
+  // 다음 사용자 로그인 시 이전 워크스페이스로 X-Active-Workspace-Id 보내 403 나는 것 방지.
+  c.delete(COOKIES.activeWorkspace)
   const h = await headers()
   try {
     const a = await getAuth()

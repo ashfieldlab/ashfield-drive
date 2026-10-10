@@ -4,14 +4,14 @@
 신원과 소속의 원천은 Ashfield 계정 서버다. 액세스 토큰(JWT)에 실린 값으로 로컬 캐시를 맞춘다.
 
   1. users upsert: JWT sub 를 PK 로 email·name·picture 저장 (바뀐 경우에만 UPDATE).
-  2. `workspaces` 클레임 → 로컬 회사·멤버십 동기화. 클레임의 해시가 users.workspaces_claim_hash
+  2. `workspaces` 클레임 → 로컬 워크스페이스·멤버십 동기화. 클레임의 해시가 users.workspaces_claim_hash
      와 같으면 건너뛴다 (보통의 요청은 쓰기 없음). 다르면:
-       - 워크스페이스마다 companies 행 upsert (account_workspace_id 로 찾고, 없으면
+       - 워크스페이스마다 workspaces 행 upsert (account_workspace_id 로 찾고, 없으면
          id = account_workspace_id = 워크스페이스 ID 로 생성, 이름이 바뀌었으면 갱신)
        - 이 사용자의 멤버십 upsert (role: owner·admin → admin, member → member)
-       - 클레임에서 빠진 계정 워크스페이스의 멤버십 삭제 (레거시 로컬 회사 멤버십은 그대로)
+       - 클레임에서 빠진 계정 워크스페이스의 멤버십 삭제 (레거시 로컬 워크스페이스 멤버십은 그대로)
      모두 ON CONFLICT 기반이라 같은 사용자의 동시 요청이 겹쳐도 결과가 같다.
-  3. user_company_memberships 조회 → UserContext.groups.
+  3. user_workspace_memberships 조회 → UserContext.groups.
 
 개인 워크스페이스는 계정 서버가 가입 때 만든다: 앱은 따로 만들지 않는다.
 """
@@ -28,21 +28,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import logger
-from app.models.company import Company
 from app.models.user import User
-from app.models.user_company_membership import CompanyRole, UserCompanyMembership
+from app.models.user_workspace_membership import UserWorkspaceMembership, WorkspaceRole
+from app.models.workspace import Workspace
 
 # 계정 서버 역할 → 앱 역할 (계약 ADR-0001 §6). 모르는 값은 member (최소 권한).
-_ROLE_MAP: dict[str, CompanyRole] = {"owner": "admin", "admin": "admin", "member": "member"}
+_ROLE_MAP: dict[str, WorkspaceRole] = {"owner": "admin", "admin": "admin", "member": "member"}
 
 
 @dataclass(frozen=True)
-class Workspace:
+class WorkspaceClaim:
     """토큰 `workspaces[]` 한 항목 (역할은 앱 역할로 변환된 값)."""
 
     id: str
     name: str
-    role: CompanyRole
+    role: WorkspaceRole
 
 
 @dataclass(frozen=True)
@@ -57,26 +57,26 @@ class Identity:
     email: str
     name: str | None
     image: str | None
-    workspaces: tuple[Workspace, ...] | None = None
+    workspaces: tuple[WorkspaceClaim, ...] | None = None
 
 
 @dataclass(frozen=True)
 class Provisioned:
-    company_ids: list[str]
+    workspace_ids: list[str]
     is_system_admin: bool
 
 
-def map_role(role: object) -> CompanyRole:
+def map_role(role: object) -> WorkspaceRole:
     return _ROLE_MAP.get(str(role), "member")
 
 
-def _parse_workspaces(raw: object) -> tuple[Workspace, ...] | None:
+def _parse_workspaces(raw: object) -> tuple[WorkspaceClaim, ...] | None:
     if raw is None:
         return None
     if not isinstance(raw, list):
         logger.warning("workspaces_claim_malformed", extra={"category": "auth"})
         return None
-    seen: dict[str, Workspace] = {}
+    seen: dict[str, WorkspaceClaim] = {}
     for item in raw:
         if not isinstance(item, dict):
             continue
@@ -84,7 +84,7 @@ def _parse_workspaces(raw: object) -> tuple[Workspace, ...] | None:
         if not ws_id or len(ws_id) > 128:
             continue
         name = str(item.get("name") or ws_id)[:255]
-        seen[ws_id] = Workspace(id=ws_id, name=name, role=map_role(item.get("role")))
+        seen[ws_id] = WorkspaceClaim(id=ws_id, name=name, role=map_role(item.get("role")))
     return tuple(sorted(seen.values(), key=lambda w: w.id))
 
 
@@ -102,7 +102,7 @@ def identity_from_claims(claims: dict) -> Identity:
     )
 
 
-def workspaces_hash(workspaces: tuple[Workspace, ...]) -> str:
+def workspaces_hash(workspaces: tuple[WorkspaceClaim, ...]) -> str:
     """동기화 결과를 바꾸는 값(id·name·앱 역할)만으로 만든 안정적인 해시."""
     canonical = json.dumps(
         [[w.id, w.name, w.role] for w in workspaces], ensure_ascii=False, separators=(",", ":")
@@ -124,16 +124,16 @@ async def provision_user(db: AsyncSession, identity: Identity) -> Provisioned:
 
     rows = (
         await db.execute(
-            select(UserCompanyMembership.company_id)
-            .where(UserCompanyMembership.user_sub == identity.sub)
-            .order_by(UserCompanyMembership.company_id)
+            select(UserWorkspaceMembership.workspace_id)
+            .where(UserWorkspaceMembership.user_sub == identity.sub)
+            .order_by(UserWorkspaceMembership.workspace_id)
         )
     ).scalars().all()
 
     is_admin = bool(user.is_system_admin) or (
         identity.email.lower() in settings.system_admin_email_set
     )
-    return Provisioned(company_ids=list(rows), is_system_admin=is_admin)
+    return Provisioned(workspace_ids=list(rows), is_system_admin=is_admin)
 
 
 async def _upsert_user(db: AsyncSession, identity: Identity) -> User:
@@ -170,37 +170,37 @@ async def _upsert_user(db: AsyncSession, identity: Identity) -> User:
 
 
 async def sync_workspaces(
-    db: AsyncSession, sub: str, workspaces: tuple[Workspace, ...]
+    db: AsyncSession, sub: str, workspaces: tuple[WorkspaceClaim, ...]
 ) -> None:
     """토큰의 워크스페이스 목록으로 이 사용자의 계정-워크스페이스 멤버십을 정확히 맞춘다 (멱등)."""
     ws_ids = [w.id for w in workspaces]
-    company_by_ws = await _ensure_companies(db, workspaces)
+    workspace_by_ws = await _ensure_workspaces(db, workspaces)
 
-    desired: dict[str, CompanyRole] = {
-        company_by_ws[w.id]: w.role for w in workspaces if w.id in company_by_ws
+    desired: dict[str, WorkspaceRole] = {
+        workspace_by_ws[w.id]: w.role for w in workspaces if w.id in workspace_by_ws
     }
     current: dict[str, str] = dict(
         (
             await db.execute(
-                select(UserCompanyMembership.company_id, UserCompanyMembership.role)
-                .join(Company, Company.id == UserCompanyMembership.company_id)
+                select(UserWorkspaceMembership.workspace_id, UserWorkspaceMembership.role)
+                .join(Workspace, Workspace.id == UserWorkspaceMembership.workspace_id)
                 .where(
-                    UserCompanyMembership.user_sub == sub,
-                    Company.account_workspace_id.is_not(None),
+                    UserWorkspaceMembership.user_sub == sub,
+                    Workspace.account_workspace_id.is_not(None),
                 )
             )
         ).all()
     )
 
-    for company_id, role in desired.items():
-        if current.get(company_id) == role:
+    for workspace_id, role in desired.items():
+        if current.get(workspace_id) == role:
             continue
-        stmt = pg_insert(UserCompanyMembership).values(
-            user_sub=sub, company_id=company_id, role=role
+        stmt = pg_insert(UserWorkspaceMembership).values(
+            user_sub=sub, workspace_id=workspace_id, role=role
         )
         await db.execute(
             stmt.on_conflict_do_update(
-                index_elements=[UserCompanyMembership.user_sub, UserCompanyMembership.company_id],
+                index_elements=[UserWorkspaceMembership.user_sub, UserWorkspaceMembership.workspace_id],
                 set_={"role": stmt.excluded.role},
             )
         )
@@ -208,9 +208,9 @@ async def sync_workspaces(
     removed = [cid for cid in current if cid not in desired]
     if removed:
         await db.execute(
-            delete(UserCompanyMembership).where(
-                UserCompanyMembership.user_sub == sub,
-                UserCompanyMembership.company_id.in_(removed),
+            delete(UserWorkspaceMembership).where(
+                UserWorkspaceMembership.user_sub == sub,
+                UserWorkspaceMembership.workspace_id.in_(removed),
             )
         )
 
@@ -226,10 +226,10 @@ async def sync_workspaces(
     )
 
 
-async def _ensure_companies(
-    db: AsyncSession, workspaces: tuple[Workspace, ...]
+async def _ensure_workspaces(
+    db: AsyncSession, workspaces: tuple[WorkspaceClaim, ...]
 ) -> dict[str, str]:
-    """워크스페이스 ID → 로컬 companies.id. 없으면 만들고, 이름이 바뀌었으면 갱신."""
+    """워크스페이스 ID → 로컬 workspaces.id. 없으면 만들고, 이름이 바뀌었으면 갱신."""
     if not workspaces:
         return {}
     ws_ids = [w.id for w in workspaces]
@@ -237,8 +237,8 @@ async def _ensure_companies(
     async def load() -> dict[str, tuple[str, str]]:
         rows = (
             await db.execute(
-                select(Company.account_workspace_id, Company.id, Company.name).where(
-                    Company.account_workspace_id.in_(ws_ids)
+                select(Workspace.account_workspace_id, Workspace.id, Workspace.name).where(
+                    Workspace.account_workspace_id.in_(ws_ids)
                 )
             )
         ).all()
@@ -248,23 +248,23 @@ async def _ensure_companies(
     missing = [w for w in workspaces if w.id not in existing]
     if missing:
         await db.execute(
-            pg_insert(Company)
+            pg_insert(Workspace)
             .values([{"id": w.id, "name": w.name, "account_workspace_id": w.id} for w in missing])
             .on_conflict_do_nothing()
         )
         existing = await load()
         lost = [w.id for w in missing if w.id not in existing]
         if lost:
-            # companies.id 가 같은 레거시 행이 있어 만들지 못함: 운영자가 그 행의
+            # workspaces.id 가 같은 레거시 행이 있어 만들지 못함: 운영자가 그 행의
             # account_workspace_id 를 채워 연결해야 한다.
             logger.error(
-                "workspace_company_id_conflict", extra={"category": "auth", "workspaces": lost}
+                "account_workspace_id_conflict", extra={"category": "auth", "workspaces": lost}
             )
 
     for w in workspaces:
         if w.id in existing and existing[w.id][1] != w.name:
             await db.execute(
-                update(Company).where(Company.id == existing[w.id][0]).values(name=w.name)
+                update(Workspace).where(Workspace.id == existing[w.id][0]).values(name=w.name)
             )
 
     return {awid: cid for awid, (cid, _) in existing.items()}

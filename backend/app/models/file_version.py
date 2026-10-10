@@ -19,7 +19,7 @@ class FileVersion(Base):
     node_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False
     )
-    company_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    workspace_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     storage_key: Mapped[str] = mapped_column(String(512), nullable=False)
     size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     etag: Mapped[str | None] = mapped_column(String(128), nullable=True)

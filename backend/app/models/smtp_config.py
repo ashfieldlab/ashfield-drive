@@ -1,7 +1,7 @@
-"""SMTP 설정: 전역 singleton + 회사별 override.
+"""SMTP 설정: 전역 singleton + 워크스페이스별 override.
 
 resolve 순서 (services/smtp_config.py):
-  CompanySmtpOverride[company_id] → SystemSmtpConfig (id=1) → env
+  WorkspaceSmtpOverride[workspace_id] → SystemSmtpConfig (id=1) → env
 
 비밀번호는 Fernet 암호화 (app/core/crypto.py). 마스킹 표시: 평문 조회 X.
 """
@@ -38,16 +38,16 @@ class SystemSmtpConfig(Base):
     )
 
 
-class CompanySmtpOverride(Base):
-    """회사별 SMTP override: Company Admin 이 관리. row 있으면 전체 set 사용.
+class WorkspaceSmtpOverride(Base):
+    """워크스페이스별 SMTP override: Workspace Admin 이 관리. row 있으면 전체 set 사용.
 
     부분 override 불가: host 만 다르고 password 는 전역 같은 패턴 금지 (resolve 단순).
     """
 
-    __tablename__ = "company_smtp_overrides"
+    __tablename__ = "workspace_smtp_overrides"
 
-    company_id: Mapped[str] = mapped_column(
-        String(128), ForeignKey("companies.id", ondelete="CASCADE"), primary_key=True
+    workspace_id: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.id", ondelete="CASCADE"), primary_key=True
     )
     host: Mapped[str] = mapped_column(String(255), nullable=False)
     port: Mapped[int] = mapped_column(Integer, nullable=False)

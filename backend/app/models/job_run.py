@@ -4,7 +4,7 @@ worker 의 recorded() 러너가 잡마다: 시작 시 status=running 로 INSERT,
 종료 시 ok/failed 로 UPDATE (started/finished 두 번 쓰기). 시작했는데 안 끝난
 잡(워커 크래시·행)은 running 으로 박제돼 보임 → 관측·liveness·실패 추적의 단일 소스.
 
-시스템 전역 잡이라 회사 스코프 없음. 오래된 row 는 purge_expired_job_runs 가 정리.
+시스템 전역 잡이라 워크스페이스 스코프 없음. 오래된 row 는 purge_expired_job_runs 가 정리.
 """
 
 from datetime import datetime

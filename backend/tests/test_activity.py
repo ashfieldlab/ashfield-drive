@@ -10,14 +10,14 @@ ACME = "tenant-a"
 async def _ensure(client, auth_headers, sub):
     await client.get(
         "/api/v1/me",
-        headers=auth_headers(sub, groups=[ACME], active_company=ACME),
+        headers=auth_headers(sub, groups=[ACME], active_workspace=ACME),
     )
 
 
 async def test_activity_shows_self_actions(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     node = (await client.post("/api/v1/nodes", json={"name": "f"}, headers=a)).json()
     await client.delete(f"/api/v1/nodes/{node['id']}", headers=a)
 
@@ -33,7 +33,7 @@ async def test_activity_shows_self_actions(
 
 
 async def test_activity_empty_for_fresh_user(client: AsyncClient, auth_headers):
-    fresh = auth_headers("user-fresh", groups=[ACME], active_company=ACME)
+    fresh = auth_headers("user-fresh", groups=[ACME], active_workspace=ACME)
     r = await client.get("/api/v1/me/activity", headers=fresh)
     assert r.status_code == 200
     assert r.json()["items"] == []
@@ -43,8 +43,8 @@ async def test_activity_shows_received_share(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _ensure(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     node = (await client.post("/api/v1/nodes", json={"name": "g"}, headers=a)).json()
     await client.post(
         f"/api/v1/nodes/{node['id']}/shares",

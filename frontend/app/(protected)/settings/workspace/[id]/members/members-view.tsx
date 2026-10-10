@@ -11,7 +11,7 @@ import { api } from "@/lib/api-client"
 import { invalidateApi, useApiGet } from "@/lib/hooks/use-api"
 import { formatBytes } from "@/lib/utils/format"
 
-type CompanyRole = "admin" | "member"
+type WorkspaceRole = "admin" | "member"
 
 const GB = 1024 ** 3
 
@@ -19,13 +19,13 @@ interface MemberItem {
   user_sub: string
   email: string | null
   name: string | null
-  role: CompanyRole
+  role: WorkspaceRole
   storage_bytes_used: number
   storage_bytes_limit: number | null
 }
 
 interface MemberListResponse {
-  /** 계정 서버 워크스페이스 ID. null = 계정 서버 도입 전의 로컬 회사. */
+  /** 계정 서버 워크스페이스 ID. null = 계정 서버 도입 전의 로컬 워크스페이스. */
   account_workspace_id: string | null
   members: MemberItem[]
 }
@@ -34,39 +34,39 @@ interface MemberListResponse {
  * 워크스페이스 멤버 조회 + 저장 한도(앱 고유 설정). 추가·제거·역할 변경은 Ashfield 계정
  * 서버에서 하고, 바뀐 소속은 다음 토큰 갱신(최대 15분) 또는 재로그인 때 이 앱에 반영된다.
  */
-export default function CompanyMembersView({
-  companyId,
+export default function WorkspaceMembersView({
+  workspaceId,
   accountURL,
 }: {
-  companyId: string
+  workspaceId: string
   accountURL: string
 }) {
-  const { isCompanyAdmin, companyNames } = useAppContext()
+  const { isWorkspaceAdmin, workspaceNames } = useAppContext()
   const { toast } = useToast()
   const [busy, setBusy] = useState<string | null>(null)
   // 한도 설정 모달: 대상 멤버 + GB 입력(빈값 = 무제한).
   const [quotaFor, setQuotaFor] = useState<MemberItem | null>(null)
   const [quotaGb, setQuotaGb] = useState("")
 
-  const url = isCompanyAdmin
-    ? `/api/v1/companies/${encodeURIComponent(companyId)}/members`
+  const url = isWorkspaceAdmin
+    ? `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/members`
     : null
   const { data, error, isLoading } = useApiGet<MemberListResponse>(url)
 
-  if (!isCompanyAdmin) {
+  if (!isWorkspaceAdmin) {
     return (
       <div
         className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
-        data-testid="company-members-settings-no-permission"
+        data-testid="workspace-members-settings-no-permission"
       >
         워크스페이스 관리자만 접근할 수 있습니다.
       </div>
     )
   }
 
-  const workspaceId = data?.account_workspace_id ?? null
-  const manageUrl = workspaceId
-    ? `${accountURL}/workspaces/${encodeURIComponent(workspaceId)}`
+  const accountWorkspaceId = data?.account_workspace_id ?? null
+  const manageUrl = accountWorkspaceId
+    ? `${accountURL}/workspaces/${encodeURIComponent(accountWorkspaceId)}`
     : null
 
   function openQuota(m: MemberItem) {
@@ -89,7 +89,7 @@ export default function CompanyMembersView({
     setBusy(quotaFor.user_sub)
     try {
       await api(
-        `/api/v1/companies/${encodeURIComponent(companyId)}/members/${encodeURIComponent(quotaFor.user_sub)}/quota`,
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(quotaFor.user_sub)}/quota`,
         { method: "PUT", body: { storage_bytes_limit: limit } },
       )
       toast.success(
@@ -107,18 +107,18 @@ export default function CompanyMembersView({
   return (
     <div
       className="h-full overflow-y-auto space-y-4 px-4 py-8 sm:px-6 lg:px-8"
-      data-testid="company-members-settings-page"
+      data-testid="workspace-members-settings-page"
     >
       <Link
         href="/settings"
         className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900"
-        data-testid="company-members-settings-back"
+        data-testid="workspace-members-settings-back"
       >
         <ArrowLeft size={12} /> 설정으로
       </Link>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-2xl font-bold text-gray-900">
-          {companyNames[companyId] ?? companyId} 멤버
+          {workspaceNames[workspaceId] ?? workspaceId} 멤버
         </h1>
         {manageUrl && (
           <a
@@ -126,7 +126,7 @@ export default function CompanyMembersView({
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-gray-900 px-3 text-sm font-medium text-white hover:bg-gray-800"
-            data-testid="company-members-manage-link"
+            data-testid="workspace-members-manage-link"
           >
             Ashfield 계정에서 관리
             <ExternalLink size={14} aria-hidden />
@@ -137,13 +137,13 @@ export default function CompanyMembersView({
       {data && !manageUrl && (
         <div
           className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600"
-          data-testid="company-members-settings-account-notice"
+          data-testid="workspace-members-settings-account-notice"
         >
           이 워크스페이스는 멤버를 변경할 수 없습니다.
         </div>
       )}
 
-      <QuotaCard companyId={companyId} mode="view" />
+      <QuotaCard workspaceId={workspaceId} mode="view" />
 
       {error ? (
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
@@ -155,7 +155,7 @@ export default function CompanyMembersView({
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <table
             className="w-full text-sm"
-            data-testid="company-members-settings-list"
+            data-testid="workspace-members-settings-list"
           >
             <thead className="bg-gray-50 text-left text-xs text-gray-500">
               <tr>
@@ -172,7 +172,7 @@ export default function CompanyMembersView({
                 return (
                   <tr
                     key={m.user_sub}
-                    data-testid={`company-members-settings-row-${m.user_sub}`}
+                    data-testid={`workspace-members-settings-row-${m.user_sub}`}
                     className="hover:bg-gray-50"
                   >
                     <td className="px-4 py-2 text-gray-900">
@@ -208,7 +208,7 @@ export default function CompanyMembersView({
                         <button
                           onClick={() => openQuota(m)}
                           disabled={busy === m.user_sub}
-                          data-testid={`company-members-settings-row-${m.user_sub}-quota`}
+                          data-testid={`workspace-members-settings-row-${m.user_sub}-quota`}
                           className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                         >
                           한도
@@ -231,7 +231,7 @@ export default function CompanyMembersView({
           <div
             className="w-80 space-y-3 rounded-lg bg-white p-5 shadow-lg"
             onClick={(e) => e.stopPropagation()}
-            data-testid="company-members-quota-modal"
+            data-testid="workspace-members-quota-modal"
           >
             <h3 className="text-base font-semibold text-gray-900">저장 한도</h3>
             <p className="text-xs text-gray-500">
@@ -251,7 +251,7 @@ export default function CompanyMembersView({
                   if (e.key === "Escape") setQuotaFor(null)
                 }}
                 placeholder="비우면 무제한"
-                data-testid="company-members-quota-input"
+                data-testid="workspace-members-quota-input"
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
               />
               <span className="text-sm text-gray-500">GB</span>
@@ -259,7 +259,7 @@ export default function CompanyMembersView({
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setQuotaFor(null)}
-                data-testid="company-members-quota-cancel"
+                data-testid="workspace-members-quota-cancel"
                 className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
               >
                 취소
@@ -267,7 +267,7 @@ export default function CompanyMembersView({
               <button
                 onClick={saveQuota}
                 disabled={busy === quotaFor.user_sub}
-                data-testid="company-members-quota-save"
+                data-testid="workspace-members-quota-save"
                 className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
               >
                 저장

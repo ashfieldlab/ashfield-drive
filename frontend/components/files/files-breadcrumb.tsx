@@ -40,7 +40,7 @@ export function FilesBreadcrumb({
     ? "부서 폴더"
     : scope === "personal"
       ? "내 파일"
-      : "회사 공유"
+      : "워크스페이스"
   const chain = data?.ancestors ?? []
 
   const vaultIdx = vaultRootId ? chain.findIndex((n) => n.id === vaultRootId) : -1

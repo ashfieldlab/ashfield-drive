@@ -699,7 +699,7 @@ export function FilesList({
                                 </button>
                               )}
                               {/* vault 안에서는 개별 공유 숨김: 보안 폴더는 폴더(루트) 단위로만 공유.
-                                  vault 루트 자체는 부모 목록(회사 공유)에서 공유. */}
+                                  vault 루트 자체는 부모 목록(워크스페이스)에서 공유. */}
                               {!vaultRootId && (
                                 <button
                                   onClick={() => setSharing(n)}

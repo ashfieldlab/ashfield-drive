@@ -11,7 +11,7 @@ ACME = "tenant-a"
 async def _ensure_user(client, auth_headers, sub):
     await client.get(
         "/api/v1/me",
-        headers=auth_headers(sub, groups=[ACME], active_company=ACME),
+        headers=auth_headers(sub, groups=[ACME], active_workspace=ACME),
     )
 
 
@@ -19,8 +19,8 @@ async def test_share_creates_notification_for_grantee(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _ensure_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     node = (await client.post("/api/v1/nodes", json={"name": "F"}, headers=a)).json()
     await client.post(
         f"/api/v1/nodes/{node['id']}/shares",
@@ -46,8 +46,8 @@ async def test_self_action_does_not_notify(
     # 본 시나리오: Alice 가 자기 일정에 자기 초대 시도 → 막힘이 아닐 수도 있으니 직접 시나리오 변경:
     # Bob 가 본인 계정에서 Alice 를 invite 받는 시점 알림은 검증됨. 여기선 mark-all-read 확인.
     await _ensure_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     node = (await client.post("/api/v1/nodes", json={"name": "Q"}, headers=a)).json()
     await client.post(
         f"/api/v1/nodes/{node['id']}/shares",
@@ -65,8 +65,8 @@ async def test_patch_notification_marks_read(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _ensure_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     node = (await client.post("/api/v1/nodes", json={"name": "X"}, headers=a)).json()
     await client.post(
         f"/api/v1/nodes/{node['id']}/shares",

@@ -30,9 +30,9 @@ async def test_me_non_admin(client, auth_headers):
 
 
 @pytest.mark.asyncio
-async def test_me_company_roles_default_member(client, auth_headers):
+async def test_me_workspace_roles_default_member(client, auth_headers):
     """첫 로그인 → lazy upsert 가 멤버십 row 만듦 → default role='member'."""
     headers = auth_headers("carol", groups=["acme-corp"])
     res = await client.get("/api/v1/me", headers=headers)
     body = res.json()
-    assert body["company_roles"] == {"acme-corp": "member"}
+    assert body["workspace_roles"] == {"acme-corp": "member"}

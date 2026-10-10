@@ -1,6 +1,6 @@
 """FileShare: node 를 특정 사용자 또는 그룹(디렉터리 부서)에게 명시적으로 공유.
 
-scope 기반 접근(personal 본인/shared 회사)을 1차로 보고, 그 외 사용자가 접근하려면 이 테이블에 row 가 필요.
+scope 기반 접근(personal 본인/shared 워크스페이스)을 1차로 보고, 그 외 사용자가 접근하려면 이 테이블에 row 가 필요.
 폴더에 share 가 걸리면 그 자손 전부에 상속 (재귀 ancestor 조회).
 
 grantee 는 둘 중 하나 (ADR-0016 그룹 공유, docs/group-sharing.html):

@@ -1,7 +1,7 @@
 /**
  * BFF 의 계정 서버 토큰 갱신 (ADR-0024): 저장된 액세스 토큰 만료를 DB 에서 앞당겨 확인한다.
  *   - 만료 임박 → refresh_token 으로 갱신 (새 토큰 저장), 동시 요청이 몰려도 갱신은 한 번
- *     (계정 서버의 refresh 재사용 감지에 걸리면 전부 401 이 된다)
+ *     (계정 서버의 refresh 재사용 감지에 걸리면 전부 401 이 된다). 만료 직전에 시작된 요청도 포함
  *   - 갱신 실패 → 401 + 앱 세션 삭제 → /login 이 다시 계정 서버로 보낸다
  */
 import { Pool } from "pg"
@@ -38,11 +38,16 @@ test("만료 임박 토큰은 BFF 가 갱신한다: 동시 요청도 한 번만"
   await me(page)
   const before = await accountRow(user.email)
 
-  await expireAccessToken(before.id)
-  const results = await Promise.all(
-    Array.from({ length: 6 }, () => page.request.get("/api/v1/me").then((r) => r.status())),
-  )
-  expect(results).toEqual([200, 200, 200, 200, 200, 200])
+  // 만료 시점을 가로지르는 요청 흐름: 이미 진행 중인 요청(로그인 직후 페이지가 보내는 것과 같은)도
+  // 갱신을 따로 일으키면 안 된다.
+  const pending: Promise<number>[] = []
+  for (let i = 0; i < 20; i++) {
+    if (i === 8) await expireAccessToken(before.id)
+    pending.push(page.request.get("/api/v1/me").then((r) => r.status()))
+    await new Promise((r) => setTimeout(r, 3))
+  }
+  const results = await Promise.all(pending)
+  expect(results.filter((s) => s !== 200)).toEqual([])
 
   const after = await accountRow(user.email)
   expect(after.access).not.toBe(before.access)

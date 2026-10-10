@@ -6,12 +6,12 @@ File과 Folder를 별도 테이블로 분리하지 않고 **단일 `nodes` 테�
 
 **Scope 컬럼**: `scope: 'personal' | 'shared'`. Phase 1 권한 모델의 토대.
 - `personal`: owner만 접근. 자식은 부모 owner 강제.
-- `shared`: 같은 회사 멤버 누구나 접근. 자식 owner는 자유 (다른 멤버가 만든 폴더 안에 추가 가능).
+- `shared`: 같은 워크스페이스 멤버 누구나 접근. 자식 owner는 자유 (다른 멤버가 만든 폴더 안에 추가 가능).
 - 자식 scope는 부모 scope 강제: 같은 scope 안에서만 트리 형성.
 
 **ID**: UUID v7 (시간 정렬 + 분산 친화). PostgreSQL 17+ native 지원.
 
-**S3 key는 트리와 무관**: 폴더는 DB에만 존재. 파일 storage_key는 `{company_id}/{file_uuid}` flat: 폴더 변경이 S3에 영향 없음.
+**S3 key는 트리와 무관**: 폴더는 DB에만 존재. 파일 storage_key는 `{workspace_id}/{file_uuid}` flat: 폴더 변경이 S3에 영향 없음.
 
 **경로 표현**: parent_id만 사용. materialized_path 컬럼은 안 둠 (rename 시 cascade update 비용 회피). 검색에 path 필요해지면 Phase 2에 캐시 컬럼 추가.
 

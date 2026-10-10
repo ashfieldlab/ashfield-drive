@@ -12,7 +12,7 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import UserContext
-from app.auth.dependencies import get_current_user, require_active_company
+from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.db import get_db
 from app.models.audit_log import AuditLog
 from app.models.notification import Notification
@@ -46,14 +46,14 @@ router = APIRouter(prefix="/me", tags=["activity"])
 async def my_activity(
     limit: int = Query(50, ge=1, le=200),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> ActivityResponse:
     # 본인이 받은 알림에 연결된 entity_id 집합: 본인이 영향받은 변경 추적
     notif_entity_ids_stmt = select(Notification.entity_id).where(
         and_(
             Notification.recipient_sub == user.sub,
-            Notification.company_id == company_id,
+            Notification.workspace_id == workspace_id,
         )
     )
     notif_ids = {
@@ -61,7 +61,7 @@ async def my_activity(
     }
 
     # 열람 기록은 활동 내역에서 뺀다: 양이 많아 실제 변경 활동을 밀어낸다 (감사로그 화면 전용).
-    conds = [AuditLog.company_id == company_id, AuditLog.entity_type != FILE_ACCESS]
+    conds = [AuditLog.workspace_id == workspace_id, AuditLog.entity_type != FILE_ACCESS]
     if notif_ids:
         conds.append(
             or_(AuditLog.actor_sub == user.sub, AuditLog.entity_id.in_(notif_ids))

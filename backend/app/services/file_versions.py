@@ -4,7 +4,7 @@
 - 같은 사람이 10분 안에 다시 저장하면 버전을 만들지 않는다(묶기). 복원은 예외.
 - 30일 지난 버전은 크론이 지운다. 파일당 50개까지.
 - 한도는 버전까지 포함해 맞추되, 저장을 막지 않고 버전을 지워 자리를 만든다.
-  순서: 그 파일 → 같은 소유자의 다른 파일 → 회사 전체.
+  순서: 그 파일 → 같은 소유자의 다른 파일 → 워크스페이스 전체.
 
 함수들은 DB 행만 정리하고, 지워야 할 S3 key 목록을 돌려준다. 호출자가 커밋한 뒤
 delete_objects() 로 지운다(커밋 실패 시 살아있는 행이 가리키는 객체를 지우지 않게).
@@ -58,7 +58,7 @@ async def retire_current(
         FileVersion(
             id=new_node_id(),
             node_id=node.id,
-            company_id=node.company_id,
+            workspace_id=node.workspace_id,
             storage_key=node.storage_key,
             size_bytes=node.size_bytes or 0,
             etag=node.etag,
@@ -112,20 +112,20 @@ async def _enforce_cap(db: AsyncSession, node: Node, *, actor: UserContext) -> l
 
 async def reclaim_space(db: AsyncSession, node: Node, *, actor: UserContext) -> list[str]:
     """내용이 늘어난 뒤 호출. 파일+버전이 한도를 넘으면 버전을 지워 맞춘다."""
-    company_id, owner = node.company_id, node.owner_id
+    workspace_id, owner = node.workspace_id, node.owner_id
     keys: list[str] = []
 
-    user_limit = await quotas.get_user_limit(db, company_id=company_id, user_sub=owner)
+    user_limit = await quotas.get_user_limit(db, workspace_id=workspace_id, user_sub=owner)
     if user_limit is not None:
-        used = await quotas.compute_user_usage(db, company_id=company_id, user_sub=owner)
-        used += await quotas.compute_user_version_usage(db, company_id=company_id, user_sub=owner)
+        used = await quotas.compute_user_usage(db, workspace_id=workspace_id, user_sub=owner)
+        used += await quotas.compute_user_version_usage(db, workspace_id=workspace_id, user_sub=owner)
         keys += await _prune(db, used - user_limit, node=node, owner_only=True, actor=actor)
 
-    company_limit = await quotas.get_limit(db, company_id=company_id)
-    if company_limit is not None:
-        used = await quotas.compute_usage(db, company_id=company_id)
-        used += await quotas.compute_version_usage(db, company_id=company_id)
-        keys += await _prune(db, used - company_limit, node=node, owner_only=False, actor=actor)
+    workspace_limit = await quotas.get_limit(db, workspace_id=workspace_id)
+    if workspace_limit is not None:
+        used = await quotas.compute_usage(db, workspace_id=workspace_id)
+        used += await quotas.compute_version_usage(db, workspace_id=workspace_id)
+        keys += await _prune(db, used - workspace_limit, node=node, owner_only=False, actor=actor)
     return keys
 
 
@@ -143,7 +143,7 @@ async def _prune(
         select(FileVersion)
         .join(Node, Node.id == FileVersion.node_id)
         # 휴지통 파일의 버전은 사용량에 안 잡히므로 지워도 공간이 안 생긴다.
-        .where(FileVersion.company_id == node.company_id, Node.deleted_at.is_(None))
+        .where(FileVersion.workspace_id == node.workspace_id, Node.deleted_at.is_(None))
         .order_by(
             case((FileVersion.node_id == node.id, 0), else_=1),
             case((Node.owner_id == node.owner_id, 0), else_=1),
@@ -168,7 +168,7 @@ async def _drop(
     """버전 행 삭제 + 감사 기록. 반환: 지울 S3 key."""
     await write_audit(
         db,
-        company_id=v.company_id,
+        workspace_id=v.workspace_id,
         actor=actor,
         action="delete",
         entity_type="file_version",

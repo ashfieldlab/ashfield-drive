@@ -1,9 +1,9 @@
 """Node 도메인 서비스: 권한 체크, 이름 충돌, 자식 조회.
 
 권한 모델 (ADR-0008):
-  - 다른 회사 노드 → 404 (존재 마스킹)
+  - 다른 워크스페이스 노드 → 404 (존재 마스킹)
   - scope=personal: owner_id == user.sub → manage
-  - scope=shared: active company 멤버면 write
+  - scope=shared: active workspace 멤버면 write
   - 그 외: FileShare 조회: 본인이 grantee 인 share + 조상(ancestors) share 중 최댓값
   → 폴더에 read share 가 걸리면 자손 전부에 상속.
   - vault 내부 노드(ADR-0016): scope 기본권한 무시, vault 전용 ACL.
@@ -34,8 +34,8 @@ def new_node_id() -> str:
     return str(uuid.uuid7())
 
 
-def storage_key_for(company_id: str, node_id: str) -> str:
-    return f"{company_id}/{node_id}"
+def storage_key_for(workspace_id: str, node_id: str) -> str:
+    return f"{workspace_id}/{node_id}"
 
 
 async def get_node_or_404(db: AsyncSession, node_id: str) -> Node:
@@ -98,7 +98,7 @@ _VAULT_ANCESTOR_SQL = text(
 )
 
 # 조상(자신 포함) 중 팀 폴더가 있으면 그 부서 id·생성자 반환 (docs/group-sharing.html 4단계).
-# 팀폴더 서브트리는 "회사 전원 write" 대신 부서 ACL (그 부서+하위만) 적용: vault 의 부서판.
+# 팀폴더 서브트리는 "워크스페이스 전원 write" 대신 부서 ACL (그 부서+하위만) 적용: vault 의 부서판.
 _TEAM_FOLDER_ANCESTOR_SQL = text(
     """
     WITH RECURSIVE chain AS (
@@ -126,18 +126,18 @@ async def is_team_folder_content(db: AsyncSession, node_id: str) -> bool:
     return row is not None
 
 
-# 회사의 vault 루트 목록 + 생성자 (sync 필터용).
-_COMPANY_VAULTS_SQL = text(
-    "SELECT node_id, created_by FROM vaults WHERE company_id = :company_id"
+# 워크스페이스의 vault 루트 목록 + 생성자 (sync 필터용).
+_WORKSPACE_VAULTS_SQL = text(
+    "SELECT node_id, created_by FROM vaults WHERE workspace_id = :workspace_id"
 )
 # 본인이 grantee 인 (만료 안 된) FileShare 의 node_id 들: vault 루트 멤버십 판별.
 _USER_SHARES_SQL = text(
     "SELECT node_id FROM file_shares "
     "WHERE grantee_sub = :grantee AND (expires_at IS NULL OR expires_at > NOW())"
 )
-# 회사의 팀 폴더 루트 + 부서 (sync 필터용).
-_COMPANY_TEAM_FOLDERS_SQL = text(
-    "SELECT node_id, department_id FROM team_folders WHERE company_id = :company_id"
+# 워크스페이스의 팀 폴더 루트 + 부서 (sync 필터용).
+_WORKSPACE_TEAM_FOLDERS_SQL = text(
+    "SELECT node_id, department_id FROM team_folders WHERE workspace_id = :workspace_id"
 )
 
 
@@ -153,7 +153,7 @@ async def _share_rank(db: AsyncSession, *, node_id: str, grantee: str) -> int:
 
 
 async def _group_share_rank(
-    db: AsyncSession, *, node_id: str, user: UserContext, company_id: str
+    db: AsyncSession, *, node_id: str, user: UserContext, workspace_id: str
 ) -> int:
     """그룹(부서) share 기반 권한 rank (docs/group-sharing.html).
 
@@ -168,7 +168,7 @@ async def _group_share_rank(
         return 0
     from app.services import departments
 
-    access = await departments.access_department_ids(user, company_id)
+    access = await departments.access_department_ids(user, workspace_id)
     best = 0
     for perm, group_id in rows:
         if group_id in access:
@@ -177,15 +177,15 @@ async def _group_share_rank(
 
 
 async def effective_permission(
-    db: AsyncSession, node: Node, *, user: UserContext, company_id: str
+    db: AsyncSession, node: Node, *, user: UserContext, workspace_id: str
 ) -> int:
     """user 의 node 에 대한 effective permission rank (0 = 없음)."""
-    if node.company_id != company_id:
+    if node.workspace_id != workspace_id:
         return 0
     if node.scope == "personal" and node.owner_id == user.sub:
         return _PERM_RANK["manage"]
     if node.scope == "shared":
-        # vault 내부 노드는 "회사 멤버 전원 write" 대신 vault 전용 ACL (ADR-0016):
+        # vault 내부 노드는 "워크스페이스 멤버 전원 write" 대신 vault 전용 ACL (ADR-0016):
         # 생성자 = manage, 그 외는 FileShare(공유 시 부여한 read/write/manage)만.
         # 비공유자는 0 → shared 라도 vault 내용 접근 불가. (decrypt 용 키와 별개)
         vault = (
@@ -196,7 +196,7 @@ async def effective_permission(
             if user.sub == created_by:
                 return _PERM_RANK["manage"]
             return await _share_rank(db, node_id=node.id, grantee=user.sub)
-        # 팀 폴더: "회사 전원 write" 대신 부서 ACL (그 부서+하위만). vault 의 부서판.
+        # 팀 폴더: "워크스페이스 전원 write" 대신 부서 ACL (그 부서+하위만). vault 의 부서판.
         team = (
             await db.execute(_TEAM_FOLDER_ANCESTOR_SQL, {"node_id": node.id})
         ).first()
@@ -206,7 +206,7 @@ async def effective_permission(
                 return _PERM_RANK["manage"]
             from app.services import departments
 
-            access = await departments.access_department_ids(user, company_id)
+            access = await departments.access_department_ids(user, workspace_id)
             return _PERM_RANK["write"] if department_id in access else 0
         return _PERM_RANK["write"]
 
@@ -214,7 +214,7 @@ async def effective_permission(
     return max(
         await _share_rank(db, node_id=node.id, grantee=user.sub),
         await _group_share_rank(
-            db, node_id=node.id, user=user, company_id=company_id
+            db, node_id=node.id, user=user, workspace_id=workspace_id
         ),
     )
 
@@ -224,16 +224,16 @@ async def assert_access(
     node: Node,
     *,
     user: UserContext,
-    company_id: str,
+    workspace_id: str,
     permission: Permission = "read",
 ) -> None:
-    if node.company_id != company_id:
+    if node.workspace_id != workspace_id:
         raise HTTPException(404, "Node not found")
     # 휴지통(soft-deleted) 노드는 조회·다운로드 등 일반 접근 전부 차단.
     # 복원·휴지통 비우기는 별도 라우트(assert_access 미경유)에서 처리.
     if node.deleted_at is not None:
         raise HTTPException(404, "Node not found")
-    rank = await effective_permission(db, node, user=user, company_id=company_id)
+    rank = await effective_permission(db, node, user=user, workspace_id=workspace_id)
     if rank < _PERM_RANK[permission]:
         # share 가 전혀 없는 personal 노드는 존재 자체를 마스킹하기 위해 404 로 응답
         if rank == 0 and node.scope == "personal":
@@ -256,13 +256,13 @@ _PARENT_CHAIN_SQL = text(
 _ANCESTORS_SQL = text(
     """
     WITH RECURSIVE ancestors AS (
-        SELECT id, name, parent_id, kind, scope, company_id, 0 AS depth
+        SELECT id, name, parent_id, kind, scope, workspace_id, 0 AS depth
         FROM nodes WHERE id = :leaf_id
         UNION ALL
-        SELECT n.id, n.name, n.parent_id, n.kind, n.scope, n.company_id, a.depth + 1
+        SELECT n.id, n.name, n.parent_id, n.kind, n.scope, n.workspace_id, a.depth + 1
         FROM nodes n JOIN ancestors a ON n.id = a.parent_id
     )
-    SELECT id, name, kind, scope, company_id, depth
+    SELECT id, name, kind, scope, workspace_id, depth
     FROM ancestors
     ORDER BY depth DESC
     """
@@ -270,16 +270,16 @@ _ANCESTORS_SQL = text(
 
 
 async def list_ancestors(
-    db: AsyncSession, *, leaf_id: str, company_id: str, user: UserContext
+    db: AsyncSession, *, leaf_id: str, workspace_id: str, user: UserContext
 ) -> list[dict]:
-    """leaf 노드의 root → leaf 순서 조상 체인. 권한·회사 가드 통과한 노드만.
+    """leaf 노드의 root → leaf 순서 조상 체인. 권한·워크스페이스 가드 통과한 노드만.
 
-    leaf 자신이 다른 회사 노드면 404 마스킹.
+    leaf 자신이 다른 워크스페이스 노드면 404 마스킹.
     """
     rows = (await db.execute(_ANCESTORS_SQL, {"leaf_id": leaf_id})).all()
     if not rows:
         raise HTTPException(404, "Node not found")
-    if rows[-1].company_id != company_id:
+    if rows[-1].workspace_id != workspace_id:
         raise HTTPException(404, "Node not found")
     # personal scope 인데 본인 소유 아닌 부모는 체인에서 제외 (다른 사람 personal 트리 노출 차단)
     return [
@@ -315,7 +315,7 @@ async def assert_parent_writable(
     parent_id: str | None,
     scope: NodeScope,
     user: UserContext,
-    company_id: str,
+    workspace_id: str,
 ) -> None:
     if parent_id is None:
         return
@@ -325,7 +325,7 @@ async def assert_parent_writable(
     if parent.scope != scope:
         raise HTTPException(400, "Child scope must match parent scope")
     await assert_access(
-        db, parent, user=user, company_id=company_id, permission="write"
+        db, parent, user=user, workspace_id=workspace_id, permission="write"
     )
 
 
@@ -369,19 +369,19 @@ async def resolve_name_conflict(
 async def list_children(
     db: AsyncSession,
     *,
-    company_id: str,
+    workspace_id: str,
     user: UserContext,
     parent_id: str | None,
     scope: NodeScope,
     include_trash: bool = False,
 ) -> list[Node]:
-    conditions = [Node.company_id == company_id, Node.scope == scope]
+    conditions = [Node.workspace_id == workspace_id, Node.scope == scope]
     if parent_id is None:
         conditions.append(Node.parent_id.is_(None))
     else:
         parent = await get_node_or_404(db, parent_id)
         await assert_access(
-            db, parent, user=user, company_id=company_id, permission="read"
+            db, parent, user=user, workspace_id=workspace_id, permission="read"
         )
         conditions.append(Node.parent_id == parent_id)
 
@@ -390,13 +390,13 @@ async def list_children(
         conditions.append(Node.owner_id == user.sub)
 
     if scope == "shared" and parent_id is None:
-        # 팀 폴더 루트는 "회사 공유" 목록에서 제외: 좌측 Team folders 섹션에만 노출.
+        # 팀 폴더 루트는 "워크스페이스" 목록에서 제외: 좌측 Team folders 섹션에만 노출.
         from app.models.team_folder import TeamFolder
 
         conditions.append(
             Node.id.notin_(
                 select(TeamFolder.node_id).where(
-                    TeamFolder.company_id == company_id
+                    TeamFolder.workspace_id == workspace_id
                 )
             )
         )
@@ -413,23 +413,23 @@ async def list_children(
 async def list_subtree(
     db: AsyncSession,
     *,
-    company_id: str,
+    workspace_id: str,
     user: UserContext,
     scope: NodeScope,
 ) -> list[Node]:
     """scope 전체 서브트리(모든 깊이) 평탄 반환: desktop sync 가 한 번에 받아
     placeholder 를 깐다. 클라이언트가 parent_id 로 트리 재구성.
 
-    personal = 본인 소유 전부 / shared = 회사 전체. (FileShare 외부 노드는 별도)
+    personal = 본인 소유 전부 / shared = 워크스페이스 전체. (FileShare 외부 노드는 별도)
 
     접근 불가한 보안 폴더(vault)·팀 폴더의 내용은 sync 에서도 제외: 웹
-    (list_children/effective_permission)과 동일한 비공개 보장. 비-멤버 회사원에게
+    (list_children/effective_permission)과 동일한 비공개 보장. 비-멤버 멤버에게
     내용이 새지 않게 한다.
       - vault: 루트는 부모 목록에 보이므로 유지, 하위만 숨김 (ADR-0016).
       - 팀 폴더: 비멤버는 웹에서 루트도 못 보므로 루트째 숨김.
     """
     conditions = [
-        Node.company_id == company_id,
+        Node.workspace_id == workspace_id,
         Node.scope == scope,
         Node.deleted_at.is_(None),
     ]
@@ -444,7 +444,7 @@ async def list_subtree(
 
     # 접근 불가 vault 루트 (하위만 숨김)
     vault_rows = (
-        await db.execute(_COMPANY_VAULTS_SQL, {"company_id": company_id})
+        await db.execute(_WORKSPACE_VAULTS_SQL, {"workspace_id": workspace_id})
     ).all()
     vault_denied: set[str] = set()
     if vault_rows:
@@ -459,13 +459,13 @@ async def list_subtree(
 
     # 접근 불가 팀 폴더 루트 (부서 ∉ 접근집합, 루트째 숨김)
     team_rows = (
-        await db.execute(_COMPANY_TEAM_FOLDERS_SQL, {"company_id": company_id})
+        await db.execute(_WORKSPACE_TEAM_FOLDERS_SQL, {"workspace_id": workspace_id})
     ).all()
     team_denied: set[str] = set()
     if team_rows:
         from app.services import departments
 
-        access = await departments.access_department_ids(user, company_id)
+        access = await departments.access_department_ids(user, workspace_id)
         team_denied = {nid for nid, dept in team_rows if dept not in access}
 
     if not vault_denied and not team_denied:
@@ -487,13 +487,13 @@ async def list_subtree(
 
 
 async def list_trash(
-    db: AsyncSession, *, company_id: str, user: UserContext
+    db: AsyncSession, *, workspace_id: str, user: UserContext
 ) -> list[Node]:
     stmt = (
         select(Node)
         .where(
             and_(
-                Node.company_id == company_id,
+                Node.workspace_id == workspace_id,
                 Node.deleted_at.is_not(None),
                 or_(
                     and_(Node.scope == "personal", Node.owner_id == user.sub),
@@ -507,11 +507,11 @@ async def list_trash(
 
 
 async def list_shared_with_me(
-    db: AsyncSession, *, company_id: str, user: UserContext
+    db: AsyncSession, *, workspace_id: str, user: UserContext
 ) -> list[Node]:
     """본인이 grantee 인 FileShare 의 node 목록 (직접 share 만; ancestor 상속은 그 자손에서 자동).
 
-    회사 격리: 다른 회사 node 가 share 되어도 (정상 시나리오 X) 본 회사로 제한.
+    워크스페이스 격리: 다른 워크스페이스 node 가 share 되어도 (정상 시나리오 X) 본 워크스페이스로 제한.
     expired share 는 제외.
     """
     sql = text(
@@ -520,13 +520,13 @@ async def list_shared_with_me(
         FROM file_shares s
         JOIN nodes n ON n.id = s.node_id
         WHERE s.grantee_sub = :sub
-          AND n.company_id = :company
+          AND n.workspace_id = :workspace
           AND n.deleted_at IS NULL
           AND (s.expires_at IS NULL OR s.expires_at > NOW())
         ORDER BY s.granted_at DESC
         """
     )
-    rows = (await db.execute(sql, {"sub": user.sub, "company": company_id})).all()
+    rows = (await db.execute(sql, {"sub": user.sub, "workspace": workspace_id})).all()
     ids = [r[0] for r in rows]
     if not ids:
         return []
@@ -545,7 +545,7 @@ def soft_delete(node: Node) -> None:
 
 
 async def collect_descendants(
-    db: AsyncSession, *, company_id: str, root_id: str
+    db: AsyncSession, *, workspace_id: str, root_id: str
 ) -> list[Node]:
     """root_id 폴더의 모든 활성 자손 (깊이 무관). parent_id BFS.
 
@@ -556,7 +556,7 @@ async def collect_descendants(
         (
             await db.execute(
                 select(Node).where(
-                    Node.company_id == company_id, Node.deleted_at.is_(None)
+                    Node.workspace_id == workspace_id, Node.deleted_at.is_(None)
                 )
             )
         )

@@ -10,7 +10,7 @@ import { api } from "@/lib/api-client"
 import { useConfirm } from "@/components/ui-custom/use-confirm"
 import { invalidateApi, useApiGet } from "@/lib/hooks/use-api"
 
-interface CompanySmtpResponse {
+interface WorkspaceSmtpResponse {
   override_enabled: boolean
   host: string
   port: number
@@ -19,24 +19,24 @@ interface CompanySmtpResponse {
   tls_mode: "none" | "starttls" | "ssl"
   from_addr: string
   from_name: string
-  effective_source: "company" | "system" | "env" | "none"
+  effective_source: "workspace" | "system" | "env" | "none"
 }
 
 type TlsMode = "none" | "starttls" | "ssl"
 
-export default function CompanySmtpPage({
+export default function WorkspaceSmtpPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id: companyIdRaw } = use(params)
-  const companyId = decodeURIComponent(companyIdRaw)
-  const { isCompanyAdmin } = useAppContext()
+  const { id: workspaceIdRaw } = use(params)
+  const workspaceId = decodeURIComponent(workspaceIdRaw)
+  const { isWorkspaceAdmin } = useAppContext()
   const { toast } = useToast()
   const confirm = useConfirm()
-  const URL = `/api/v1/companies/${encodeURIComponent(companyId)}/smtp`
-  const { data, error, isLoading } = useApiGet<CompanySmtpResponse>(
-    isCompanyAdmin ? URL : null,
+  const URL = `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/smtp`
+  const { data, error, isLoading } = useApiGet<WorkspaceSmtpResponse>(
+    isWorkspaceAdmin ? URL : null,
   )
 
   const [host, setHost] = useState("")
@@ -71,13 +71,13 @@ export default function CompanySmtpPage({
     setFromName(data.from_name)
   }, [data])
 
-  if (!isCompanyAdmin) {
+  if (!isWorkspaceAdmin) {
     return (
       <div
         className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
-        data-testid="company-smtp-no-permission"
+        data-testid="workspace-smtp-no-permission"
       >
-        회사 관리자만 접근할 수 있습니다.
+        워크스페이스 관리자만 접근할 수 있습니다.
       </div>
     )
   }
@@ -96,7 +96,7 @@ export default function CompanySmtpPage({
           from_name: fromName,
         },
       })
-      toast.success("회사 SMTP 설정을 저장했습니다")
+      toast.success("워크스페이스 SMTP 설정을 저장했습니다")
       invalidateApi(URL)
     } catch (e) {
       toast.error(`저장 실패: ${(e as Error).message}`)
@@ -106,11 +106,11 @@ export default function CompanySmtpPage({
   }
 
   async function removeOverride() {
-    if (!(await confirm({ title: "SMTP 설정 삭제", description: "이 회사 전용 SMTP 를 삭제하고 공통 설정을 사용하시겠습니까?", confirmText: "삭제", variant: "destructive" }))) return
+    if (!(await confirm({ title: "SMTP 설정 삭제", description: "이 워크스페이스 전용 SMTP 를 삭제하고 공통 설정을 사용하시겠습니까?", confirmText: "삭제", variant: "destructive" }))) return
     setBusy(true)
     try {
       await api(URL, { method: "DELETE" })
-      toast.success("회사 전용 SMTP 를 삭제했습니다")
+      toast.success("워크스페이스 전용 SMTP 를 삭제했습니다")
       invalidateApi(URL)
     } catch (e) {
       toast.error(`삭제 실패: ${(e as Error).message}`)
@@ -161,12 +161,12 @@ export default function CompanySmtpPage({
   return (
     <div
       className="h-full overflow-y-auto px-4 py-8 sm:px-6 lg:px-8"
-      data-testid="company-smtp-page"
+      data-testid="workspace-smtp-page"
     >
       <Link
         href="/settings"
         className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900"
-        data-testid="company-smtp-back"
+        data-testid="workspace-smtp-back"
       >
         <ArrowLeft size={12} /> 설정으로
       </Link>
@@ -174,7 +174,7 @@ export default function CompanySmtpPage({
         <div className="flex items-center gap-2">
           <Mail size={20} className="text-gray-600" />
           <h1 className="text-2xl font-bold text-gray-900">
-            {companyId} SMTP 설정
+            {workspaceId} SMTP 설정
           </h1>
         </div>
       </header>
@@ -182,7 +182,7 @@ export default function CompanySmtpPage({
       {data && (
         <p className="mb-4 text-xs text-gray-500">
           {data.override_enabled
-            ? "이 회사 전용 SMTP 사용 중"
+            ? "이 워크스페이스 전용 SMTP 사용 중"
             : data.effective_source === "none"
               ? "사용 가능한 SMTP 설정이 없습니다."
               : "공통 SMTP 설정 사용 중"}
@@ -202,7 +202,7 @@ export default function CompanySmtpPage({
               type="text"
               value={host}
               onChange={(e) => setHost(e.target.value)}
-              data-testid="company-smtp-host-input"
+              data-testid="workspace-smtp-host-input"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               placeholder="smtp.example.com"
             />
@@ -212,7 +212,7 @@ export default function CompanySmtpPage({
               type="number"
               value={port}
               onChange={(e) => setPort(Number(e.target.value))}
-              data-testid="company-smtp-port-input"
+              data-testid="workspace-smtp-port-input"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             />
           </Row>
@@ -221,7 +221,7 @@ export default function CompanySmtpPage({
               type="text"
               value={smtpUser}
               onChange={(e) => setSmtpUser(e.target.value)}
-              data-testid="company-smtp-user-input"
+              data-testid="workspace-smtp-user-input"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               autoComplete="off"
             />
@@ -231,7 +231,7 @@ export default function CompanySmtpPage({
               type="password"
               value={smtpPassword}
               onChange={(e) => setSmtpPassword(e.target.value)}
-              data-testid="company-smtp-password-input"
+              data-testid="workspace-smtp-password-input"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               autoComplete="new-password"
             />
@@ -240,7 +240,7 @@ export default function CompanySmtpPage({
             <select
               value={tlsMode}
               onChange={(e) => setTlsMode(e.target.value as TlsMode)}
-              data-testid="company-smtp-tls-mode-input"
+              data-testid="workspace-smtp-tls-mode-input"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             >
               <option value="starttls">STARTTLS (587)</option>
@@ -253,7 +253,7 @@ export default function CompanySmtpPage({
               type="email"
               value={fromAddr}
               onChange={(e) => setFromAddr(e.target.value)}
-              data-testid="company-smtp-from-addr-input"
+              data-testid="workspace-smtp-from-addr-input"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             />
           </Row>
@@ -262,7 +262,7 @@ export default function CompanySmtpPage({
               type="text"
               value={fromName}
               onChange={(e) => setFromName(e.target.value)}
-              data-testid="company-smtp-from-name-input"
+              data-testid="workspace-smtp-from-name-input"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             />
           </Row>
@@ -272,10 +272,10 @@ export default function CompanySmtpPage({
               <button
                 onClick={removeOverride}
                 disabled={busy}
-                data-testid="company-smtp-remove-button"
+                data-testid="workspace-smtp-remove-button"
                 className="inline-flex items-center gap-1 rounded border border-rose-300 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
               >
-                <Trash2 size={12} /> 회사 전용 SMTP 삭제
+                <Trash2 size={12} /> 워크스페이스 전용 SMTP 삭제
               </button>
             ) : (
               <span />
@@ -284,7 +284,7 @@ export default function CompanySmtpPage({
               <button
                 onClick={checkConnection}
                 disabled={busy || !host || !port}
-                data-testid="company-smtp-connection-test-button"
+                data-testid="workspace-smtp-connection-test-button"
                 className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                 title="발송 없이 서버 연결·인증만 확인"
               >
@@ -293,7 +293,7 @@ export default function CompanySmtpPage({
               <button
                 onClick={save}
                 disabled={busy || !host || !fromAddr}
-                data-testid="company-smtp-save-button"
+                data-testid="workspace-smtp-save-button"
                 className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
               >
                 저장
@@ -308,13 +308,13 @@ export default function CompanySmtpPage({
                 value={testTo}
                 onChange={(e) => setTestTo(e.target.value)}
                 placeholder="받는 주소"
-                data-testid="company-smtp-test-to-input"
+                data-testid="workspace-smtp-test-to-input"
                 className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
               />
               <button
                 onClick={sendTest}
                 disabled={busy || !testTo}
-                data-testid="company-smtp-test-send-button"
+                data-testid="workspace-smtp-test-send-button"
                 className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
               >
                 <Send size={12} /> 테스트 발송

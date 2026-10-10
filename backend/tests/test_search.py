@@ -11,14 +11,14 @@ ACME = "tenant-a"
 async def _ensure(client, auth_headers, sub):
     await client.get(
         "/api/v1/me",
-        headers=auth_headers(sub, groups=[ACME], active_company=ACME),
+        headers=auth_headers(sub, groups=[ACME], active_workspace=ACME),
     )
 
 
 async def test_search_node(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     await client.post(
         "/api/v1/nodes", json={"name": "기획서-2026"}, headers=a
     )
@@ -35,7 +35,7 @@ async def test_search_node(
 
 
 async def test_search_empty_term_rejected(client: AsyncClient, auth_headers):
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.get("/api/v1/search?q=", headers=a)
     assert r.status_code == 422
 
@@ -44,8 +44,8 @@ async def test_search_isolated_per_user(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _ensure(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
 
     await client.post(
         "/api/v1/nodes", json={"name": "alice-personal"}, headers=a
@@ -63,8 +63,8 @@ async def test_search_includes_file_shared_to_me(
     """다른 사람이 나에게 직접 공유한 파일이 검색에 뜬다 (ADR-0020)."""
     await _ensure(client, auth_headers, ALICE)
     await _ensure(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
 
     n = (
         await client.post(
@@ -90,7 +90,7 @@ async def test_search_includes_file_shared_to_me(
 
 
 async def test_search_kind_filter(client: AsyncClient, auth_headers):
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     await client.post("/api/v1/nodes", json={"name": "카파-폴더"}, headers=a)
 
     r = await client.get("/api/v1/search?q=카파&kind=folder", headers=a)

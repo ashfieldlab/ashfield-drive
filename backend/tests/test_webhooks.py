@@ -17,13 +17,13 @@ ACME = "tenant-a"
 async def _ensure_user(client, auth_headers, sub):
     await client.get(
         "/api/v1/me",
-        headers=auth_headers(sub, groups=[ACME], active_company=ACME),
+        headers=auth_headers(sub, groups=[ACME], active_workspace=ACME),
     )
 
 
 async def test_endpoint_crud_admin_only(client: AsyncClient, auth_headers):
-    user = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    admin = auth_headers(ADMIN, groups=[ACME], roles=["admin"], active_company=ACME)
+    user = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    admin = auth_headers(ADMIN, groups=[ACME], roles=["admin"], active_workspace=ACME)
 
     # 일반 사용자 → 403
     r = await client.post(
@@ -65,8 +65,8 @@ async def test_share_dispatches_webhook_with_signature(
 ):
     """node_shared 이벤트 → 등록된 endpoint 로 POST + X-Workspace-Signature 검증."""
     await _ensure_user(client, auth_headers, BOB)
-    admin = auth_headers(ADMIN, groups=[ACME], roles=["admin"], active_company=ACME)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    admin = auth_headers(ADMIN, groups=[ACME], roles=["admin"], active_workspace=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
 
     # endpoint 등록
     r = await client.post(
@@ -134,8 +134,8 @@ async def test_event_filter_skips_non_matching(
     client: AsyncClient, auth_headers, monkeypatch, mock_storage
 ):
     await _ensure_user(client, auth_headers, BOB)
-    admin = auth_headers(ADMIN, groups=[ACME], roles=["admin"], active_company=ACME)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    admin = auth_headers(ADMIN, groups=[ACME], roles=["admin"], active_workspace=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
 
     # event_invited 만 구독: node_shared 는 매칭 안 됨
     await client.post(

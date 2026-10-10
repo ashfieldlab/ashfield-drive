@@ -17,15 +17,15 @@ interface Props {
 /** 관리자: 부서 선택 + 이름 → 팀(부서) 폴더 생성 (docs/group-sharing.html 4단계). */
 export function CreateTeamFolderModal({ onClose, onCreated }: Props) {
   const { toast } = useToast()
-  const { activeCompanyId } = useAppContext()
+  const { activeWorkspaceId } = useAppContext()
   const { data: depts } = useApiGet<GroupDept[]>("/api/v1/groups")
   const [departmentId, setDepartmentId] = useState("")
   const [name, setName] = useState("")
   const [busy, setBusy] = useState(false)
 
-  // 활성 회사의 부서만. 본부→팀 깊이 들여쓰기로 트리 느낌.
+  // 활성 워크스페이스의 부서만. 본부→팀 깊이 들여쓰기로 트리 느낌.
   const options = useMemo(() => {
-    const rows = (depts ?? []).filter((d) => d.company === activeCompanyId)
+    const rows = (depts ?? []).filter((d) => d.workspace === activeWorkspaceId)
     const byId = new Map(rows.map((d) => [d.department_id, d]))
     const byName = new Map(rows.map((d) => [d.department, d]))
     const depth = (d: GroupDept): number => {
@@ -43,7 +43,7 @@ export function CreateTeamFolderModal({ onClose, onCreated }: Props) {
     return rows
       .map((d) => ({ ...d, _depth: depth(d) }))
       .sort((a, b) => a.department.localeCompare(b.department))
-  }, [depts, activeCompanyId])
+  }, [depts, activeWorkspaceId])
 
   async function submit() {
     if (!departmentId || !name.trim()) return

@@ -1,4 +1,4 @@
-import { E2E_USERS, setActiveCompany, setupSharedWorkspace, signOut } from "./auth"
+import { E2E_USERS, setActiveWorkspace, setupSharedWorkspace, signOut } from "./auth"
 import { test, expect } from "./fixtures"
 
 test.describe("file sharing", () => {
@@ -7,13 +7,13 @@ test.describe("file sharing", () => {
     loginAs,
   }) => {
     // admin 의 공유 워크스페이스(계정 서버에서 생성·초대)에 member_a 가 들어온다.
-    const { companyId, memberSub } = await setupSharedWorkspace(
+    const { workspaceId, memberSub } = await setupSharedWorkspace(
       page,
       E2E_USERS.admin,
       E2E_USERS.member_a,
       `공유 팀 ${Date.now()}`,
     )
-    await setActiveCompany(page, companyId)
+    await setActiveWorkspace(page, workspaceId)
     await page.goto("/files")
     const name = `공유-${Date.now()}`
 
@@ -41,7 +41,7 @@ test.describe("file sharing", () => {
 
     // member_a 로 전환 후 공유받음 확인
     await signOut(page)
-    await setActiveCompany(page, companyId)
+    await setActiveWorkspace(page, workspaceId)
     await loginAs("member_a")
     await page.goto("/files?view=shared-with-me")
     await expect(

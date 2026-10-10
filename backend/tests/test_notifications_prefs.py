@@ -59,7 +59,7 @@ async def test_master_off_overrides_categories(db_session):
 
 @pytest.mark.asyncio
 async def test_patch_preferences_merges_categories(client: AsyncClient, auth_headers):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     # file_share off
     r = await client.patch(
         "/api/v1/notifications/preferences",

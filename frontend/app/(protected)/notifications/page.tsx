@@ -20,7 +20,7 @@ const PAGE = 30
 
 export default function NotificationsPage() {
   const { toast } = useToast()
-  const { activeCompanyId } = useAppContext()
+  const { activeWorkspaceId } = useAppContext()
 
   const [items, setItems] = useState<NotificationResponse[]>([])
   const [hasMore, setHasMore] = useState(false)
@@ -48,9 +48,9 @@ export default function NotificationsPage() {
     [entityParams],
   )
 
-  // 활성 회사 준비 후 첫 페이지 로드.
+  // 활성 워크스페이스 준비 후 첫 페이지 로드.
   useEffect(() => {
-    if (!activeCompanyId) return
+    if (!activeWorkspaceId) return
     let cancelled = false
     setLoading(true)
     setError(false)
@@ -65,7 +65,7 @@ export default function NotificationsPage() {
     return () => {
       cancelled = true
     }
-  }, [activeCompanyId, load])
+  }, [activeWorkspaceId, load])
 
   async function loadMore() {
     setLoadingMore(true)

@@ -12,7 +12,7 @@ ACME = "tenant-a"
 async def _ensure_user(client, auth_headers, sub):
     await client.get(
         "/api/v1/me",
-        headers=auth_headers(sub, groups=[ACME], active_company=ACME),
+        headers=auth_headers(sub, groups=[ACME], active_workspace=ACME),
     )
 
 
@@ -20,7 +20,7 @@ async def test_email_fanout_invokes_send_for_share(
     client: AsyncClient, auth_headers, monkeypatch, mock_storage
 ):
     await _ensure_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
 
     monkeypatch.setattr(email_svc.settings, "smtp_enabled", True)
     captured: list = []
@@ -52,7 +52,7 @@ async def test_email_fanout_invokes_send_for_share(
 
 
 async def test_email_pref_opt_out(client: AsyncClient, auth_headers):
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     r = await client.get("/api/v1/notifications/preferences", headers=b)
     assert r.status_code == 200
     assert r.json()["email_enabled"] is True

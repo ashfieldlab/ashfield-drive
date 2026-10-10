@@ -1,4 +1,4 @@
-"""nodes API 핵심 경로: 폴더 트리, 업로드 흐름, 다른 회사 격리, 휴지통."""
+"""nodes API 핵심 경로: 폴더 트리, 업로드 흐름, 다른 워크스페이스 격리, 휴지통."""
 
 from httpx import AsyncClient
 
@@ -11,7 +11,7 @@ BETA = "tenant-b"
 async def test_folder_create_lists_in_tree(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post("/api/v1/nodes", json={"name": "Docs"}, headers=h)
     assert r.status_code == 201, r.text
     folder_id = r.json()["id"]
@@ -32,7 +32,7 @@ async def test_folder_create_lists_in_tree(
 async def test_duplicate_name_auto_renames(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     await client.post("/api/v1/nodes", json={"name": "Docs"}, headers=h)
     r = await client.post("/api/v1/nodes", json={"name": "Docs"}, headers=h)
     assert r.status_code == 201
@@ -42,7 +42,7 @@ async def test_duplicate_name_auto_renames(
 async def test_upload_flow_pending_to_ready(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "spec.pdf", "size": 123, "mime": "application/pdf"},
@@ -66,7 +66,7 @@ async def test_upload_flow_pending_to_ready(
 async def test_download_url_only_when_ready(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "a.bin", "size": 1, "mime": None},
@@ -84,18 +84,18 @@ async def test_download_url_only_when_ready(
     assert r.json()["url"].startswith("http://mock-s3/get/")
 
 
-async def test_other_company_isolation(
+async def test_other_workspace_isolation(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[BETA], active_company=BETA)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[BETA], active_workspace=BETA)
 
     r = await client.post(
         "/api/v1/nodes", json={"name": "AcmeOnly"}, headers=a
     )
     node_id = r.json()["id"]
 
-    # Bob 은 BETA 활성: 다른 회사 노드는 404 마스킹
+    # Bob 은 BETA 활성: 다른 워크스페이스 노드는 404 마스킹
     r = await client.get(f"/api/v1/nodes/{node_id}", headers=b)
     assert r.status_code == 404
     r = await client.delete(f"/api/v1/nodes/{node_id}", headers=b)
@@ -105,7 +105,7 @@ async def test_other_company_isolation(
 async def test_trash_and_restore(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post("/api/v1/nodes", json={"name": "Temp"}, headers=h)
     node_id = r.json()["id"]
 
@@ -126,7 +126,7 @@ async def test_trash_and_restore(
 async def test_folder_cannot_move_into_self(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     f = (await client.post("/api/v1/nodes", json={"name": "F"}, headers=h)).json()
     r = await client.patch(
         f"/api/v1/nodes/{f['id']}", json={"parent_id": f["id"]}, headers=h
@@ -137,7 +137,7 @@ async def test_folder_cannot_move_into_self(
 async def test_folder_cannot_move_into_descendant(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     a = (await client.post("/api/v1/nodes", json={"name": "A"}, headers=h)).json()
     b = (
         await client.post(
@@ -160,10 +160,10 @@ async def test_folder_cannot_move_into_descendant(
     assert r.status_code == 400
 
 
-async def test_active_company_must_be_in_groups(
+async def test_active_workspace_must_be_in_groups(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=BETA)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=BETA)
     r = await client.get("/api/v1/nodes/tree?scope=personal", headers=h)
     assert r.status_code == 403
 
@@ -182,7 +182,7 @@ async def _make_ready_file(client, h, name="doc.bin", size=10):
 async def test_overwrite_replaces_content(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     node_id = await _make_ready_file(client, h)
 
     # 교체 시작: 새 내용 presigned URL
@@ -207,7 +207,7 @@ async def test_overwrite_replaces_content(
 async def test_overwrite_if_match_conflict(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     node_id = await _make_ready_file(client, h)
 
     # 잘못된 etag → 412 (동시 수정 충돌)
@@ -223,7 +223,7 @@ async def test_overwrite_if_match_conflict(
 async def test_overwrite_rejects_folder(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post("/api/v1/nodes", json={"name": "Dir"}, headers=h)
     folder_id = r.json()["id"]
 
@@ -236,7 +236,7 @@ async def test_overwrite_rejects_folder(
 async def test_overwrite_complete_without_start(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     node_id = await _make_ready_file(client, h)
 
     # overwrite-url 없이 바로 complete → 409
@@ -249,7 +249,7 @@ async def test_overwrite_complete_without_start(
 async def test_recursive_tree_returns_full_subtree(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     # 루트 폴더 + 그 안에 중첩 폴더 + 파일
     r = await client.post("/api/v1/nodes", json={"name": "outer"}, headers=h)
     outer = r.json()["id"]
@@ -275,7 +275,7 @@ async def test_recursive_tree_returns_full_subtree(
 async def test_delete_folder_cascades_to_descendants(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post("/api/v1/nodes", json={"name": "box"}, headers=h)
     box = r.json()["id"]
     r = await client.post(

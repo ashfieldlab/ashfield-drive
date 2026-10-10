@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.nodes import _to_response
 from app.auth.context import UserContext
-from app.auth.dependencies import get_current_user, require_active_company
+from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.config import settings
 from app.core.db import get_db
 from app.core.storage import presign_get
@@ -29,10 +29,10 @@ router = APIRouter(prefix="/nodes/{node_id}/versions", tags=["file-versions"])
 
 
 async def _file_node(
-    db: AsyncSession, node_id: str, *, user: UserContext, company_id: str, permission: Permission
+    db: AsyncSession, node_id: str, *, user: UserContext, workspace_id: str, permission: Permission
 ) -> Node:
     node = await get_node_or_404(db, node_id)
-    await assert_access(db, node, user=user, company_id=company_id, permission=permission)
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission=permission)
     if node.kind != "file":
         raise HTTPException(400, "Not a file")
     return node
@@ -49,10 +49,10 @@ async def _version(db: AsyncSession, node: Node, version_id: str) -> FileVersion
 async def list_versions(
     node_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> list[FileVersionResponse]:
-    node = await _file_node(db, node_id, user=user, company_id=company_id, permission="write")
+    node = await _file_node(db, node_id, user=user, workspace_id=workspace_id, permission="write")
     rows = (
         await db.execute(
             select(FileVersion, User.name)
@@ -83,10 +83,10 @@ async def version_download_url(
     node_id: str,
     version_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> FileVersionDownloadUrl:
-    node = await _file_node(db, node_id, user=user, company_id=company_id, permission="write")
+    node = await _file_node(db, node_id, user=user, workspace_id=workspace_id, permission="write")
     v = await _version(db, node, version_id)
     url = await presign_get(v.storage_key, download_name=node.name)
     await record_file_access(
@@ -107,10 +107,10 @@ async def restore_version(
     node_id: str,
     version_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NodeResponse:
-    node = await _file_node(db, node_id, user=user, company_id=company_id, permission="write")
+    node = await _file_node(db, node_id, user=user, workspace_id=workspace_id, permission="write")
     if node.status != "ready" or node.pending_storage_key:
         raise HTTPException(409, "File upload in progress")
     v = await _version(db, node, version_id)
@@ -118,7 +118,7 @@ async def restore_version(
     # 데스크톱 싱크는 감사로그의 node update 로 내용 변경을 감지한다 (/nodes/changes).
     await write_audit(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor=user,
         action="update",
         entity_type="node",
@@ -142,10 +142,10 @@ async def delete_version(
     node_id: str,
     version_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    node = await _file_node(db, node_id, user=user, company_id=company_id, permission="manage")
+    node = await _file_node(db, node_id, user=user, workspace_id=workspace_id, permission="manage")
     v = await _version(db, node, version_id)
     key = await file_versions.delete_version(db, v, actor=user)
     await db.commit()

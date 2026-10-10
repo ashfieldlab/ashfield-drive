@@ -1,6 +1,6 @@
 """/s/{token}: 인증 없이 접근하는 외부 공유 링크.
 
-`api/v1` prefix 아님. JWT/X-Active-Company-Id 안 받음. 토큰 자체가 capability.
+`api/v1` prefix 아님. JWT/X-Active-Workspace-Id 안 받음. 토큰 자체가 capability.
 
 흐름:
   1. `GET /s/{token}` → 공개 메타 (이름·MIME·크기·has_password 등). 없거나 만료·철회면 404.

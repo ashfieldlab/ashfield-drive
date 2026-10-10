@@ -39,7 +39,7 @@ async def _access_rows(db, node_id) -> list[AuditLog]:
 async def test_download_and_preview_are_recorded(
     client: AsyncClient, auth_headers, mock_storage, db_session
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     node_id = await _file(client, h)
     await client.post(f"/api/v1/nodes/{node_id}/download-url", headers=h)
     await client.post(f"/api/v1/nodes/{node_id}/download-url?purpose=preview", headers=h)
@@ -53,7 +53,7 @@ async def test_download_and_preview_are_recorded(
 async def test_access_not_in_sync_changes_or_activity(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     node_id = await _file(client, h)
     for _ in range(3):
         await client.post(f"/api/v1/nodes/{node_id}/download-url", headers=h)
@@ -69,7 +69,7 @@ async def test_access_not_in_sync_changes_or_activity(
 async def test_zip_download_recorded(
     client: AsyncClient, auth_headers, mock_storage, db_session
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     folder = (await client.post("/api/v1/nodes", json={"name": "Dir"}, headers=h)).json()["id"]
     r = await client.get(f"/api/v1/nodes/{folder}/zip", headers=h)
     assert r.status_code == 200, r.text
@@ -79,7 +79,7 @@ async def test_zip_download_recorded(
 async def test_external_link_access_recorded_with_ip(
     client: AsyncClient, auth_headers, mock_storage, db_session
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     node_id = await _file(client, h)
     r = await client.post(
         f"/api/v1/nodes/{node_id}/external-links", json={"permission": "read"}, headers=h
@@ -100,7 +100,7 @@ async def test_external_link_access_recorded_with_ip(
 async def test_access_logs_kept_one_year(
     client: AsyncClient, auth_headers, mock_storage, db_session
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     node_id = await _file(client, h)
     await client.post(f"/api/v1/nodes/{node_id}/download-url", headers=h)
 

@@ -11,7 +11,7 @@ interface MyStorage {
   version_bytes_used: number
   storage_bytes_limit: number | null
   storage_pct: number | null
-  company_bytes_limit: number | null
+  workspace_bytes_limit: number | null
 }
 
 // 파일앱 내 본인 저장 사용량: 개인 한도 있으면 바, 없으면 사용량만.

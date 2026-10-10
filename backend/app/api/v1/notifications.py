@@ -14,7 +14,7 @@ from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import UserContext
-from app.auth.dependencies import get_current_user, require_active_company
+from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.db import get_db
 from app.models.notification import Notification
 from app.models.user import User
@@ -68,12 +68,12 @@ async def list_notifications(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0, description="페이지네이션 오프셋 (히스토리 페이지 '더 보기')"),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NotificationListResponse:
     conds = [
         Notification.recipient_sub == user.sub,
-        Notification.company_id == company_id,
+        Notification.workspace_id == workspace_id,
     ]
     if entity_types:
         conds.append(Notification.entity_type.in_(entity_types))
@@ -160,14 +160,14 @@ async def patch_notification(
     notification_id: str,
     body: NotificationPatch,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> NotificationResponse:
     n = await db.get(Notification, notification_id)
     if (
         n is None
         or n.recipient_sub != user.sub
-        or n.company_id != company_id
+        or n.workspace_id != workspace_id
     ):
         raise HTTPException(404, "Notification not found")
     n.read_at = datetime.now(UTC) if body.read else None
@@ -189,13 +189,13 @@ async def mark_all_read(
         "미지정이면 전체.",
     ),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> MarkAllReadResponse:
     now = datetime.now(UTC)
     conds = [
         Notification.recipient_sub == user.sub,
-        Notification.company_id == company_id,
+        Notification.workspace_id == workspace_id,
         Notification.read_at.is_(None),
     ]
     # 뱃지·목록이 현재 앱 알림만 보여주므로, "모두 읽음"도 그 앱 범위만

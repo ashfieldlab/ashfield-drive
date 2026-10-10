@@ -10,7 +10,7 @@ BIG = 60 * 1024 * 1024  # 60MB
 async def test_large_upload_uses_multipart(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "big.zip", "size": BIG, "mime": "application/zip"},
@@ -53,7 +53,7 @@ async def test_large_upload_uses_multipart(
 async def test_small_file_still_single_put(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "small.bin", "size": 100, "mime": None},
@@ -68,7 +68,7 @@ async def test_small_file_still_single_put(
 async def test_delete_aborts_in_progress_multipart(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "abort.zip", "size": BIG, "mime": None},

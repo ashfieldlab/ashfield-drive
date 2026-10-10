@@ -23,8 +23,8 @@ class Vault(Base):
     node_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("nodes.id", ondelete="CASCADE"), primary_key=True
     )
-    company_id: Mapped[str] = mapped_column(
-        String(128), ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True
+    workspace_id: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
     )
     created_by: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(

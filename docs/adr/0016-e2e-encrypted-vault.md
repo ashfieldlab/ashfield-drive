@@ -9,7 +9,7 @@
 
 ## 컨텍스트
 
-회사 요구사항: **특정 폴더/파일은 개발자·관리자조차 볼 수 없어야 한다.** 파일 소유자의
+워크스페이스 요구사항: **특정 폴더/파일은 개발자·관리자조차 볼 수 없어야 한다.** 파일 소유자의
 비밀번호 없이는 누구도 (DB + S3 전체를 들고 가도) 평문에 접근 불가. S3 에는 암호문만
 저장되고, 복호화는 접근 끝단 (웹 브라우저 / 데스크톱 탐색기) 에서만 일어나야 한다.
 
@@ -88,7 +88,7 @@ AES(KEK_복구코드, 개인키)   ← 비밀번호 분실 시
 ```
 e2e_user_keys   (user_sub PK, salt, public_key,
                  enc_private_key, enc_private_key_recovery)
-vaults          (node_id PK → nodes.id, company_id, created_by)
+vaults          (node_id PK → nodes.id, workspace_id, created_by)
 vault_members   (vault_id, user_sub, wrapped_vault_key)   -- 공유 = 행 추가
 -- nodes: vault 내 파일은 name=암호문(base64), node_deks 불필요
 --        (DEK 는 파일 메타에 wrapped_dek 컬럼 또는 별도 테이블)

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class AuditLogResponse(BaseModel):
     id: str
-    company_id: str | None  # NULL = 시스템 레벨 변경
+    workspace_id: str | None  # NULL = 시스템 레벨 변경
     actor_sub: str | None
     actor_name: str | None  # users 캐시 표시명 (UI 친화)
     actor_type: str

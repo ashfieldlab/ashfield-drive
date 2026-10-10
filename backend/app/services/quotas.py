@@ -1,7 +1,7 @@
 """스토리지 quota 서비스: 사용량 계산 + enforcement.
 
 호출 패턴:
-  upload 시작 시 ensure_capacity(company_id, additional_bytes) 호출.
+  upload 시작 시 ensure_capacity(workspace_id, additional_bytes) 호출.
   초과면 HTTPException(413) raise.
 """
 
@@ -9,16 +9,16 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.company_quota import CompanyQuota
 from app.models.file_version import FileVersion
 from app.models.node import Node
 from app.models.user_quota import UserQuota
+from app.models.workspace_quota import WorkspaceQuota
 
 
-async def compute_usage(db: AsyncSession, *, company_id: str) -> int:
+async def compute_usage(db: AsyncSession, *, workspace_id: str) -> int:
     """active(미삭제, ready) 파일 size_bytes 합계."""
     stmt = select(func.coalesce(func.sum(Node.size_bytes), 0)).where(
-        Node.company_id == company_id,
+        Node.workspace_id == workspace_id,
         Node.kind == "file",
         Node.deleted_at.is_(None),
         Node.status == "ready",
@@ -26,22 +26,22 @@ async def compute_usage(db: AsyncSession, *, company_id: str) -> int:
     return int((await db.execute(stmt)).scalar_one())
 
 
-async def get_limit(db: AsyncSession, *, company_id: str) -> int | None:
+async def get_limit(db: AsyncSession, *, workspace_id: str) -> int | None:
     """None = 무제한 (quota row 없거나 NULL)."""
-    q = await db.get(CompanyQuota, company_id)
+    q = await db.get(WorkspaceQuota, workspace_id)
     if q is None:
         return None
     return q.storage_bytes_limit
 
 
 async def ensure_capacity(
-    db: AsyncSession, *, company_id: str, additional_bytes: int
+    db: AsyncSession, *, workspace_id: str, additional_bytes: int
 ) -> None:
     """추가하려는 바이트가 quota 넘으면 413."""
-    limit = await get_limit(db, company_id=company_id)
+    limit = await get_limit(db, workspace_id=workspace_id)
     if limit is None:
         return
-    usage = await compute_usage(db, company_id=company_id)
+    usage = await compute_usage(db, workspace_id=workspace_id)
     if usage + additional_bytes > limit:
         raise HTTPException(
             status_code=413,
@@ -54,16 +54,16 @@ async def ensure_capacity(
 
 
 # ---------------------------------------------------------------------------
-# 사용자별 (회사 안 멤버) quota
+# 사용자별 (워크스페이스 안 멤버) quota
 # ---------------------------------------------------------------------------
 
 
 async def compute_user_usage(
-    db: AsyncSession, *, company_id: str, user_sub: str
+    db: AsyncSession, *, workspace_id: str, user_sub: str
 ) -> int:
-    """그 회사에서 해당 사용자가 소유한 active 파일 size_bytes 합계."""
+    """그 워크스페이스에서 해당 사용자가 소유한 active 파일 size_bytes 합계."""
     stmt = select(func.coalesce(func.sum(Node.size_bytes), 0)).where(
-        Node.company_id == company_id,
+        Node.workspace_id == workspace_id,
         Node.owner_id == user_sub,
         Node.kind == "file",
         Node.deleted_at.is_(None),
@@ -73,13 +73,13 @@ async def compute_user_usage(
 
 
 async def compute_user_usages(
-    db: AsyncSession, *, company_id: str
+    db: AsyncSession, *, workspace_id: str
 ) -> dict[str, int]:
-    """회사 멤버별 사용량 한 번에 (owner_id 그룹). 멤버 목록 화면용."""
+    """워크스페이스 멤버별 사용량 한 번에 (owner_id 그룹). 멤버 목록 화면용."""
     stmt = (
         select(Node.owner_id, func.coalesce(func.sum(Node.size_bytes), 0))
         .where(
-            Node.company_id == company_id,
+            Node.workspace_id == workspace_id,
             Node.kind == "file",
             Node.deleted_at.is_(None),
             Node.status == "ready",
@@ -90,22 +90,22 @@ async def compute_user_usages(
 
 
 async def get_user_limit(
-    db: AsyncSession, *, company_id: str, user_sub: str
+    db: AsyncSession, *, workspace_id: str, user_sub: str
 ) -> int | None:
     """None = 무제한 (row 없거나 NULL)."""
-    q = await db.get(UserQuota, (company_id, user_sub))
+    q = await db.get(UserQuota, (workspace_id, user_sub))
     return q.storage_bytes_limit if q else None
 
 
 async def ensure_user_capacity(
-    db: AsyncSession, *, company_id: str, user_sub: str, additional_bytes: int
+    db: AsyncSession, *, workspace_id: str, user_sub: str, additional_bytes: int
 ) -> None:
     """사용자 개인 한도 초과 시 413."""
-    limit = await get_user_limit(db, company_id=company_id, user_sub=user_sub)
+    limit = await get_user_limit(db, workspace_id=workspace_id, user_sub=user_sub)
     if limit is None:
         return
     usage = await compute_user_usage(
-        db, company_id=company_id, user_sub=user_sub
+        db, workspace_id=workspace_id, user_sub=user_sub
     )
     if usage + additional_bytes > limit:
         raise HTTPException(
@@ -124,32 +124,32 @@ async def ensure_user_capacity(
 # ---------------------------------------------------------------------------
 
 
-def _version_usage_stmt(company_id: str):
+def _version_usage_stmt(workspace_id: str):
     return (
         select(func.coalesce(func.sum(FileVersion.size_bytes), 0))
         .join(Node, Node.id == FileVersion.node_id)
-        .where(FileVersion.company_id == company_id, Node.deleted_at.is_(None))
+        .where(FileVersion.workspace_id == workspace_id, Node.deleted_at.is_(None))
     )
 
 
-async def compute_version_usage(db: AsyncSession, *, company_id: str) -> int:
-    return int((await db.execute(_version_usage_stmt(company_id))).scalar_one())
+async def compute_version_usage(db: AsyncSession, *, workspace_id: str) -> int:
+    return int((await db.execute(_version_usage_stmt(workspace_id))).scalar_one())
 
 
 async def compute_user_version_usage(
-    db: AsyncSession, *, company_id: str, user_sub: str
+    db: AsyncSession, *, workspace_id: str, user_sub: str
 ) -> int:
-    stmt = _version_usage_stmt(company_id).where(Node.owner_id == user_sub)
+    stmt = _version_usage_stmt(workspace_id).where(Node.owner_id == user_sub)
     return int((await db.execute(stmt)).scalar_one())
 
 
 async def compute_user_version_usages(
-    db: AsyncSession, *, company_id: str
+    db: AsyncSession, *, workspace_id: str
 ) -> dict[str, int]:
     stmt = (
         select(Node.owner_id, func.coalesce(func.sum(FileVersion.size_bytes), 0))
         .join(Node, Node.id == FileVersion.node_id)
-        .where(FileVersion.company_id == company_id, Node.deleted_at.is_(None))
+        .where(FileVersion.workspace_id == workspace_id, Node.deleted_at.is_(None))
         .group_by(Node.owner_id)
     )
     return {sub: int(total) for sub, total in (await db.execute(stmt)).all()}

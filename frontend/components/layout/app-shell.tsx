@@ -14,7 +14,7 @@ import {
 
 import {
   AppFrame,
-  type CompanyOption,
+  type WorkspaceOption,
   type NavItem,
   type NavLinkRenderProps,
 } from "@/components/ui-custom/app-frame"
@@ -29,7 +29,7 @@ import { signOutAction } from "@/lib/actions/auth"
 import { APP } from "@/lib/apps"
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { authUser, companies, companyNames, activeCompanyId, setActiveCompany, isSystemAdmin } =
+  const { authUser, workspaces, workspaceNames, activeWorkspaceId, setActiveWorkspace, isSystemAdmin } =
     useAppContext()
   const pathname = usePathname() ?? ""
   const sp = useSearchParams()
@@ -45,7 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const fromTeam = sp?.get("from") === "team-folders"
     return {
       personal: !trash && !sharedWithMe && scope !== "shared",
-      // 부서 폴더 컨텍스트면 "회사 공유"로 잡지 않음 (부서 폴더 메뉴가 활성).
+      // 부서 폴더 컨텍스트면 "워크스페이스"로 잡지 않음 (부서 폴더 메뉴가 활성).
       shared: !trash && !sharedWithMe && scope === "shared" && !fromTeam,
       sharedWithMe,
       trash,
@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ]
     return [
       { id: "files-personal", label: "내 파일", href: "/files?scope=personal", icon: <Folder size={16} />, active: filesActive?.personal },
-      { id: "files-shared", label: "회사 공유", href: "/files?scope=shared", icon: <Users size={16} />, active: filesActive?.shared },
+      { id: "files-shared", label: "워크스페이스", href: "/files?scope=shared", icon: <Users size={16} />, active: filesActive?.shared },
       { id: "files-shared-with-me", label: "공유받음", href: "/files?view=shared-with-me", icon: <Share2 size={16} />, active: filesActive?.sharedWithMe },
       // "부서 폴더" 메뉴는 부서 소스(외부 디렉터리) 제거로 숨김 (ADR-0023, backend/app/services/departments.py).
       { id: "files-trash", label: "휴지통", href: "/files?trash=1", icon: <Trash2 size={16} />, active: filesActive?.trash },
@@ -69,9 +69,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ]
   }, [filesActive, pathname])
 
-  const companyOptions: CompanyOption[] = useMemo(
-    () => companies.map((c) => ({ id: c, name: companyNames[c] ?? c })),
-    [companies, companyNames],
+  const workspaceOptions: WorkspaceOption[] = useMemo(
+    () => workspaces.map((c) => ({ id: c, name: workspaceNames[c] ?? c })),
+    [workspaces, workspaceNames],
   )
 
   const sidebarRenderLink = (
@@ -110,12 +110,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AppFrame
-      companySwitcher={
-        companies.length > 0
+      workspaceSwitcher={
+        workspaces.length > 0
           ? {
-              companies: companyOptions,
-              selectedId: activeCompanyId ?? undefined,
-              onSelect: (c) => setActiveCompany(c.id),
+              workspaces: workspaceOptions,
+              selectedId: activeWorkspaceId ?? undefined,
+              onSelect: (c) => setActiveWorkspace(c.id),
             }
           : undefined
       }

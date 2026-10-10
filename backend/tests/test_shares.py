@@ -11,7 +11,7 @@ async def _bootstrap_user(client: AsyncClient, auth_headers, sub: str):
     """JWT claims 의 lazy-upsert 로 users row 만들기."""
     await client.get(
         "/api/v1/me",
-        headers=auth_headers(sub, groups=[ACME], active_company=ACME),
+        headers=auth_headers(sub, groups=[ACME], active_workspace=ACME),
     )
 
 
@@ -19,8 +19,8 @@ async def test_share_grants_access_and_revoke_removes_it(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _bootstrap_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
 
     node = (await client.post("/api/v1/nodes", json={"name": "Doc"}, headers=a)).json()
 
@@ -62,8 +62,8 @@ async def test_write_permission_allows_rename(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _bootstrap_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     node = (
         await client.post("/api/v1/nodes", json={"name": "RW"}, headers=a)
     ).json()
@@ -82,8 +82,8 @@ async def test_folder_share_inherits_to_descendants(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _bootstrap_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
 
     parent = (
         await client.post("/api/v1/nodes", json={"name": "Folder"}, headers=a)
@@ -115,8 +115,8 @@ async def test_only_owner_can_create_share(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _bootstrap_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     node = (
         await client.post("/api/v1/nodes", json={"name": "Owned"}, headers=a)
     ).json()
@@ -136,9 +136,9 @@ async def test_manage_permission_can_reshare(
     CHARLIE = "user-charlie"  # noqa: N806
     await _bootstrap_user(client, auth_headers, BOB)
     await _bootstrap_user(client, auth_headers, CHARLIE)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
-    c = auth_headers(CHARLIE, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
+    c = auth_headers(CHARLIE, groups=[ACME], active_workspace=ACME)
 
     node = (await client.post("/api/v1/nodes", json={"name": "MGR"}, headers=a)).json()
 
@@ -168,8 +168,8 @@ async def test_write_only_cannot_reshare(
     CHARLIE = "user-charlie"  # noqa: N806
     await _bootstrap_user(client, auth_headers, BOB)
     await _bootstrap_user(client, auth_headers, CHARLIE)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     node = (await client.post("/api/v1/nodes", json={"name": "RW"}, headers=a)).json()
     # Alice → Bob with write (not manage)
     await client.post(
@@ -189,8 +189,8 @@ async def test_shared_with_me_lists_direct_shares(
     client: AsyncClient, auth_headers, mock_storage
 ):
     await _bootstrap_user(client, auth_headers, BOB)
-    a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
-    b = auth_headers(BOB, groups=[ACME], active_company=ACME)
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
     node = (
         await client.post("/api/v1/nodes", json={"name": "Pkg"}, headers=a)
     ).json()

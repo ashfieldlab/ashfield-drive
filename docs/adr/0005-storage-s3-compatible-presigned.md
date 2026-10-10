@@ -11,7 +11,7 @@
 
 만료는 발급 즉시 사용을 가정. 실패 시 클라이언트가 같은 endpoint에 다시 요청해 새 URL 받음. 노출 위험 최소화.
 
-**Bucket·Key 컨벤션**: 환경별 bucket 1개, key는 `{company_id}/{file_uuid}` flat. 폴더 path 안 박음: 폴더 rename·이동 시 S3 작업 0. 파일 메타데이터는 모두 DB.
+**Bucket·Key 컨벤션**: 환경별 bucket 1개, key는 `{workspace_id}/{file_uuid}` flat. 폴더 path 안 박음: 폴더 rename·이동 시 S3 작업 0. 파일 메타데이터는 모두 DB.
 
 **라이브러리**: aioboto3 (boto3 wrap async). MinIO/AWS 등 S3 호환 스토리지 모두 endpoint_url 파라미터로 동일 코드 동작.
 

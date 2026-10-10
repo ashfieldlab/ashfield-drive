@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * 앱 공통 레이아웃 프레임: 상단 헤더(브랜드·회사 전환·우측 위젯) + 좌측 내비게이션 + 본문.
+ * 앱 공통 레이아웃 프레임: 상단 헤더(브랜드·워크스페이스 전환·우측 위젯) + 좌측 내비게이션 + 본문.
  *
  * 도메인 지식은 없다. 메뉴 항목·우측 위젯·링크 렌더링(next/link 등)은 호출부
  * (components/layout/app-shell.tsx)가 넘긴다. 좁은 화면(< md)에서는 사이드바가
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 
-export interface CompanyOption {
+export interface WorkspaceOption {
   id: string
   name: string
 }
@@ -49,11 +49,11 @@ export interface AppFrameProps {
     /** 로고·서비스명 클릭 */
     onClick?: () => void
   }
-  /** 소속 회사가 있을 때만 넘긴다: 없으면 전환 UI 숨김 */
-  companySwitcher?: {
-    companies: CompanyOption[]
+  /** 소속 워크스페이스가 있을 때만 넘긴다: 없으면 전환 UI 숨김 */
+  workspaceSwitcher?: {
+    workspaces: WorkspaceOption[]
     selectedId?: string
-    onSelect: (company: CompanyOption) => void
+    onSelect: (workspace: WorkspaceOption) => void
   }
   /** 헤더 우측 영역 (검색·알림·사용자 메뉴 등) */
   headerTrailing?: React.ReactNode
@@ -74,7 +74,7 @@ const navLinkClass =
 
 export function AppFrame({
   brand,
-  companySwitcher,
+  workspaceSwitcher,
   headerTrailing,
   navItems,
   renderNavLink,
@@ -136,7 +136,7 @@ export function AppFrame({
             {brand.name}
           </span>
         </button>
-        {companySwitcher && <CompanySwitcher {...companySwitcher} />}
+        {workspaceSwitcher && <WorkspaceSwitcher {...workspaceSwitcher} />}
         <div className="ml-auto flex items-center gap-2">{headerTrailing}</div>
       </header>
 
@@ -183,21 +183,21 @@ export function AppFrame({
   )
 }
 
-function CompanySwitcher({
-  companies,
+function WorkspaceSwitcher({
+  workspaces,
   selectedId,
   onSelect,
-}: NonNullable<AppFrameProps["companySwitcher"]>) {
-  const selected = companies.find((c) => c.id === selectedId)
+}: NonNullable<AppFrameProps["workspaceSwitcher"]>) {
+  const selected = workspaces.find((c) => c.id === selectedId)
 
-  // 회사가 하나뿐이면 전환할 게 없으므로 이름만 표시
-  if (companies.length < 2) {
+  // 워크스페이스가 하나뿐이면 전환할 게 없으므로 이름만 표시
+  if (workspaces.length < 2) {
     return (
       <span
         className="max-w-48 truncate px-2 text-sm text-muted-foreground"
-        data-testid="company-switcher"
+        data-testid="workspace-switcher"
       >
-        {selected?.name ?? companies[0]?.name}
+        {selected?.name ?? workspaces[0]?.name}
       </span>
     )
   }
@@ -209,20 +209,20 @@ function CompanySwitcher({
           variant="ghost"
           size="sm"
           className="max-w-48 text-muted-foreground"
-          data-testid="company-switcher"
+          data-testid="workspace-switcher"
         >
-          <span className="truncate">{selected?.name ?? "회사 선택"}</span>
+          <span className="truncate">{selected?.name ?? "워크스페이스 선택"}</span>
           <ChevronsUpDown className="opacity-60" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>회사</DropdownMenuLabel>
+        <DropdownMenuLabel>워크스페이스</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {companies.map((c) => (
+        {workspaces.map((c) => (
           <DropdownMenuItem
             key={c.id}
             onSelect={() => onSelect(c)}
-            data-testid={`company-option-${c.id}`}
+            data-testid={`workspace-option-${c.id}`}
           >
             <span className="truncate">{c.name}</span>
             {c.id === selectedId && <Check className="ml-auto" />}

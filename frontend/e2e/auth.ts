@@ -39,8 +39,8 @@ interface MeResponse {
   sub: string
   email: string
   groups: string[]
-  companies: { id: string; name: string; account_workspace_id: string | null }[]
-  company_roles: Record<string, string>
+  workspaces: { id: string; name: string; account_workspace_id: string | null }[]
+  workspace_roles: Record<string, string>
 }
 
 const onApp = (url: URL) => url.origin === APP_URL && !url.pathname.startsWith("/login")
@@ -96,16 +96,16 @@ export async function me(page: Page): Promise<MeResponse> {
 }
 
 /** 현재 사용자의 개인 워크스페이스 ID (계정 서버가 가입 때 만든 "{이름}의 워크스페이스"). */
-export async function personalCompanyId(page: Page, user: E2EUser): Promise<string> {
+export async function personalWorkspaceId(page: Page, user: E2EUser): Promise<string> {
   const body = await me(page)
-  const c = body.companies.find((x) => x.name === `${user.name}의 워크스페이스`)
+  const c = body.workspaces.find((x) => x.name === `${user.name}의 워크스페이스`)
   expect(c, "personal workspace").toBeTruthy()
   return c!.id
 }
 
 /**
  * 계정 서버에서 새 워크스페이스 + 초대 링크를 만든다 (현재 브라우저의 계정 서버 세션 = 소유자).
- * 반환: 워크스페이스 ID(= 앱 회사 ID)와 초대 URL. 앱에 반영하려면 새 토큰이 필요하다 (재로그인).
+ * 반환: 워크스페이스 ID(= 앱 워크스페이스 ID)와 초대 URL. 앱에 반영하려면 새 토큰이 필요하다 (재로그인).
  */
 export async function createWorkspaceWithInvite(
   page: Page,
@@ -146,7 +146,7 @@ export async function setupSharedWorkspace(
   owner: E2EUser,
   member: E2EUser,
   name: string,
-): Promise<{ companyId: string; memberSub: string }> {
+): Promise<{ workspaceId: string; memberSub: string }> {
   await signOut(page)
   await signIn(page, owner)
   const { id, inviteUrl } = await createWorkspaceWithInvite(page, name)
@@ -156,17 +156,17 @@ export async function setupSharedWorkspace(
   await signIn(page, member) // 계정 서버 세션이 있어 SSO
   const memberMe = await me(page)
   expect(memberMe.groups).toContain(id)
-  expect(memberMe.company_roles[id]).toBe("member")
+  expect(memberMe.workspace_roles[id]).toBe("member")
   await signOut(page)
 
   await signIn(page, owner)
-  expect((await me(page)).company_roles[id]).toBe("admin") // owner → admin
-  return { companyId: id, memberSub: memberMe.sub }
+  expect((await me(page)).workspace_roles[id]).toBe("admin") // owner → admin
+  return { workspaceId: id, memberSub: memberMe.sub }
 }
 
-/** 활성 회사 cookie 를 고정 (AppContext 가 다음 로드 때 이 회사를 고른다). */
-export async function setActiveCompany(page: Page, companyId: string): Promise<void> {
+/** 활성 워크스페이스 cookie 를 고정 (AppContext 가 다음 로드 때 이 워크스페이스를 고른다). */
+export async function setActiveWorkspace(page: Page, workspaceId: string): Promise<void> {
   await page.context().addCookies([
-    { name: COOKIES.activeCompany, value: encodeURIComponent(companyId), url: BASE_URL },
+    { name: COOKIES.activeWorkspace, value: encodeURIComponent(workspaceId), url: BASE_URL },
   ])
 }

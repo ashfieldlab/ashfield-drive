@@ -7,10 +7,10 @@ pytest 공통 fixtures.
   - 인증은 mocking 없이 진짜 JWT: Ashfield 계정 서버 액세스 토큰과 같은 모양(RS256, typ at+jwt,
     iss, aud 배열, picture, workspaces)으로 테스트 프로세스가 만든 RSA 키로 서명 → validator·소속
     동기화 코드 경로 동일. JWKS 는 네트워크 대신 그 키의 공개 JWK 를 돌려주도록 `_fetch_jwks` 만 바꾼다.
-  - `workspaces=[...]` 는 실제 클레임 → 운영 코드(provisioning.sync_workspaces)가 회사·멤버십을 맞춘다.
+  - `workspaces=[...]` 는 실제 클레임 → 운영 코드(provisioning.sync_workspaces)가 워크스페이스·멤버십을 맞춘다.
   - `groups=[...]`·`roles=[...]` 는 테스트 전용 `_test_seed` claim: 계정 서버 도입 전의 로컬(레거시)
-    회사 멤버십·System Admin 을 테스트 transport 가 요청 직전에 DB 에 심는다. 운영 코드는 이 claim 을
-    모른다. 도메인 테스트 대부분이 이 경로로 활성 회사를 준비한다.
+    워크스페이스 멤버십·System Admin 을 테스트 transport 가 요청 직전에 DB 에 심는다. 운영 코드는 이 claim 을
+    모른다. 도메인 테스트 대부분이 이 경로로 활성 워크스페이스를 준비한다.
 """
 
 from __future__ import annotations
@@ -46,9 +46,9 @@ from app.core.config import settings
 from app.core.db import get_db
 from app.main import app
 from app.models import Base
-from app.models.company import Company
 from app.models.user import User
-from app.models.user_company_membership import UserCompanyMembership
+from app.models.user_workspace_membership import UserWorkspaceMembership
+from app.models.workspace import Workspace
 
 # ---------------------------------------------------------------------------
 # 테스트 서명 키: 프로세스마다 새로 만든다 (저장소에 개인키를 두지 않음)
@@ -198,17 +198,17 @@ async def _apply_test_seed(db: AsyncSession, authorization: str | None) -> None:
     )
     for g in groups:
         await db.execute(
-            pg_insert(Company).values(id=g, name=g).on_conflict_do_nothing()
+            pg_insert(Workspace).values(id=g, name=g).on_conflict_do_nothing()
         )
         await db.execute(
-            pg_insert(UserCompanyMembership)
-            .values(user_sub=sub, company_id=g)
+            pg_insert(UserWorkspaceMembership)
+            .values(user_sub=sub, workspace_id=g)
             .on_conflict_do_nothing()
         )
-    cond = [UserCompanyMembership.user_sub == sub]
+    cond = [UserWorkspaceMembership.user_sub == sub]
     if groups:
-        cond.append(UserCompanyMembership.company_id.notin_(groups))
-    await db.execute(delete(UserCompanyMembership).where(*cond))
+        cond.append(UserWorkspaceMembership.workspace_id.notin_(groups))
+    await db.execute(delete(UserWorkspaceMembership).where(*cond))
     await db.flush()
 
 
@@ -322,7 +322,7 @@ def mint_jwt(
     private_pem: str = TEST_PRIVATE_PEM,
     kid: str = TEST_KID,
 ) -> str:
-    """seed=True 면 `_test_seed` 로 groups·roles 를 DB 에 심는다 (테스트 transport, 레거시 회사).
+    """seed=True 면 `_test_seed` 로 groups·roles 를 DB 에 심는다 (테스트 transport, 레거시 워크스페이스).
     seed=False 는 실제 첫 로그인처럼 아무 소속 없이 들어오는 토큰.
     workspaces 를 주면 실제 `workspaces` 클레임으로 싣는다 (None 이면 클레임 없음)."""
     now = int(time.time())
@@ -457,19 +457,19 @@ def mock_storage(monkeypatch):
 
 @pytest.fixture
 def auth_headers(make_jwt):
-    """편의 헬퍼: auth_headers(sub, ...) → Authorization + X-Active-Company-Id."""
+    """편의 헬퍼: auth_headers(sub, ...) → Authorization + X-Active-Workspace-Id."""
 
     def _headers(
         sub: str,
         *,
         groups: list[str] | None = None,
         roles: list[str] | None = None,
-        active_company: str | None = None,
+        active_workspace: str | None = None,
     ) -> dict[str, str]:
         token = make_jwt(sub, groups=groups, roles=roles)
         headers = {"Authorization": f"Bearer {token}"}
-        if active_company:
-            headers["X-Active-Company-Id"] = active_company
+        if active_workspace:
+            headers["X-Active-Workspace-Id"] = active_workspace
         return headers
 
     return _headers

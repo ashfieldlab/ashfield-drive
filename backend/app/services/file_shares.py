@@ -29,7 +29,7 @@ async def assert_can_manage_shares(
     if node.owner_id == user.sub:
         return
     rank = await effective_permission(
-        db, node, user=user, company_id=node.company_id
+        db, node, user=user, workspace_id=node.workspace_id
     )
     if rank < _PERM_RANK["manage"]:
         raise HTTPException(403, "Manage permission required")

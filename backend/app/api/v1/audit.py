@@ -1,8 +1,8 @@
 """/api/v1/audit: 감사 로그 조회.
 
 접근:
-  scope=company: 활성 회사의 감사 로그. 그 회사 admin(또는 System Admin).
-  scope=system : company_id NULL 인 시스템 레벨 로그. System Admin 만.
+  scope=workspace: 활성 워크스페이스의 감사 로그. 그 워크스페이스 admin(또는 System Admin).
+  scope=system : workspace_id NULL 인 시스템 레벨 로그. System Admin 만.
 
 필터: 기간(from/to)·entity_type·action·actor_sub. CSV export 제공(같은 필터).
 """
@@ -17,41 +17,41 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import UserContext
-from app.auth.dependencies import get_current_user, require_active_company
+from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.db import get_db
 from app.models.audit_log import AuditLog
 from app.models.user import User
-from app.models.user_company_membership import UserCompanyMembership
+from app.models.user_workspace_membership import UserWorkspaceMembership
 from app.schemas.audit import AuditLogListResponse, AuditLogResponse
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
-Scope = Literal["company", "system"]
+Scope = Literal["workspace", "system"]
 
 # CSV export 상한: 너무 큰 응답 방지.
 _EXPORT_CAP = 10_000
 
 
 async def _assert_scope_access(
-    db: AsyncSession, *, user: UserContext, scope: Scope, company_id: str
+    db: AsyncSession, *, user: UserContext, scope: Scope, workspace_id: str
 ) -> None:
-    """scope=system 은 System Admin, scope=company 는 그 회사 admin."""
+    """scope=system 은 System Admin, scope=workspace 는 그 워크스페이스 admin."""
     if scope == "system":
         if not user.is_system_admin:
             raise HTTPException(403, "System admin only")
         return
     if user.is_system_admin:
         return
-    membership = await db.get(UserCompanyMembership, (user.sub, company_id))
+    membership = await db.get(UserWorkspaceMembership, (user.sub, workspace_id))
     if membership is None or membership.role != "admin":
-        raise HTTPException(403, "Company admin only")
+        raise HTTPException(403, "Workspace admin only")
 
 
 async def _query_logs(
     db: AsyncSession,
     *,
     scope: Scope,
-    company_id: str,
+    workspace_id: str,
     from_: datetime | None,
     to: datetime | None,
     entity_type: str | None,
@@ -60,9 +60,9 @@ async def _query_logs(
     limit: int,
 ) -> list[AuditLog]:
     if scope == "system":
-        conds = [AuditLog.company_id.is_(None)]
+        conds = [AuditLog.workspace_id.is_(None)]
     else:
-        conds = [AuditLog.company_id == company_id]
+        conds = [AuditLog.workspace_id == workspace_id]
     if from_:
         conds.append(AuditLog.created_at >= from_)
     if to:
@@ -97,35 +97,35 @@ async def _actor_names(
 @router.get(
     "",
     response_model=AuditLogListResponse,
-    summary="감사 로그 조회 (회사 admin: 자기 회사 / system scope: System Admin)",
+    summary="감사 로그 조회 (워크스페이스 admin: 자기 워크스페이스 / system scope: System Admin)",
     responses={403: {"description": "권한 없음"}},
 )
 async def list_audit(
     from_: datetime | None = Query(None, alias="from", description="ISO datetime"),
     to: datetime | None = Query(None, description="ISO datetime (exclusive)"),
     entity_type: str | None = Query(
-        None, description="`node` | `company` 등"
+        None, description="`node` | `workspace` 등"
     ),
     action: str | None = Query(
         None, description="`create` | `update` | `delete` | `share` 등"
     ),
     actor_sub: str | None = Query(None, description="특정 사용자(sub)만"),
     scope: Scope = Query(
-        "company",
-        description="company=활성 회사 / system=company_id NULL 시스템 항목",
+        "workspace",
+        description="workspace=활성 워크스페이스 / system=workspace_id NULL 시스템 항목",
     ),
     limit: int = Query(100, ge=1, le=500),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> AuditLogListResponse:
     await _assert_scope_access(
-        db, user=user, scope=scope, company_id=company_id
+        db, user=user, scope=scope, workspace_id=workspace_id
     )
     rows = await _query_logs(
         db,
         scope=scope,
-        company_id=company_id,
+        workspace_id=workspace_id,
         from_=from_,
         to=to,
         entity_type=entity_type,
@@ -138,7 +138,7 @@ async def list_audit(
         logs=[
             AuditLogResponse(
                 id=r.id,
-                company_id=r.company_id,
+                workspace_id=r.workspace_id,
                 actor_sub=r.actor_sub,
                 actor_name=names.get(r.actor_sub) if r.actor_sub else None,
                 actor_type=r.actor_type,
@@ -165,18 +165,18 @@ async def export_audit_csv(
     entity_type: str | None = Query(None),
     action: str | None = Query(None),
     actor_sub: str | None = Query(None),
-    scope: Scope = Query("company"),
+    scope: Scope = Query("workspace"),
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     await _assert_scope_access(
-        db, user=user, scope=scope, company_id=company_id
+        db, user=user, scope=scope, workspace_id=workspace_id
     )
     rows = await _query_logs(
         db,
         scope=scope,
-        company_id=company_id,
+        workspace_id=workspace_id,
         from_=from_,
         to=to,
         entity_type=entity_type,

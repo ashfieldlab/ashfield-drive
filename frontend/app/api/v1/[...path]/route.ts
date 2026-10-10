@@ -5,7 +5,7 @@
  *   - 자격 증명은 서버 사이드에서만 만든다: 브라우저 JS 에 노출 X.
  *     Better Auth 세션 쿠키 → 계정 서버 액세스 토큰(만료 임박 시 refresh) → `Authorization: Bearer`
  *     (ADR-0024). 갱신 실패면 세션을 지우고 401 → 클라이언트가 /login 으로.
- *   - X-Active-Company-Id 헤더는 클라이언트가 보낸 그대로 전달, 없으면 쿠키에서 보강.
+ *   - X-Active-Workspace-Id 헤더는 클라이언트가 보낸 그대로 전달, 없으면 쿠키에서 보강.
  */
 
 import { NextRequest, NextResponse } from "next/server"
@@ -52,19 +52,19 @@ async function proxy(
   const headers = new Headers()
   for (const [k, v] of Object.entries(authHeaders)) headers.set(k, v)
 
-  const activeCompany =
-    req.headers.get("X-Active-Company-Id") ??
-    req.cookies.get(COOKIES.activeCompany)?.value
-  if (activeCompany) {
+  const activeWorkspace =
+    req.headers.get("X-Active-Workspace-Id") ??
+    req.cookies.get(COOKIES.activeWorkspace)?.value
+  if (activeWorkspace) {
     // HTTP header 는 ByteString (≤ 0xFF) 만 허용: 한글이 박히면 fetch 가 throw.
-    // 잘못된 cookie/header (예: 회사 ID 에 한글 회사명) 가 들어와도 500 대신
-    // 헤더만 skip 하고 통과: backend 가 active company 누락으로 4xx 응답하면
-    // 사용자가 회사 재선택할 수 있다.
-    if (/^[\x20-\x7E]+$/.test(activeCompany)) {
-      headers.set("X-Active-Company-Id", activeCompany)
+    // 잘못된 cookie/header (예: 워크스페이스 ID 에 한글 이름) 가 들어와도 500 대신
+    // 헤더만 skip 하고 통과: backend 가 active workspace 누락으로 4xx 응답하면
+    // 사용자가 워크스페이스 재선택할 수 있다.
+    if (/^[\x20-\x7E]+$/.test(activeWorkspace)) {
+      headers.set("X-Active-Workspace-Id", activeWorkspace)
     } else {
-      console.warn("[bff] X-Active-Company-Id non-ASCII, skipping", {
-        value: activeCompany,
+      console.warn("[bff] X-Active-Workspace-Id non-ASCII, skipping", {
+        value: activeWorkspace,
       })
     }
   }

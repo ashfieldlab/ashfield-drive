@@ -10,32 +10,32 @@ import { QuotaCard } from "@/components/quota/quota-card"
 import { api } from "@/lib/api-client"
 import { invalidateApi, useApiGet } from "@/lib/hooks/use-api"
 
-type CompanyRole = "admin" | "member"
+type WorkspaceRole = "admin" | "member"
 
 interface MemberItem {
   user_sub: string
   email: string | null
   name: string | null
-  role: CompanyRole
+  role: WorkspaceRole
 }
 
 interface MemberListResponse {
   members: MemberItem[]
 }
 
-export default function CompanyMembersPage({
+export default function WorkspaceMembersPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id: companyIdRaw } = use(params)
-  const companyId = decodeURIComponent(companyIdRaw)
+  const { id: workspaceIdRaw } = use(params)
+  const workspaceId = decodeURIComponent(workspaceIdRaw)
   const { isSystemAdmin } = useAppContext()
   const { toast } = useToast()
   const [busy, setBusy] = useState<string | null>(null)
 
   const url = isSystemAdmin
-    ? `/api/v1/admin/companies/${encodeURIComponent(companyId)}/members`
+    ? `/api/v1/admin/workspaces/${encodeURIComponent(workspaceId)}/members`
     : null
   const { data, error, isLoading } = useApiGet<MemberListResponse>(url)
 
@@ -43,7 +43,7 @@ export default function CompanyMembersPage({
     return (
       <div
         className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
-        data-testid="company-members-no-permission"
+        data-testid="workspace-members-no-permission"
       >
         시스템 관리자만 접근할 수 있습니다.
       </div>
@@ -53,11 +53,11 @@ export default function CompanyMembersPage({
   const adminCount =
     data?.members.filter((m) => m.role === "admin").length ?? 0
 
-  async function setRole(member: MemberItem, role: CompanyRole) {
+  async function setRole(member: MemberItem, role: WorkspaceRole) {
     setBusy(member.user_sub)
     try {
       await api(
-        `/api/v1/admin/companies/${encodeURIComponent(companyId)}/members/${encodeURIComponent(member.user_sub)}`,
+        `/api/v1/admin/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(member.user_sub)}`,
         { method: "PATCH", body: { role } },
       )
       toast.success(
@@ -66,7 +66,7 @@ export default function CompanyMembersPage({
           : `${member.name ?? member.user_sub} 님을 멤버로 변경했습니다`,
       )
       invalidateApi(url!)
-      invalidateApi("/api/v1/admin/companies")
+      invalidateApi("/api/v1/admin/workspaces")
     } catch (e) {
       toast.error(`변경 실패: ${(e as Error).message}`)
     } finally {
@@ -77,30 +77,30 @@ export default function CompanyMembersPage({
   return (
     <div
       className="h-full overflow-y-auto space-y-4 px-4 py-8 sm:px-6 lg:px-8"
-      data-testid="company-members-page"
+      data-testid="workspace-members-page"
     >
       <Link
-        href="/admin/companies"
+        href="/admin/workspaces"
         className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900"
-        data-testid="company-members-back"
+        data-testid="workspace-members-back"
       >
-        <ArrowLeft size={12} /> 회사 목록
+        <ArrowLeft size={12} /> 워크스페이스 목록
       </Link>
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">
-          {companyId} 멤버 관리
+          {workspaceId} 멤버 관리
         </h1>
       </header>
 
-      <QuotaCard companyId={companyId} mode="admin" />
+      <QuotaCard workspaceId={workspaceId} mode="admin" />
 
       {adminCount === 0 && data && (
         <div
           className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800"
-          data-testid="company-members-no-admin-warning"
+          data-testid="workspace-members-no-admin-warning"
         >
           <AlertTriangle size={14} />
-          이 회사에는 관리자가 없습니다. 한 명을 임명해주세요.
+          이 워크스페이스에는 관리자가 없습니다. 한 명을 임명해주세요.
         </div>
       )}
 
@@ -112,7 +112,7 @@ export default function CompanyMembersPage({
         <div className="text-sm text-gray-500">불러오는 중…</div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <table className="w-full text-sm" data-testid="company-members-list">
+          <table className="w-full text-sm" data-testid="workspace-members-list">
             <thead className="bg-gray-50 text-left text-xs text-gray-500">
               <tr>
                 <th className="px-4 py-2 font-medium">이름</th>
@@ -127,7 +127,7 @@ export default function CompanyMembersPage({
                 return (
                   <tr
                     key={m.user_sub}
-                    data-testid={`company-members-row-${m.user_sub}`}
+                    data-testid={`workspace-members-row-${m.user_sub}`}
                     className="hover:bg-gray-50"
                   >
                     <td className="px-4 py-2 text-gray-900">
@@ -155,7 +155,7 @@ export default function CompanyMembersPage({
                         <button
                           onClick={() => setRole(m, "member")}
                           disabled={busy === m.user_sub}
-                          data-testid={`company-members-row-${m.user_sub}-demote`}
+                          data-testid={`workspace-members-row-${m.user_sub}-demote`}
                           className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                         >
                           강등
@@ -164,7 +164,7 @@ export default function CompanyMembersPage({
                         <button
                           onClick={() => setRole(m, "admin")}
                           disabled={busy === m.user_sub}
-                          data-testid={`company-members-row-${m.user_sub}-promote`}
+                          data-testid={`workspace-members-row-${m.user_sub}-promote`}
                           className="rounded bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                         >
                           관리자 임명
@@ -180,7 +180,7 @@ export default function CompanyMembersPage({
                     colSpan={4}
                     className="px-4 py-8 text-center text-sm text-gray-500"
                   >
-                    아직 이 회사로 로그인한 사용자가 없습니다.
+                    아직 이 워크스페이스로 로그인한 사용자가 없습니다.
                   </td>
                 </tr>
               )}

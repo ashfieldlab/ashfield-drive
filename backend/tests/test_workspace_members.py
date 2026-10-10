@@ -1,4 +1,4 @@
-"""/api/v1/companies/{id}/members: Company Admin 의 멤버 조회 (읽기 전용, ADR-0024).
+"""/api/v1/workspaces/{id}/members: Workspace Admin 의 멤버 조회 (읽기 전용, ADR-0024).
 
 멤버 추가·제거·역할 변경은 Ashfield 계정 서버가 한다: 앱엔 쓰기 API 가 없다.
 """
@@ -8,26 +8,26 @@ import pytest
 from tests.conftest import ws
 
 
-async def _make_admin(client, auth_headers, db_session, sub, company):
-    from app.models.user_company_membership import UserCompanyMembership
+async def _make_admin(client, auth_headers, db_session, sub, workspace):
+    from app.models.user_workspace_membership import UserWorkspaceMembership
 
-    h = auth_headers(sub, groups=[company], active_company=company)
+    h = auth_headers(sub, groups=[workspace], active_workspace=workspace)
     await client.get("/api/v1/me", headers=h)
-    m = await db_session.get(UserCompanyMembership, (sub, company))
+    m = await db_session.get(UserWorkspaceMembership, (sub, workspace))
     m.role = "admin"
     await db_session.flush()
     return h
 
 
 @pytest.mark.asyncio
-async def test_company_admin_lists_members(client, auth_headers, db_session):
+async def test_workspace_admin_lists_members(client, auth_headers, db_session):
     admin_h = await _make_admin(client, auth_headers, db_session, "frank", "acme-corp")
     await client.get("/api/v1/me", headers=auth_headers("user1", groups=["acme-corp"]))
 
-    res = await client.get("/api/v1/companies/acme-corp/members", headers=admin_h)
+    res = await client.get("/api/v1/workspaces/acme-corp/members", headers=admin_h)
     assert res.status_code == 200
     body = res.json()
-    # 레거시(로컬) 회사: 계정 서버 워크스페이스 아님
+    # 레거시(로컬) 워크스페이스: 계정 서버 워크스페이스 아님
     assert body["account_workspace_id"] is None
     members = {x["user_sub"]: x for x in body["members"]}
     assert members["user1"]["role"] == "member"
@@ -41,8 +41,8 @@ async def test_account_workspace_members_include_workspace_id(client, make_jwt):
     await client.get("/api/v1/me", headers={"Authorization": f"Bearer {member}"})
 
     res = await client.get(
-        "/api/v1/companies/wsTeam01/members",
-        headers={"Authorization": f"Bearer {owner}", "X-Active-Company-Id": "wsTeam01"},
+        "/api/v1/workspaces/wsTeam01/members",
+        headers={"Authorization": f"Bearer {owner}", "X-Active-Workspace-Id": "wsTeam01"},
     )
     assert res.status_code == 200, res.text
     body = res.json()
@@ -54,32 +54,32 @@ async def test_account_workspace_members_include_workspace_id(client, make_jwt):
 
     # 멤버(앱 role member)는 목록 권한 없음
     res = await client.get(
-        "/api/v1/companies/wsTeam01/members", headers={"Authorization": f"Bearer {member}"}
+        "/api/v1/workspaces/wsTeam01/members", headers={"Authorization": f"Bearer {member}"}
     )
     assert res.status_code == 403
 
 
 @pytest.mark.asyncio
 async def test_member_cannot_list_members(client, auth_headers):
-    h = auth_headers("user1", groups=["acme-corp"], active_company="acme-corp")
+    h = auth_headers("user1", groups=["acme-corp"], active_workspace="acme-corp")
     await client.get("/api/v1/me", headers=h)
-    res = await client.get("/api/v1/companies/acme-corp/members", headers=h)
+    res = await client.get("/api/v1/workspaces/acme-corp/members", headers=h)
     assert res.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_company_admin_cannot_touch_other_company(client, auth_headers, db_session):
-    from app.models.user_company_membership import UserCompanyMembership
+async def test_workspace_admin_cannot_touch_other_workspace(client, auth_headers, db_session):
+    from app.models.user_workspace_membership import UserWorkspaceMembership
 
     admin_h = auth_headers(
-        "frank", groups=["acme-corp", "beta-co"], active_company="acme-corp"
+        "frank", groups=["acme-corp", "beta-co"], active_workspace="acme-corp"
     )
     await client.get("/api/v1/me", headers=admin_h)
-    m = await db_session.get(UserCompanyMembership, ("frank", "acme-corp"))
+    m = await db_session.get(UserWorkspaceMembership, ("frank", "acme-corp"))
     m.role = "admin"
     await db_session.flush()
 
-    res = await client.get("/api/v1/companies/beta-co/members", headers=admin_h)
+    res = await client.get("/api/v1/workspaces/beta-co/members", headers=admin_h)
     assert res.status_code == 403
 
 
@@ -87,9 +87,9 @@ async def test_company_admin_cannot_touch_other_company(client, auth_headers, db
 @pytest.mark.parametrize(
     ("method", "path", "body"),
     [
-        ("POST", "/api/v1/companies/acme-corp/members", {"email": "x@example.com"}),
-        ("DELETE", "/api/v1/companies/acme-corp/members/user1", None),
-        ("PATCH", "/api/v1/companies/acme-corp/members/user1", {"role": "admin"}),
+        ("POST", "/api/v1/workspaces/acme-corp/members", {"email": "x@example.com"}),
+        ("DELETE", "/api/v1/workspaces/acme-corp/members/user1", None),
+        ("PATCH", "/api/v1/workspaces/acme-corp/members/user1", {"role": "admin"}),
     ],
 )
 async def test_membership_writes_are_gone(client, auth_headers, db_session, method, path, body):

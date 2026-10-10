@@ -6,7 +6,7 @@
   - [0005](0005-storage-s3-compatible-presigned.md) S3 presigned URL
   - [0008](0008-permission-model-scope-then-share.md) Scope + FileShare 권한 모델
 
-> **개정 (2026-10, ADR-0023)**: Keycloak 을 없애고 웹 로그인을 Better Auth 로 옮겼다. 데스크톱 클라이언트(ashfield-sync)는 아직 옛 Keycloak Bearer 를 쓰므로 **지금은 백엔드 인증이 실패한다**: 이전 작업이 필요하다. 백엔드 쪽 계약은 그대로다: `Authorization: Bearer <JWT>` + `X-Active-Company-Id`, API 경로 불변. 바뀌는 것은 토큰 발급처뿐:
+> **개정 (2026-10, ADR-0023)**: Keycloak 을 없애고 웹 로그인을 Better Auth 로 옮겼다. 데스크톱 클라이언트(ashfield-sync)는 아직 옛 Keycloak Bearer 를 쓰므로 **지금은 백엔드 인증이 실패한다**: 이전 작업이 필요하다. 백엔드 쪽 계약은 그대로다: `Authorization: Bearer <JWT>` + `X-Active-Workspace-Id`, API 경로 불변. 바뀌는 것은 토큰 발급처뿐:
 >
 > 1. 로그인: 시스템 브라우저로 Better Auth 로그인. 네이티브 앱으로 자격 증명을 넘기는 흐름은 Better Auth `deviceAuthorization` 플러그인(RFC 8628: `/api/auth/device/code`, `/api/auth/device/token`) 또는 앱 전용 콜백 + `bearer` 플러그인(세션 토큰을 Bearer 로) 중 택1: 둘 다 아직 켜지 않았다.
 > 2. 세션 토큰을 Windows Credential Manager 에 보관 (아래 3절의 refresh token 자리).
@@ -84,7 +84,7 @@ Backend → Client 방향. SSE 도입은 Phase 3 이후.
 
 ```python
 # 새 endpoint
-GET /api/v1/nodes/changes?since=<ISO timestamp>&company_id=<>
+GET /api/v1/nodes/changes?since=<ISO timestamp>&workspace_id=<>
 → {
     "changes": [
       {
@@ -112,22 +112,22 @@ ALTER TABLE nodes ADD COLUMN etag VARCHAR(64);  # md5(content) 또는 incrementi
 
 CONTEXT.md 의 도메인 용어 그대로:
 - Personal Area (`scope=personal, owner_id=me`)
-- Shared Area (`scope=shared`, 회사 전체)
+- Shared Area (`scope=shared`, 워크스페이스 전체)
 - FileShare 받은 것 (다른 사람이 나한테 명시 공유)
 
 Trash 는 sync 제외: Windows 휴지통과 혼동 방지. ExternalLink 는 외부 사용자용이라 desktop client 와 무관.
 
-### 7. Multi-company → 회사별 root 폴더 분리
+### 7. Multi-workspace → 워크스페이스별 root 폴더 분리
 
-CalDAV 의 `(user_sub, company_id)` tuple 키 와 일관:
-- `C:\Users\X\Ashfield\` (회사 1)
-- `C:\Users\X\다른회사\` (회사 2: 사용자가 두 회사 멤버면)
+CalDAV 의 `(user_sub, workspace_id)` tuple 키 와 일관:
+- `C:\Users\X\Ashfield\` (워크스페이스 1)
+- `C:\Users\X\다른워크스페이스\` (워크스페이스 2: 사용자가 두 워크스페이스 멤버면)
 
-웹앱의 sidebar 구조와 1:1 매칭. 활성 회사 전환 개념 X: 둘 다 동시 sync.
+웹앱의 sidebar 구조와 1:1 매칭. 활성 워크스페이스 전환 개념 X: 둘 다 동시 sync.
 
 ### 8. Multi-device 자동 (backend device 구분 X)
 
-같은 사용자가 회사 PC + 집 PC 두 대 sync OK. backend 는 device 정보 추적 안 함. 충돌 처리는 ETag + 충돌 사본으로 자동 해결.
+같은 사용자가 워크스페이스 PC + 집 PC 두 대 sync OK. backend 는 device 정보 추적 안 함. 충돌 처리는 ETag + 충돌 사본으로 자동 해결.
 
 Phase 4 (SaaS) 단계에서 device registration (admin 의 "이 디바이스 logout") 도입 검토.
 
@@ -139,13 +139,13 @@ Backend API ↔ Desktop 의 contract 는 **OpenAPI auto-generate** (FastAPI 의 
 
 ### 10. MVP 단계: Phase 1 + 2 (~2.5개월)
 
-**Phase 1: POC (~1개월)**: OAuth + 회사 root 선택 + VFS placeholder + hydrate + read-only + polling
+**Phase 1: POC (~1개월)**: OAuth + 워크스페이스 root 선택 + VFS placeholder + hydrate + read-only + polling
 
 **Phase 2: 양방향 MVP (~1.5개월)**: 로컬 변경 감지 + 양방향 + 충돌 사본
 
 **Phase 3 (외부 배포)**: tray icon + 자동 업데이트 + Windows Authenticode signing + onboarding wizard
 
-**Phase 4 (SaaS)**: Multi-company UI + 다국어 + Sentry + device registration
+**Phase 4 (SaaS)**: Multi-workspace UI + 다국어 + Sentry + device registration
 
 MVP 도달 후 내부 검증 → Phase 3/4 진행 결정.
 
@@ -153,7 +153,7 @@ MVP 도달 후 내부 검증 → Phase 3/4 진행 결정.
 
 "Ashfield" (한글). Root 폴더 default = `~\Ashfield\` 와 일관.
 
-영문 표기 시 (메모 / repo): `Ashfield` (회사명 영문 표기 정책: 항상 대문자).
+영문 표기 시 (메모 / repo): `Ashfield` (워크스페이스 이름 영문 표기 정책: 항상 대문자).
 
 ## 대안 비교
 
@@ -172,7 +172,7 @@ MVP 도달 후 내부 검증 → Phase 3/4 진행 결정.
 ```
 1. ashfield-sync 설치 (.msi)
 2. 첫 실행 → 시스템 브라우저 → Keycloak SSO
-3. 회사 선택 (멤버 1 회사면 자동) + 로컬 폴더 선택 (default `~\Ashfield\`)
+3. 워크스페이스 선택 (멤버 1 워크스페이스면 자동) + 로컬 폴더 선택 (default `~\Ashfield\`)
 4. 첫 sync: placeholder 생성. 큰 워크스페이스도 ~수 분
 5. 탐색기에서 폴더 보임: 익숙한 환경
 6. 파일 클릭 → 자동 download → Word/Excel/한컴오피스 열림

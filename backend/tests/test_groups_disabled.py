@@ -7,7 +7,7 @@ ACME = "acme-corp"
 
 @pytest.mark.asyncio
 async def test_groups_list_is_empty(client, auth_headers):
-    h = auth_headers("alice", groups=[ACME], active_company=ACME)
+    h = auth_headers("alice", groups=[ACME], active_workspace=ACME)
     res = await client.get("/api/v1/groups", headers=h)
     assert res.status_code == 200
     assert res.json() == []
@@ -15,7 +15,7 @@ async def test_groups_list_is_empty(client, auth_headers):
 
 @pytest.mark.asyncio
 async def test_group_share_rejected(client, auth_headers, mock_storage):
-    h = auth_headers("alice", groups=[ACME], active_company=ACME)
+    h = auth_headers("alice", groups=[ACME], active_workspace=ACME)
     node = (await client.post("/api/v1/nodes", json={"name": "Doc"}, headers=h)).json()
     res = await client.post(
         f"/api/v1/nodes/{node['id']}/shares",
@@ -27,11 +27,11 @@ async def test_group_share_rejected(client, auth_headers, mock_storage):
 
 @pytest.mark.asyncio
 async def test_team_folder_create_rejected(client, auth_headers, db_session):
-    from app.models.user_company_membership import UserCompanyMembership
+    from app.models.user_workspace_membership import UserWorkspaceMembership
 
-    h = auth_headers("alice", groups=[ACME], active_company=ACME)
+    h = auth_headers("alice", groups=[ACME], active_workspace=ACME)
     await client.get("/api/v1/me", headers=h)
-    m = await db_session.get(UserCompanyMembership, ("alice", ACME))
+    m = await db_session.get(UserWorkspaceMembership, ("alice", ACME))
     m.role = "admin"
     await db_session.flush()
 

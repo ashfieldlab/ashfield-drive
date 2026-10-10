@@ -13,8 +13,8 @@
 
 **대상**: 멀티테넌트 파일 저장·공유 SaaS. Nextcloud self-host 대체. (일정은 별도 레포 ashfield-calendar.)
 **기반**: 초기 스켈레톤 (NextAuth + JWT 다이렉트 + Multi-tenant + Redis revocation).
-**외부 시스템 의존** (ADR-0009, 2026-10 개정): S3-compatible storage(스토리지), Google·GitHub OAuth(로그인, Better Auth). 회원·회사 관리는 앱 DB.
-**원칙**: JWT만 신뢰. 회원가입·회사관리·빌링 자체 구현 없음.
+**외부 시스템 의존** (ADR-0009, 2026-10 개정): S3-compatible storage(스토리지), Google·GitHub OAuth(로그인, Better Auth). 회원·워크스페이스 관리는 앱 DB.
+**원칙**: JWT만 신뢰. 회원가입·워크스페이스 관리·빌링 자체 구현 없음.
 
 > §1~§8은 스켈레톤에서 상속된 기반 spec (참조용: Item 예제는 무시).
 > §9부터가 Ashfield Drive 본 도메인 모델.
@@ -99,7 +99,7 @@ ashfield-drive/
     ├── alembic/
     │   ├── env.py
     │   └── versions/
-    │       └── 0001_initial.py    ← users, companies, items
+    │       └── 0001_initial.py    ← users, workspaces, items
     ├── app/
     │   ├── main.py                ← FastAPI 앱, 미들웨어, exception handler
     │   ├── core/
@@ -113,16 +113,16 @@ ashfield-drive/
     │   │   ├── revocation.py      ← Redis revoked_sid
     │   │   ├── backchannel.py     ← /auth/backchannel-logout 엔드포인트
     │   │   ├── context.py         ← UserContext
-    │   │   └── dependencies.py    ← get_current_user, require_active_company, require_admin
+    │   │   └── dependencies.py    ← get_current_user, require_active_workspace, require_admin
     │   ├── cache/
     │   │   └── user_sync.py       ← lazy upsert (Redis SETNX throttle)
     │   ├── models/
     │   │   ├── user.py            ← users 테이블 (캐시)
-    │   │   ├── company.py         ← companies 테이블 (캐시)
+    │   │   ├── workspace.py         ← workspaces 테이블 (캐시)
     │   │   └── item.py            ← 예제 도메인 모델
     │   ├── schemas/
     │   │   ├── user.py
-    │   │   ├── company.py
+    │   │   ├── workspace.py
     │   │   └── item.py
     │   ├── api/
     │   │   ├── router.py
@@ -181,7 +181,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           sub: user.id!,
           email: user.email!,
           name: user.name ?? undefined,
-          groups: (user as any).companies ?? [],
+          groups: (user as any).workspaces ?? [],
           roles: (user as any).roles ?? [],
         })
         token.idToken = token.accessToken  // 같은 토큰으로 logout id_token_hint
@@ -224,7 +224,7 @@ export default function LoginPage() {
 ```typescript
 // 핵심 책임:
 //   - 자동 타임아웃 (NEXT_PUBLIC_API_TIMEOUT_MS)
-//   - X-Active-Company-Id 자동 첨부 (AppContext에서 읽음)
+//   - X-Active-Workspace-Id 자동 첨부 (AppContext에서 읽음)
 //   - 401 핸들러 → NextAuth signOut + /login 리다이렉트
 //   - 활성 요청 카운팅 (전역 로딩바)
 //   - request_id 로깅
@@ -263,9 +263,9 @@ interface AppContextType {
   authUser: AuthUser | null
   bootstrapped: boolean
   
-  companies: string[]                       // JWT의 groups
-  activeCompanyId: string | null
-  setActiveCompany: (id: string) => void    // 쿠키 저장
+  workspaces: string[]                       // JWT의 groups
+  activeWorkspaceId: string | null
+  setActiveWorkspace: (id: string) => void    // 쿠키 저장
   
   isSystemAdmin: boolean                    // JWT realm_access.roles에 "admin"
 }
@@ -273,8 +273,8 @@ interface AppContextType {
 
 부트스트랩:
 1. useSession()으로 JWT 추출
-2. JWT의 groups → companies
-3. 쿠키 `active_company` 확인 → companies에 포함되면 활성, 아니면 companies[0]
+2. JWT의 groups → workspaces
+3. 쿠키 `active_workspace` 확인 → workspaces에 포함되면 활성, 아니면 workspaces[0]
 4. bootstrapped = true → 자식 렌더 시작
 
 ### 2.6 SWR 에러 브릿지 (`components/providers/swr-error-bridge.tsx`)
@@ -509,7 +509,7 @@ async def maybe_sync_user_cache(claims: dict, db: AsyncSession) -> None:
         db, id=sub, email=claims["email"], name=claims.get("name")
     )
     for group in claims.get("groups", []):
-        await companies_repo.upsert(db, id=group, name=group)
+        await workspaces_repo.upsert(db, id=group, name=group)
 ```
 
 ### 3.8 Dependencies (`app/auth/dependencies.py`)
@@ -538,13 +538,13 @@ async def get_current_user(
         sid=sid,
     )
 
-def require_active_company(
+def require_active_workspace(
     user: UserContext = Depends(get_current_user),
-    x_active_company_id: str = Header(..., alias="X-Active-Company-Id"),
+    x_active_workspace_id: str = Header(..., alias="X-Active-Workspace-Id"),
 ) -> str:
-    if x_active_company_id not in user.groups:
-        raise HTTPException(403, "Not a member of this company")
-    return x_active_company_id
+    if x_active_workspace_id not in user.groups:
+        raise HTTPException(403, "Not a member of this workspace")
+    return x_active_workspace_id
 
 def require_admin(user: UserContext = Depends(get_current_user)) -> UserContext:
     if "admin" not in user.roles:
@@ -564,9 +564,9 @@ class User(Base):
     created_at: Mapped[datetime]
     updated_at: Mapped[datetime]
 
-# companies (캐시)
-class Company(Base):
-    __tablename__ = "companies"
+# workspaces (캐시)
+class Workspace(Base):
+    __tablename__ = "workspaces"
     id: Mapped[str] = mapped_column(primary_key=True)  # group 값
     name: Mapped[str]
     created_at: Mapped[datetime]
@@ -578,7 +578,7 @@ class Item(Base):
     id: Mapped[str] = mapped_column(primary_key=True, default=lambda: str(uuid4()))
     name: Mapped[str]
     owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
-    company_id: Mapped[str] = mapped_column(ForeignKey("companies.id"))
+    workspace_id: Mapped[str] = mapped_column(ForeignKey("workspaces.id"))
     created_at: Mapped[datetime]
 ```
 
@@ -588,28 +588,28 @@ class Item(Base):
 # /api/v1/items.py
 @router.get("/items")
 async def list_items(
-    company: str = Depends(require_active_company),
+    workspace: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ):
-    return await items_repo.list_by_company(db, company)
+    return await items_repo.list_by_workspace(db, workspace)
 
 @router.post("/items")
 async def create_item(
     payload: ItemCreate,
     user: UserContext = Depends(get_current_user),
-    company: str = Depends(require_active_company),
+    workspace: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ):
-    return await items_repo.create(db, name=payload.name, owner_id=user.sub, company_id=company)
+    return await items_repo.create(db, name=payload.name, owner_id=user.sub, workspace_id=workspace)
 
 @router.delete("/items/{item_id}")
 async def delete_item(
     item_id: str,
     user: UserContext = Depends(get_current_user),
-    company: str = Depends(require_active_company),
+    workspace: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ):
-    item = await items_repo.get_in_company(db, item_id, company)
+    item = await items_repo.get_in_workspace(db, item_id, workspace)
     if not item:
         raise HTTPException(404)
     
@@ -871,7 +871,7 @@ make frontend   # localhost:3000
 검증 통과 조건:
 - [ ] 로그인 후 /items 페이지에서 SWR이 백엔드 호출, 성공
 - [ ] /items에서 새 항목 생성 → 즉시 리스트에 반영
-- [ ] 다른 회사로 active 전환 → /items 데이터 격리됨
+- [ ] 다른 워크스페이스로 active 전환 → /items 데이터 격리됨
 - [ ] admin 사용자만 /admin 접근 가능
 - [ ] 로그아웃 → /login → 다시 로그인 흐름 가능
 - [ ] Playwright `make e2e` 통과
@@ -914,12 +914,12 @@ make frontend   # localhost:3000
 | 7 | Hybrid 워크플로우 | 4.1, 4.2 |
 | 8 | 레벨 2 + admin 예제 | 3.10, 6 |
 | 9 | ~~즉시 IDP 리다이렉트~~ → 자체 로그인 화면 (소셜 버튼) | ADR-0023 |
-| 10 | 멀티테넌트 로컬 DB 멤버십 + X-Active-Company-Id | 2.5, ADR-0004 |
+| 10 | 멀티테넌트 로컬 DB 멤버십 + X-Active-Workspace-Id | 2.5, ADR-0004 |
 | 11 | users upsert + 개인 워크스페이스 자동 생성 | ADR-0004, ADR-0023 |
 | 12 | UI: shadcn + Pretendard | 2.8, 2.12 |
 | 13 | Testing: pytest + Vitest + Playwright + Storybook | 2.10, 2.11, 3.13 |
 | 14 | Error: sonner + 글로벌 에러 페이지 + SWR 핸들러 | 2.6, 3.12 |
-| 15 | API client 분리 + 자동 X-Active-Company-Id | 2.3 |
+| 15 | API client 분리 + 자동 X-Active-Workspace-Id | 2.3 |
 | 16 | AppContext 최소형 | 2.5 |
 | 17 | CI: Makefile + pre-push + multi-stage Dockerfile | 4.2, 4.3, 4.6 |
 | 18 | Playwright 초반 셋업 | 2.10 |
@@ -941,13 +941,13 @@ make frontend   # localhost:3000
 ### 9.1 ER 다이어그램 (Phase 1 + 1.5)
 
 ```
-users (cache, ADR-0004)             companies (cache, ADR-0004)
+users (cache, ADR-0004)             workspaces (cache, ADR-0004)
   └── id (sub), email, name           └── id (group), name
 
 nodes (Phase 1) ADR-0006
   ├── id (uuid v7), kind: file|folder, name
   ├── parent_id → nodes (NULL=루트)
-  ├── company_id → companies
+  ├── workspace_id → workspaces
   ├── owner_id → users (만든 사람·소유자)
   ├── scope: personal|shared
   ├── storage_key (file만), size_bytes, mime
@@ -967,7 +967,7 @@ external_links (Phase 1.5) ADR-0008
   ├── access_count, last_accessed_at, created_by_sub, revoked_at?
 
 calendars (Phase 1): ashfield-calendar 로 이전
-  ├── id, company_id, owner_id?
+  ├── id, workspace_id, owner_id?
   ├── scope: personal|shared
   ├── source: native|external_ics (Phase 2)
   ├── name, description, color
@@ -991,7 +991,7 @@ calendar_event_invitations (Phase 1.5)
   └── responded_at?
 
 audit_logs (Phase 1)
-  ├── id, company_id, actor_sub?, actor_type: user|external_link
+  ├── id, workspace_id, actor_sub?, actor_type: user|external_link
   ├── action: create|update|delete|restore|share|unshare
   ├── entity_type, entity_id
   ├── meta (jsonb), ip_address?, user_agent?, request_id
@@ -1007,20 +1007,20 @@ async def require_node_access(
     node_id: str,
     permission: Literal['read', 'write'] = 'read',
     user: UserContext = Depends(get_current_user),
-    company: str = Depends(require_active_company),
+    workspace: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> Node:
     node = await get_node(db, node_id)
     
-    # 다른 회사 노드는 존재 자체 마스킹
-    if node is None or node.company_id != company:
+    # 다른 워크스페이스 노드는 존재 자체 마스킹
+    if node is None or node.workspace_id != workspace:
         raise HTTPException(404)
     
     # Phase 1 규칙
     if node.scope == 'personal' and node.owner_id != user.sub:
         raise HTTPException(403)
     if node.scope == 'shared':
-        pass  # active company 멤버면 통과
+        pass  # active workspace 멤버면 통과
     
     # Phase 1.5에 FileShare 조회 + ancestor 권한 합산 추가
     return node
@@ -1040,7 +1040,7 @@ S3_SECRET_KEY=...
 S3_REGION=us-east-1
 ```
 
-**Key 패턴**: `{company_id}/{file_uuid}` flat. 폴더 path 안 박음.
+**Key 패턴**: `{workspace_id}/{file_uuid}` flat. 폴더 path 안 박음.
 
 **업로드 흐름**:
 ```
@@ -1049,7 +1049,7 @@ S3_REGION=us-east-1
    백엔드:
      a. parent_id 접근권한 체크 (require_node_access write)
      b. 동일 폴더 동일 이름 충돌 시 "(2)" 자동 rename
-     c. node row INSERT (kind=file, status=pending, storage_key=`{company}/{uuid}`)
+     c. node row INSERT (kind=file, status=pending, storage_key=`{workspace}/{uuid}`)
      d. presigned PUT URL 발급 (60s 만료, single PUT)
      e. 응답: { node_id, upload_url, expires_at }
 
@@ -1112,7 +1112,7 @@ GET    /api/v1/events/{id}
 PATCH  /api/v1/events/{id}                         (this occurrence vs entire series: 옵션)
 DELETE /api/v1/events/{id}?occurrence=             (this occurrence면 exception 추가)
 
-GET    /api/v1/audit?from=&to=&entity_type=        (회사 admin만)
+GET    /api/v1/audit?from=&to=&entity_type=        (워크스페이스 admin만)
 ```
 
 **Phase 1.5 추가**:
@@ -1136,20 +1136,20 @@ PATCH  /api/v1/events/{id}/invitations/{id}        (응답)
    /files?folder={id}       특정 폴더로 이동
    /files/trash             휴지통
 /calendar                   월 뷰 + 좌측 사이드바
-/audit                      회사 admin만 (Phase 1 minimum)
+/audit                      워크스페이스 admin만 (Phase 1 minimum)
 /login                      skeleton 그대로 (IDP redirect)
 /access-denied              groups 비어있을 때 노출
 ```
 
 **좌측 사이드바 (전체 공통)**:
-- 워크스페이스 selector (skeleton의 CompanySwitcher)
+- 워크스페이스 selector (skeleton의 WorkspaceSwitcher)
 - "파일" / "캘린더" 메뉴
 
 **`/files` 좌측 보조 사이드바**:
-- 내 파일 / 회사 공유 / 휴지통
+- 내 파일 / 워크스페이스 / 휴지통
 
 **`/calendar` 좌측 보조 사이드바**:
-- 내 캘린더 (체크박스) / 회사 공유 캘린더 (체크박스)
+- 내 캘린더 (체크박스) / 워크스페이스 캘린더 (체크박스)
 - + 버튼으로 새 캘린더 생성
 
 ### 9.6 testid 컨벤션 (skeleton § 2.9 연장)
@@ -1168,7 +1168,7 @@ ESLint custom rule (skeleton ADR) 그대로 적용.
 
 skeleton의 6 카테고리 그대로 사용:
 - `auth`: JWT 검증, revocation
-- `authz`: node 접근 거부, 회사 미멤버
+- `authz`: node 접근 거부, 워크스페이스 미멤버
 - `api`: 요청·응답 일반
 - `db`: 무거운 쿼리·트랜잭션
 - `cache`: Redis (revocation, throttle)
@@ -1235,6 +1235,6 @@ make frontend
 - 파일 다운로드 → 정상
 - 휴지통으로 이동 → /files/trash에 노출 → 복원
 - /calendar → 월 뷰. 새 이벤트 추가. 표시.
-- 다른 dev 사용자(같은 회사)로 재로그인 → shared 캘린더·shared 폴더 자동 보임
+- 다른 dev 사용자(같은 워크스페이스)로 재로그인 → shared 캘린더·shared 폴더 자동 보임
 ```
 

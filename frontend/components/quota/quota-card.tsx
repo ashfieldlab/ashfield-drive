@@ -9,25 +9,25 @@ import { invalidateApi, useApiGet } from "@/lib/hooks/use-api"
 import { formatBytes } from "@/lib/utils/format"
 
 interface QuotaResponse {
-  company_id: string
+  workspace_id: string
   storage_bytes_limit: number | null
   storage_bytes_used: number
   storage_pct: number | null
 }
 
 interface Props {
-  companyId: string
+  workspaceId: string
   /** "admin": System Admin 편집 모드. "view": 읽기 전용. */
   mode: "admin" | "view"
 }
 
-/** 회사 스토리지 quota 게이지 + (admin 모드 시) 편집 폼. */
-export function QuotaCard({ companyId, mode }: Props) {
+/** 워크스페이스 스토리지 quota 게이지 + (admin 모드 시) 편집 폼. */
+export function QuotaCard({ workspaceId, mode }: Props) {
   const { toast } = useToast()
   const url =
     mode === "admin"
-      ? `/api/v1/admin/companies/${encodeURIComponent(companyId)}/quota`
-      : `/api/v1/companies/${encodeURIComponent(companyId)}/quota`
+      ? `/api/v1/admin/workspaces/${encodeURIComponent(workspaceId)}/quota`
+      : `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/quota`
   const { data, error, isLoading } = useApiGet<QuotaResponse>(url)
 
   // 입력값: bytes 단위로 보여주면 너무 길어서 MB 단위. 0 == limit 강제 0(차단).
@@ -74,7 +74,7 @@ export function QuotaCard({ companyId, mode }: Props) {
   return (
     <div
       className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
-      data-testid={`quota-card-${companyId}`}
+      data-testid={`quota-card-${workspaceId}`}
     >
       <div className="flex items-center gap-2">
         <Database size={16} className="text-gray-600" />

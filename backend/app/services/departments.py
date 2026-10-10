@@ -7,7 +7,7 @@
   - 그래서 기존 그룹 share 는 아무 권한도 주지 않고, 부서 폴더는 생성자·System Admin 만 접근한다.
   - 새 그룹 공유·부서 폴더 생성은 400.
 
-로컬 그룹(회사 내 팀) 모델을 만들면 이 모듈만 채우면 된다: 호출부(nodes·team_folders·groups)는
+로컬 그룹(워크스페이스 내 팀) 모델을 만들면 이 모듈만 채우면 된다: 호출부(nodes·team_folders·groups)는
 이 함수 시그니처만 본다.
 """
 
@@ -23,11 +23,11 @@ def groups_enabled() -> bool:
     return False
 
 
-async def list_departments(user: UserContext, company_id: str) -> list[dict]:
-    """활성 회사의 부서 목록 (그룹 후보). 항목: department_id, department, company, ..."""
+async def list_departments(user: UserContext, workspace_id: str) -> list[dict]:
+    """활성 워크스페이스의 부서 목록 (그룹 후보). 항목: department_id, department, workspace, ..."""
     return []
 
 
-async def access_department_ids(user: UserContext, company_id: str) -> set[str]:
+async def access_department_ids(user: UserContext, workspace_id: str) -> set[str]:
     """유저의 접근집합 (소속 부서 + 모든 조상 department_id)."""
     return set()

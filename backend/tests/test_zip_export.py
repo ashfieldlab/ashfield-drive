@@ -12,7 +12,7 @@ ACME = "tenant-a"
 async def test_zip_folder_with_files(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     # 폴더 + 하위 폴더 + 파일 2개
     root = (
         await client.post("/api/v1/nodes", json={"name": "Pack"}, headers=h)
@@ -61,7 +61,7 @@ async def test_zip_folder_with_files(
 async def test_zip_rejects_non_folder(
     client: AsyncClient, auth_headers, mock_storage
 ):
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     r = await client.post(
         "/api/v1/nodes/upload-url",
         json={"name": "a.bin", "size": 1, "mime": None},
@@ -80,7 +80,7 @@ async def test_zip_too_many_files(
 
     monkeypatch.setattr(cfg, "zip_max_files", 2)
 
-    h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
     root = (
         await client.post("/api/v1/nodes", json={"name": "Big"}, headers=h)
     ).json()

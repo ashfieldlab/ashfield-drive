@@ -15,7 +15,7 @@ class NodeResponse(BaseModel):
     kind: NodeKind
     name: str
     parent_id: str | None
-    company_id: str
+    workspace_id: str
     owner_id: str
     scope: NodeScope
     size_bytes: int | None

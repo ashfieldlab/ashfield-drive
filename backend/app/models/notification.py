@@ -23,8 +23,8 @@ class Notification(Base):
     recipient_sub: Mapped[str] = mapped_column(
         String(64), ForeignKey("users.id"), nullable=False, index=True
     )
-    company_id: Mapped[str] = mapped_column(
-        String(128), ForeignKey("companies.id"), nullable=False
+    workspace_id: Mapped[str] = mapped_column(
+        String(128), ForeignKey("workspaces.id"), nullable=False
     )
     actor_sub: Mapped[str | None] = mapped_column(
         String(64), ForeignKey("users.id"), nullable=True

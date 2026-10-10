@@ -146,7 +146,7 @@ async def send_for_event(
     actor_sub: str | None,
     event_type: str,
     payload: dict,
-    company_id: str | None = None,
+    workspace_id: str | None = None,
 ) -> str:
     """본인 행동이 아닌 알림에 한해 이메일 발송.
 
@@ -159,7 +159,7 @@ async def send_for_event(
         return "skipped"
 
     async with AsyncSessionLocal() as db:
-        cfg = await resolve_smtp(db, company_id=company_id)
+        cfg = await resolve_smtp(db, workspace_id=workspace_id)
         if cfg is None:
             logger.debug(
                 "email_skipped_no_config",

@@ -32,7 +32,7 @@ async def send_notification_email(notification_id: str) -> None:
             actor_sub=n.actor_sub,
             event_type=n.type,
             payload=n.payload,
-            company_id=n.company_id,
+            workspace_id=n.workspace_id,
         )
         if outcome in ("sent", "skipped"):
             n.emailed_at = datetime.now(UTC)
@@ -61,7 +61,7 @@ async def notify(
     pending: PendingDispatch,
     *,
     recipient_sub: str,
-    company_id: str,
+    workspace_id: str,
     actor_sub: str | None,
     type_: str,
     entity_type: str,
@@ -74,7 +74,7 @@ async def notify(
     n = await emit_notification(
         db,
         recipient_sub=recipient_sub,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor_sub=actor_sub,
         type_=type_,
         entity_type=entity_type,
@@ -83,7 +83,7 @@ async def notify(
     )
     ids = await enqueue_for_event(
         db,
-        company_id=company_id,
+        workspace_id=workspace_id,
         event_type=type_,
         payload={
             "recipient_sub": recipient_sub,
@@ -103,7 +103,7 @@ async def emit_notification(
     db: AsyncSession,
     *,
     recipient_sub: str,
-    company_id: str,
+    workspace_id: str,
     actor_sub: str | None,
     type_: str,
     entity_type: str,
@@ -116,7 +116,7 @@ async def emit_notification(
     n = Notification(
         id=str(uuid.uuid7()),
         recipient_sub=recipient_sub,
-        company_id=company_id,
+        workspace_id=workspace_id,
         actor_sub=actor_sub,
         type=type_,
         entity_type=entity_type,

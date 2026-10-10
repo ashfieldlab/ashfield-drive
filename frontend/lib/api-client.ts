@@ -3,7 +3,7 @@
  *
  * 책임:
  *   - 자동 타임아웃 (NEXT_PUBLIC_API_TIMEOUT_MS)
- *   - X-Active-Company-Id 자동 첨부 (쿠키에서 읽음)
+ *   - X-Active-Workspace-Id 자동 첨부 (쿠키에서 읽음)
  *   - 401 → /login 리다이렉트 (복귀 주소 보존)
  *   - 활성 요청 카운팅 (전역 로딩바 구독)
  *   - request_id 로깅
@@ -44,10 +44,10 @@ export function subscribeActiveRequests(cb: CountListener): () => void {
 // 헤더 헬퍼
 // -----------------------------------------------------------------------------
 
-function readActiveCompanyFromCookie(): string | null {
+function readActiveWorkspaceFromCookie(): string | null {
   if (typeof document === "undefined") return null
   const match = document.cookie.match(
-    new RegExp(`(?:^|;\\s*)${COOKIES.activeCompany}=([^;]+)`),
+    new RegExp(`(?:^|;\\s*)${COOKIES.activeWorkspace}=([^;]+)`),
   )
   return match ? decodeURIComponent(match[1]) : null
 }
@@ -62,11 +62,11 @@ function buildHeaders(
   if (!isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json")
   }
-  const active = readActiveCompanyFromCookie()
-  if (active && !headers.has("X-Active-Company-Id")) {
-    // HTTP header value 는 ByteString (latin-1) 만 안전. 한글 회사 ID 면
+  const active = readActiveWorkspaceFromCookie()
+  if (active && !headers.has("X-Active-Workspace-Id")) {
+    // HTTP header value 는 ByteString (latin-1) 만 안전. 한글 워크스페이스 ID 면
     // fetch API 가 TypeError 던짐 → percent-encode 로 전송, backend 가 unquote.
-    headers.set("X-Active-Company-Id", encodeURIComponent(active))
+    headers.set("X-Active-Workspace-Id", encodeURIComponent(active))
   }
   return headers
 }
@@ -189,7 +189,7 @@ export async function api<T = unknown>(
 
 /**
  * 파일 다운로드: JSON 이 아닌 응답(CSV 등)을 blob 으로 받아 저장.
- * buildHeaders 로 X-Active-Company-Id 자동 첨부(자격 증명은 BFF 가 쿠키에서 해석).
+ * buildHeaders 로 X-Active-Workspace-Id 자동 첨부(자격 증명은 BFF 가 쿠키에서 해석).
  */
 export async function apiDownload(
   path: string,

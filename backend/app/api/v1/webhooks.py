@@ -1,6 +1,6 @@
 """/api/v1/webhooks: admin 전용. 외부 시스템에 알림 fan-out.
 
-회사 단위 endpoint 등록 → notification 발생 시 매칭 endpoint 에 POST.
+워크스페이스 단위 endpoint 등록 → notification 발생 시 매칭 endpoint 에 POST.
 
 수신측 검증:
   ```
@@ -30,7 +30,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import UserContext
-from app.auth.dependencies import get_current_user, require_active_company
+from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.db import get_db
 from app.models.webhook import WebhookDelivery, WebhookEndpoint
 from app.schemas.webhook import (
@@ -67,18 +67,18 @@ def _to_response(
 @router.get(
     "",
     response_model=WebhookEndpointList,
-    summary="회사 endpoint 목록",
+    summary="워크스페이스 endpoint 목록",
     responses={403: {"description": "admin 아님"}},
 )
 async def list_endpoints(
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> WebhookEndpointList:
     _require_admin(user)
     stmt = (
         select(WebhookEndpoint)
-        .where(WebhookEndpoint.company_id == company_id)
+        .where(WebhookEndpoint.workspace_id == workspace_id)
         .order_by(WebhookEndpoint.created_at.desc())
     )
     rows = list((await db.execute(stmt)).scalars().all())
@@ -100,13 +100,13 @@ async def list_endpoints(
 async def create_endpoint(
     body: WebhookEndpointCreate,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> WebhookEndpointResponse:
     _require_admin(user)
     ep = WebhookEndpoint(
         id=new_id(),
-        company_id=company_id,
+        workspace_id=workspace_id,
         url=str(body.url),
         secret=new_secret(),
         events=body.events,
@@ -130,12 +130,12 @@ async def patch_endpoint(
     endpoint_id: str,
     body: WebhookEndpointPatch,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> WebhookEndpointResponse:
     _require_admin(user)
     ep = await db.get(WebhookEndpoint, endpoint_id)
-    if ep is None or ep.company_id != company_id:
+    if ep is None or ep.workspace_id != workspace_id:
         raise HTTPException(404, "Endpoint not found")
     fields = body.model_dump(exclude_unset=True)
     if "url" in fields and fields["url"] is not None:
@@ -158,12 +158,12 @@ async def patch_endpoint(
 async def delete_endpoint(
     endpoint_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     _require_admin(user)
     ep = await db.get(WebhookEndpoint, endpoint_id)
-    if ep is None or ep.company_id != company_id:
+    if ep is None or ep.workspace_id != workspace_id:
         raise HTTPException(404, "Endpoint not found")
     await db.delete(ep)
     await db.commit()
@@ -178,12 +178,12 @@ async def delete_endpoint(
 async def list_deliveries(
     endpoint_id: str,
     user: UserContext = Depends(get_current_user),
-    company_id: str = Depends(require_active_company),
+    workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> WebhookDeliveryList:
     _require_admin(user)
     ep = await db.get(WebhookEndpoint, endpoint_id)
-    if ep is None or ep.company_id != company_id:
+    if ep is None or ep.workspace_id != workspace_id:
         raise HTTPException(404, "Endpoint not found")
     stmt = (
         select(WebhookDelivery)

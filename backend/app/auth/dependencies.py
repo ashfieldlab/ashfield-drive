@@ -2,9 +2,9 @@
 FastAPI dependencies: 인증/인가 (ADR-0024).
 
   get_current_user       : Bearer JWT(계정 서버 액세스 토큰, JWKS 검증) + 로컬 사용자·소속 동기화 → UserContext
-  require_active_company : X-Active-Company-Id 헤더 검증 (로컬 멤버십에 포함되는지)
+  require_active_workspace : X-Active-Workspace-Id 헤더 검증 (로컬 멤버십에 포함되는지)
   require_admin          : System Admin 검증
-  require_company_admin  : 활성 회사의 admin (System Admin 은 super-set, ADR-0010)
+  require_workspace_admin  : 활성 워크스페이스의 admin (System Admin 은 super-set, ADR-0010)
 """
 
 from fastapi import Depends, Header, HTTPException, status
@@ -15,7 +15,7 @@ from app.auth.provisioning import identity_from_claims, provision_user
 from app.auth.validator import validate_jwt
 from app.core.db import get_db
 from app.core.logging import logger
-from app.models.user_company_membership import UserCompanyMembership
+from app.models.user_workspace_membership import UserWorkspaceMembership
 
 
 async def get_current_user(
@@ -41,38 +41,38 @@ async def get_current_user(
         sub=identity.sub,
         email=identity.email,
         name=identity.name,
-        groups=provisioned.company_ids,
+        groups=provisioned.workspace_ids,
         roles=["admin"] if provisioned.is_system_admin else [],
     )
 
 
-def require_active_company(
+def require_active_workspace(
     user: UserContext = Depends(get_current_user),
-    x_active_company_id: str = Header(..., alias="X-Active-Company-Id"),
+    x_active_workspace_id: str = Header(..., alias="X-Active-Workspace-Id"),
 ) -> str:
-    """헤더의 X-Active-Company-Id 가 사용자의 소속 회사여야 함.
+    """헤더의 X-Active-Workspace-Id 가 사용자의 소속 워크스페이스여야 함.
 
-    비 ASCII 회사 ID 의 ByteString 한계 회피를 위해 frontend 가 percent-encode 해서
+    비 ASCII 워크스페이스 ID 의 ByteString 한계 회피를 위해 frontend 가 percent-encode 해서
     보냄 → 여기서 unquote.
     """
     from urllib.parse import unquote
 
-    x_active_company_id = unquote(x_active_company_id)
-    if not user.is_member_of(x_active_company_id):
+    x_active_workspace_id = unquote(x_active_workspace_id)
+    if not user.is_member_of(x_active_workspace_id):
         logger.warning(
-            "active_company_not_member",
+            "active_workspace_not_member",
             extra={
                 "category": "authz",
                 "sub": user.sub,
-                "requested_company": x_active_company_id,
+                "requested_workspace": x_active_workspace_id,
                 "user_groups": user.groups,
             },
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this company",
+            detail="Not a member of this workspace",
         )
-    return x_active_company_id
+    return x_active_workspace_id
 
 
 def require_admin(user: UserContext = Depends(get_current_user)) -> UserContext:
@@ -85,28 +85,28 @@ def require_admin(user: UserContext = Depends(get_current_user)) -> UserContext:
     return user
 
 
-async def require_company_admin(
-    company_id: str,  # path param: `{company_id}` 가 있는 라우트에서만 사용
+async def require_workspace_admin(
+    workspace_id: str,  # path param: `{workspace_id}` 가 있는 라우트에서만 사용
     user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> UserContext:
-    """path 의 company_id 에 대한 admin (role='admin' 또는 System Admin). ADR-0010.
+    """path 의 workspace_id 에 대한 admin (role='admin' 또는 System Admin). ADR-0010.
 
-    System Admin 은 회사 멤버 아니어도 통과 (super-set). 회사 admin 은
-    그 회사 의 row.role=='admin' 일 때만. 다른 회사 path 침범 불가.
+    System Admin 은 워크스페이스 멤버 아니어도 통과 (super-set). 워크스페이스 admin 은
+    그 워크스페이스 의 row.role=='admin' 일 때만. 다른 워크스페이스 path 침범 불가.
     """
     if user.is_system_admin:
         return user
-    membership = await db.get(UserCompanyMembership, (user.sub, company_id))
+    membership = await db.get(UserWorkspaceMembership, (user.sub, workspace_id))
     if membership is not None and membership.role == "admin":
         return user
     logger.warning(
-        "company_admin_required",
+        "workspace_admin_required",
         extra={
             "category": "authz",
             "sub": user.sub,
-            "company_id": company_id,
+            "workspace_id": workspace_id,
             "current_role": membership.role if membership else None,
         },
     )
-    raise HTTPException(status_code=403, detail="Company admin only")
+    raise HTTPException(status_code=403, detail="Workspace admin only")

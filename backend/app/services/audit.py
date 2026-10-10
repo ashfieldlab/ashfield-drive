@@ -17,7 +17,7 @@ from app.models.audit_log import AuditLog
 async def write_audit(
     db: AsyncSession,
     *,
-    company_id: str | None,
+    workspace_id: str | None,
     actor: UserContext | None,
     action: str,
     entity_type: str,
@@ -46,7 +46,7 @@ async def write_audit(
     db.add(
         AuditLog(
             id=str(uuid.uuid7()),
-            company_id=company_id,
+            workspace_id=workspace_id,
             actor_sub=actor.sub if actor else None,
             actor_type=actor_type or ("user" if actor else "system"),
             action=action,
@@ -57,14 +57,14 @@ async def write_audit(
         )
     )
 
-    # Desktop sync 의 SSE nudge: node 변경이면 회사 채널에 신호.
+    # Desktop sync 의 SSE nudge: node 변경이면 워크스페이스 채널에 신호.
     # fire-and-forget: redis 다운/실패가 요청을 깨뜨리지 않음. 신호일 뿐이라
     # commit 전 publish 여도 클라이언트가 delta(/changes)로 정합성 확보.
-    if entity_type == "node" and company_id:
+    if entity_type == "node" and workspace_id:
         try:
             from app.core.redis import get_redis
 
-            await get_redis().publish(f"node_events:{company_id}", "1")
+            await get_redis().publish(f"node_events:{workspace_id}", "1")
         except Exception:
             pass
 
@@ -96,7 +96,7 @@ async def record_file_access(
         m["name"] = node.name
     await write_audit(
         db,
-        company_id=node.company_id,
+        workspace_id=node.workspace_id,
         actor=actor,
         action=kind,
         entity_type=FILE_ACCESS,
