@@ -173,13 +173,6 @@ export function VariantC() {
             </div>
 
             <div className="mt-3 divide-y rounded-lg border bg-background text-sm">
-              <Row label="편집 허용">
-                <Switch
-                  checked={link.permission === "write"}
-                  onChange={(v) => setLink({ ...link, permission: v ? "write" : "read" })}
-                  testId={`${T}-link-write`}
-                />
-              </Row>
               <Row label="만료">
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
