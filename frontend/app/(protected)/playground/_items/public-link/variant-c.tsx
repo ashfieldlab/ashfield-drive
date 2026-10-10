@@ -233,7 +233,7 @@ function ExpiredPane() {
       <div className="w-full max-w-xs">
         <Clock className="size-5 text-amber-600 dark:text-amber-300" />
         <h1 className="mt-4 text-2xl font-semibold tracking-tight">만료된 링크</h1>
-        <p className="mt-2 text-sm text-muted-foreground">링크가 만료되었습니다. 공유한 사람에게 문의하세요.</p>
+        <p className="mt-2 text-sm text-muted-foreground">링크가 만료되었습니다.</p>
         <a
           href={`mailto:${SHARER.email}`}
           data-testid="pg-public-link-c-expired-contact"
