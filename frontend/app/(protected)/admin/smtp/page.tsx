@@ -149,7 +149,7 @@ export default function AdminSmtpPage() {
 
       {data && data.source !== "system" && (
         <p className="mb-4 text-xs text-amber-700">
-          아직 저장된 설정이 없습니다. 폼을 채워 저장해주세요.
+          아직 저장된 설정이 없습니다.
         </p>
       )}
 
@@ -254,9 +254,6 @@ export default function AdminSmtpPage() {
           </div>
 
           <div className="mt-6 space-y-3 rounded border border-dashed border-gray-300 bg-gray-50 p-4">
-            <p className="text-xs text-gray-600">
-              저장된 설정으로 테스트 메일을 발송합니다.
-            </p>
             <div className="flex gap-2">
               <input
                 type="email"

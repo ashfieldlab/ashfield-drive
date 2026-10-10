@@ -43,10 +43,6 @@ export default function AdminCompaniesPage() {
         <Building2 size={20} className="text-gray-600" />
         <h1 className="text-2xl font-bold text-gray-900">회사 관리</h1>
       </header>
-      <p className="text-xs text-gray-500">
-        한 번 이상 활동한 회사만 표시됩니다. 관리자가 0명인 회사는 설정을 변경할
-        수 없으니, 최소 한 명을 임명해주세요.
-      </p>
 
       {error ? (
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">

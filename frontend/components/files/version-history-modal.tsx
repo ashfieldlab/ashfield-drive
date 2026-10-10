@@ -129,7 +129,7 @@ export function VersionHistoryModal({
           </button>
         </div>
         <p className="border-b border-gray-100 px-5 py-2 text-xs text-gray-500">
-          덮어쓰기 전 내용을 30일간 보관합니다. 같은 사람이 10분 안에 다시 저장하면 하나로 묶입니다.
+          30일간 보관
         </p>
         <div className="overflow-y-auto">
           {isLoading ? (

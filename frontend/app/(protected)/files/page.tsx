@@ -208,7 +208,7 @@ export default function FilesPage() {
                 <span
                   className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700"
                   data-testid="files-team-folder-badge"
-                  title="부서 폴더. 해당 부서(+하위) 인원이 접근합니다"
+                  title="부서 폴더"
                 >
                   👥 부서 폴더
                 </span>
@@ -265,9 +265,6 @@ export default function FilesPage() {
             <div className="text-3xl">🔒</div>
             <p className="mt-3 text-sm font-semibold text-gray-100">
               보안 폴더가 잠겨 있습니다
-            </p>
-            <p className="mt-1 text-xs text-gray-400">
-              파일 개수·크기·수정일·종류를 포함한 모든 내용은 잠금을 해제해야 볼 수 있습니다.
             </p>
             <button
               onClick={() => void requestUnlock()}

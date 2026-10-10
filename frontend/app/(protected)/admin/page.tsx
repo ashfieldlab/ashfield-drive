@@ -6,9 +6,9 @@ import { Activity, Building2, Mail } from "lucide-react"
 import { useAppContext } from "@/components/providers/app-context"
 
 const SECTIONS = [
-  { href: "/admin/companies", title: "회사 관리", desc: "등록 회사 조회·멤버 관리", icon: Building2 },
-  { href: "/admin/smtp", title: "전역 SMTP 설정", desc: "메일 발송 서버 설정·테스트", icon: Mail },
-  { href: "/admin/jobs", title: "작업 모니터링", desc: "백그라운드 작업 실행 상태·이력", icon: Activity },
+  { href: "/admin/companies", title: "회사 관리", icon: Building2 },
+  { href: "/admin/smtp", title: "전역 SMTP 설정", icon: Mail },
+  { href: "/admin/jobs", title: "작업 모니터링", icon: Activity },
 ]
 
 export default function AdminIndexPage() {
@@ -34,13 +34,10 @@ export default function AdminIndexPage() {
             key={s.href}
             href={s.href}
             data-testid={`admin-index-link-${s.href.split("/").pop()}`}
-            className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-300 hover:bg-gray-50"
+            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-300 hover:bg-gray-50"
           >
-            <s.icon size={18} className="mt-0.5 shrink-0 text-gray-500" />
-            <div>
-              <p className="font-medium text-gray-900">{s.title}</p>
-              <p className="mt-0.5 text-xs text-gray-500">{s.desc}</p>
-            </div>
+            <s.icon size={18} className="shrink-0 text-gray-500" />
+            <p className="font-medium text-gray-900">{s.title}</p>
           </Link>
         ))}
       </div>

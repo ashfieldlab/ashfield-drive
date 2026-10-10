@@ -147,7 +147,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
           const status = (err as { status?: number }).status
           if (status === 404) {
             toast.error(
-              "상대가 아직 보안 폴더를 설정하지 않아 공유할 수 없습니다. 상대가 먼저 보안 폴더 비밀번호를 설정해야 합니다.",
+              "상대가 아직 보안 폴더를 설정하지 않아 공유할 수 없습니다.",
             )
           } else {
             toast.error(`보안 폴더 키 전달 실패: ${(err as Error).message}`)
@@ -202,8 +202,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
           className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
           data-testid="share-vault-hint"
         >
-          🔒 보안 폴더입니다. 공유하면 암호화 키도 함께 전달돼 상대가 내용을 볼 수 있습니다.
-          상대가 <b>보안 폴더를 먼저 설정</b>해 두어야 공유됩니다.
+          🔒 상대가 <b>보안 폴더를 먼저 설정</b>해 두어야 공유됩니다.
         </div>
       )}
       <div className="flex items-end gap-2">

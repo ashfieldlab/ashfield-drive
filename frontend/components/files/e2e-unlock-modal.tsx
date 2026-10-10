@@ -81,9 +81,8 @@ export function E2EUnlockModal({ onUnlocked, onClose }: Props) {
           {mode === "setup" && (
             <>
               <p className="mb-3 text-sm text-gray-600">
-                보안 폴더를 처음 사용합니다. 암호화 비밀번호를 설정하세요. 이
-                비밀번호는 <b>로그인 비밀번호와 별개</b>이며, 분실 시 복구 코드로만
-                되살릴 수 있습니다. (관리자도 복구 불가)
+                암호화 비밀번호를 설정하세요. <b>로그인 비밀번호와 별개</b>이며,
+                분실 시 복구 코드로만 복구할 수 있습니다.
               </p>
               <input
                 type="password"

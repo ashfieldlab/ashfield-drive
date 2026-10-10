@@ -397,7 +397,7 @@ export function FilesList({
         }`}
         data-testid="files-empty"
       >
-        {trash ? "휴지통이 비어 있습니다." : "여기에 파일을 업로드하거나 폴더를 만들어 보세요."}
+        {trash ? "휴지통이 비어 있습니다." : "파일이 없습니다."}
       </div>
     )
   }
@@ -570,7 +570,7 @@ export function FilesList({
                               toast.error(
                                 isStalePending(n)
                                   ? "업로드 중 오류가 발생한 파일입니다. 휴지통으로 삭제 후 다시 업로드해주세요."
-                                  : "업로드 중인 파일입니다. 완료되면 열 수 있습니다.",
+                                  : "업로드 중",
                               )
                               return
                             }

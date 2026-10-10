@@ -117,14 +117,9 @@ export default function CompanyMembersView({
         <ArrowLeft size={12} /> 설정으로
       </Link>
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {companyNames[companyId] ?? companyId} 멤버
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            이 앱에 접속한 적이 있는 멤버만 표시됩니다.
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {companyNames[companyId] ?? companyId} 멤버
+        </h1>
         {manageUrl && (
           <a
             href={manageUrl}
@@ -133,20 +128,18 @@ export default function CompanyMembersView({
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-gray-900 px-3 text-sm font-medium text-white hover:bg-gray-800"
             data-testid="company-members-manage-link"
           >
-            멤버 관리는 Ashfield 계정에서
+            Ashfield 계정에서 관리
             <ExternalLink size={14} aria-hidden />
           </a>
         )}
       </header>
 
-      {data && (
+      {data && !manageUrl && (
         <div
           className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600"
           data-testid="company-members-settings-account-notice"
         >
-          {manageUrl
-            ? "멤버 초대·제거·역할 변경은 Ashfield 계정의 워크스페이스 화면에서 합니다. 바뀐 내용은 다음 토큰 갱신(최대 15분) 또는 다시 로그인할 때 반영됩니다. 저장 한도는 여기서 정합니다."
-            : "계정 서버와 연결되지 않은 이전 워크스페이스라 이 앱에서 멤버를 바꿀 수 없습니다."}
+          이 워크스페이스는 멤버를 변경할 수 없습니다.
         </div>
       )}
 

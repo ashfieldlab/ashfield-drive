@@ -92,10 +92,6 @@ export default function AdminJobsPage() {
         )}
       </header>
 
-      <p className="mb-4 text-xs text-gray-500">
-        백그라운드 작업 실행 기록입니다. 15초마다 자동 갱신 · 기록 14일 보관.
-      </p>
-
       {error ? (
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
           불러오지 못했습니다. 잠시 후 다시 시도해주세요.

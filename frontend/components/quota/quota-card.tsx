@@ -115,7 +115,7 @@ export function QuotaCard({ companyId, mode }: Props) {
         </div>
         {isOverflow && (
           <p className="mt-1 text-xs text-rose-700">
-            저장소 한도 초과. 새 업로드가 차단됩니다. 한도 상향 또는 휴지통 정리 필요.
+            저장소 한도 초과. 새 업로드가 차단됩니다.
           </p>
         )}
       </div>

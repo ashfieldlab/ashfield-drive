@@ -58,12 +58,7 @@ export default function LoginForm({ callbackUrl, error, accountReady }: Props) {
       >
         <div className="flex flex-col items-center gap-3 text-center">
           <AppIcon alt={APP.title} size={56} className="h-14 w-14 rounded-2xl" />
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight">Ashfield {APP.title}</h1>
-            <p className="text-sm text-muted-foreground">
-              하나의 Ashfield 계정으로 모든 앱을 사용합니다.
-            </p>
-          </div>
+          <h1 className="text-xl font-semibold tracking-tight">Ashfield {APP.title}</h1>
         </div>
 
         {message && (
@@ -99,9 +94,6 @@ export default function LoginForm({ callbackUrl, error, accountReady }: Props) {
           </div>
         )}
 
-        <p className="text-center text-xs text-muted-foreground">
-          계정이 없으면 로그인 화면에서 바로 만들 수 있습니다.
-        </p>
       </div>
     </div>
   )

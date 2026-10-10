@@ -182,10 +182,10 @@ export default function CompanySmtpPage({
       {data && (
         <p className="mb-4 text-xs text-gray-500">
           {data.override_enabled
-            ? "이 회사 전용 SMTP 를 사용 중입니다."
+            ? "이 회사 전용 SMTP 사용 중"
             : data.effective_source === "none"
-              ? "사용 가능한 SMTP 설정이 없습니다. 폼을 채워 저장해주세요."
-              : "회사 전용 SMTP 가 없어 공통 설정으로 발송됩니다. 이 회사 전용을 쓰려면 폼을 채워 저장하세요."}
+              ? "사용 가능한 SMTP 설정이 없습니다."
+              : "공통 SMTP 설정 사용 중"}
         </p>
       )}
 
@@ -278,9 +278,7 @@ export default function CompanySmtpPage({
                 <Trash2 size={12} /> 회사 전용 SMTP 삭제
               </button>
             ) : (
-              <span className="text-xs text-gray-500">
-                저장하면 이 회사 전용 SMTP 가 생성됩니다.
-              </span>
+              <span />
             )}
             <div className="flex gap-2">
               <button
@@ -304,9 +302,6 @@ export default function CompanySmtpPage({
           </div>
 
           <div className="mt-6 space-y-3 rounded border border-dashed border-gray-300 bg-gray-50 p-4">
-            <p className="text-xs text-gray-600">
-              현재 이 회사에 적용되는 설정으로 테스트 메일을 발송합니다.
-            </p>
             <div className="flex gap-2">
               <input
                 type="email"

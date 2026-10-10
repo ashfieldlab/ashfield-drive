@@ -14,7 +14,7 @@ import type { EmailPreferenceResponse } from "@/lib/types/api"
 
 // 백엔드 _TYPE_CATEGORY(email.py)와 키 일치.
 const EMAIL_CATEGORIES = [
-  { key: "file_share", label: "파일 공유", desc: "파일·폴더를 공유받았을 때" },
+  { key: "file_share", label: "파일 공유" },
 ] as const
 
 export default function SettingsPage() {
@@ -79,12 +79,7 @@ export default function SettingsPage() {
                 data-testid="settings-email-toggle"
                 className="mt-0.5 rounded border-gray-300"
               />
-              <span>
-                <span className="block font-medium text-gray-900">이메일 알림</span>
-                <span className="block text-xs text-gray-500">
-                  끄면 이메일은 보내지 않고 앱 안에서만 알림이 표시됩니다.
-                </span>
-              </span>
+              <span className="font-medium text-gray-900">이메일 알림</span>
             </label>
 
             <div className="ml-7 space-y-2 border-l border-gray-100 pl-4">
@@ -107,7 +102,6 @@ export default function SettingsPage() {
                   />
                   <span className={data.email_enabled ? "" : "opacity-40"}>
                     <span className="block text-gray-900">{c.label}</span>
-                    <span className="block text-xs text-gray-500">{c.desc}</span>
                   </span>
                 </label>
               ))}
@@ -122,35 +116,30 @@ export default function SettingsPage() {
         <section className="rounded-lg border border-gray-200 bg-white">
           <header className="border-b border-gray-100 px-5 py-3">
             <h2 className="text-sm font-semibold text-gray-900">시스템 관리</h2>
-            <p className="mt-0.5 text-xs text-gray-500">시스템 관리자만 보입니다.</p>
           </header>
           <ul className="divide-y divide-gray-100">
             <SettingsRow
               href="/admin/companies"
               icon={<Building2 size={16} />}
               title="회사 관리"
-              desc="전체 회사 조회·관리"
               testid="settings-link-admin-companies"
             />
             <SettingsRow
               href="/admin/smtp"
               icon={<Mail size={16} />}
               title="SMTP 설정"
-              desc="시스템 기본 메일 발송 서버"
               testid="settings-link-admin-smtp"
             />
             <SettingsRow
               href="/audit"
               icon={<ScrollText size={16} />}
               title="감사 로그"
-              desc="시스템 변경 이력 조회"
               testid="settings-link-audit"
             />
             <SettingsRow
               href="/webhooks"
               icon={<Webhook size={16} />}
               title="웹훅"
-              desc="외부 시스템 연동용 웹훅 관리"
               testid="settings-link-webhooks"
             />
           </ul>
@@ -163,30 +152,24 @@ export default function SettingsPage() {
             <h2 className="text-sm font-semibold text-gray-900">
               회사 관리 ({activeCompanyId})
             </h2>
-            <p className="mt-0.5 text-xs text-gray-500">
-              회사 관리자만 보입니다.
-            </p>
           </header>
           <ul className="divide-y divide-gray-100">
             <SettingsRow
               href={`${companyBase}/members`}
               icon={<Users size={16} />}
               title="멤버"
-              desc="워크스페이스 멤버 보기 · 저장 한도 · 관리는 Ashfield 계정에서"
               testid="settings-link-members"
             />
             <SettingsRow
               href="/audit"
               icon={<ScrollText size={16} />}
               title="감사 로그"
-              desc="회사 내 변경 이력 조회 · 필터 · CSV 내보내기"
               testid="settings-link-company-audit"
             />
             <SettingsRow
               href={`${companyBase}/smtp`}
               icon={<Mail size={16} />}
               title="SMTP 설정"
-              desc="이 회사 전용 메일 발송 서버. 미설정 시 시스템 SMTP 사용."
               testid="settings-link-smtp"
             />
           </ul>
@@ -217,15 +200,8 @@ function E2ESettingsSection() {
       {needsSetup === null ? (
         <p className="text-sm text-gray-500">불러오는 중…</p>
       ) : needsSetup ? (
-        <div className="flex items-start justify-between gap-4">
-          <div className="text-sm text-gray-600">
-            <p>아직 보안 폴더 비밀번호가 없습니다.</p>
-            <p className="mt-1">
-              보안 폴더를 사용하거나{" "}
-              <b className="text-gray-800">다른 사람에게 공유받으려면</b> 먼저
-              비밀번호를 만들어야 합니다.
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-gray-600">아직 보안 폴더 비밀번호가 없습니다.</p>
           <button
             onClick={() => setShowModal(true)}
             data-testid="settings-e2e-setup-button"
@@ -235,7 +211,7 @@ function E2ESettingsSection() {
           </button>
         </div>
       ) : (
-        <p className="text-sm text-emerald-700">✅ 설정됨. 보안 폴더를 사용하고 공유받을 수 있습니다.</p>
+        <p className="text-sm text-emerald-700">✅ 설정됨</p>
       )}
       {showModal && (
         <E2EUnlockModal
@@ -257,13 +233,11 @@ function SettingsRow({
   href,
   icon,
   title,
-  desc,
   testid,
 }: {
   href: string
   icon: React.ReactNode
   title: string
-  desc?: string
   testid: string
 }) {
   return (
@@ -275,10 +249,7 @@ function SettingsRow({
       >
         <div className="flex items-center gap-3">
           <span className="text-gray-500">{icon}</span>
-          <div>
-            <div className="text-sm font-medium text-gray-900">{title}</div>
-            {desc && <div className="mt-0.5 text-xs text-gray-500">{desc}</div>}
-          </div>
+          <div className="text-sm font-medium text-gray-900">{title}</div>
         </div>
         <ChevronRight size={16} className="shrink-0 text-gray-400" />
       </Link>

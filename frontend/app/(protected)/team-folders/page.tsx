@@ -46,7 +46,7 @@ export default function TeamFoldersPage() {
             className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800"
             data-testid="team-folders-disabled-notice"
           >
-            부서 폴더는 현재 지원하지 않습니다 (조직도 연동이 없습니다).
+            부서 폴더는 현재 지원하지 않습니다.
           </div>
         )}
 
@@ -65,7 +65,6 @@ export default function TeamFoldersPage() {
             data-testid="team-folders-empty"
           >
             소속된 부서 폴더가 없습니다.
-            {TEAM_FOLDERS_ENABLED && isCompanyAdmin && " 우측 상단에서 만들어 보세요."}
           </div>
         ) : (
           <div
