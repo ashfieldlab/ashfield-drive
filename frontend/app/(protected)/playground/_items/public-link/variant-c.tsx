@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Clock, Download, Eye, Loader2, Lock, ShieldCheck } from "lucide-react"
+import { Check, Clock, Download, Eye, Loader2, Lock } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -51,9 +51,8 @@ function SidePanel({ state }: { state: PublicState }) {
         {SHARER.name}
       </span>
     )],
-    ["권한", LINK.permission === "read" ? "보기 · 다운로드" : "편집"],
-    ["만료", expired ? EXPIRED_AT : `${EXPIRES} · ${daysLeft()}일`],
-    ["보호", LINK.hasPassword ? "비밀번호" : "없음"],
+    ["권한", LINK.permission === "read" ? "보기, 다운로드" : "편집"],
+    ["만료", expired ? EXPIRED_AT : `${EXPIRES}, ${daysLeft()}일 남음`],
   ]
   return (
     <aside className="relative hidden w-[300px] shrink-0 flex-col overflow-hidden bg-primary p-7 text-primary-foreground md:flex">
@@ -78,10 +77,6 @@ function SidePanel({ state }: { state: PublicState }) {
           ))}
         </dl>
       </div>
-      <p className="relative mt-10 flex items-center gap-1.5 text-[11px] opacity-50">
-        <ShieldCheck className="size-3.5" />
-        TLS · 다운로드 {LINK.downloads}회
-      </p>
     </aside>
   )
 }
@@ -149,7 +144,7 @@ function FilePane() {
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{FILE.name}</p>
             <p className="text-xs text-muted-foreground">
-              {formatBytes(FILE.size)} · {kindLabel(FILE.kind)}
+              {formatBytes(FILE.size)}, {kindLabel(FILE.kind)}
             </p>
           </div>
         </div>
@@ -181,7 +176,7 @@ function FolderPane() {
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{FOLDER.name}</p>
             <p className="text-xs text-muted-foreground">
-              {FOLDER.count}개 · {formatBytes(FOLDER.size)}
+              {FOLDER.count}개, {formatBytes(FOLDER.size)}
             </p>
           </div>
         </div>
