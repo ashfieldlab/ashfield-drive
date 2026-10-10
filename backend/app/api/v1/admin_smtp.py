@@ -113,7 +113,7 @@ async def patch_smtp(
     row.from_addr = body.from_addr
     row.from_name = body.from_name
 
-    # 비밀번호: 마스킹·빈 문자열은 미변경, 그 외만 재암호화 저장
+    # 비밀번호: 마스킹 또는 빈 문자열은 미변경, 그 외만 재암호화 저장
     if body.smtp_password and body.smtp_password != _PW_MASK:
         try:
             row.smtp_password_encrypted = encrypt(body.smtp_password)
@@ -154,7 +154,7 @@ async def patch_smtp(
 @router.post(
     "/connection-test",
     summary="발송 없이 SMTP 연결+인증만 확인 (System Admin)",
-    responses={400: {"description": "연결·인증 실패"}},
+    responses={400: {"description": "연결, 인증 실패"}},
 )
 async def test_smtp_connection(
     body: SmtpConnectionTestRequest,

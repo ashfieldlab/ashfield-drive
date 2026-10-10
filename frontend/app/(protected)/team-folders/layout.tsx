@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 
-// 부서 폴더 = 파일 앱의 일부 → 탭 파비콘·제목을 'drive' 브랜드로 (사이드바 브랜드는 app-shell).
+// 부서 폴더 = 파일 앱의 일부 → 탭 파비콘과 제목을 'drive' 브랜드로 (사이드바 브랜드는 app-shell).
 export const metadata: Metadata = {
   title: "부서 폴더",
   icons: {

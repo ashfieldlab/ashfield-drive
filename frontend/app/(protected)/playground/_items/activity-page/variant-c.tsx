@@ -114,7 +114,7 @@ export function VariantC() {
                 >
                   {hover === i && (
                     <span className="absolute -top-1 z-10 -translate-y-full rounded-md border bg-popover px-2 py-1 text-xs whitespace-nowrap text-popover-foreground shadow-md">
-                      {d.full} · <span className="font-medium tabular-nums">{d.count}</span>건
+                      {d.full}, <span className="font-medium tabular-nums">{d.count}</span>건
                     </span>
                   )}
                   <span className="relative flex w-full flex-1 items-end justify-center">
@@ -186,7 +186,7 @@ export function VariantC() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{a.target}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {a.actor.name} · {shortLine(a)}
+                      {a.actor.name}, {shortLine(a)}
                     </span>
                   </span>
                   <span className={cn("rounded px-1.5 py-0.5 text-xs font-medium", meta.tone)}>{meta.label}</span>

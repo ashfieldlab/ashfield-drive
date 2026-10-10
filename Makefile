@@ -56,7 +56,7 @@ dev:  ## 백엔드 + 프론트 dev 서버 함께 실행 (Ctrl+C 로 둘 다 종�
 
 infra:  ## redis + postgres + minio + mailpit 컨테이너 띄움
 	docker compose up -d
-	@echo "✓ Redis :$${REDIS_HOST_PORT:-16479} · PostgreSQL :$${POSTGRES_HOST_PORT:-15532} · MinIO API :$${MINIO_HOST_PORT:-19200} / Console :$${MINIO_CONSOLE_HOST_PORT:-19201} · Mailpit SMTP :$${MAILPIT_SMTP_HOST_PORT:-11025} / Web :$${MAILPIT_WEB_HOST_PORT:-18025}"
+	@echo "✓ Redis :$${REDIS_HOST_PORT:-16479}, PostgreSQL :$${POSTGRES_HOST_PORT:-15532}, MinIO API :$${MINIO_HOST_PORT:-19200} / Console :$${MINIO_CONSOLE_HOST_PORT:-19201}, Mailpit SMTP :$${MAILPIT_SMTP_HOST_PORT:-11025} / Web :$${MAILPIT_WEB_HOST_PORT:-18025}"
 
 stop:  ## 인프라 컨테이너 중지
 	docker compose down
@@ -83,7 +83,7 @@ worker:  ## arq worker (백그라운드 잡 + cron 디스패치)
 migrate:  ## alembic upgrade head
 	cd backend && . .venv/bin/activate && alembic upgrade head
 
-auth-migrate:  ## Better Auth 테이블 생성·갱신 (Postgres 스키마 auth: 세션·계정 서버 토큰, ADR-0024)
+auth-migrate:  ## Better Auth 테이블 생성과 갱신 (Postgres 스키마 auth: 세션과 계정 서버 토큰, ADR-0024)
 	cd frontend && npx auth migrate --config lib/auth/server.ts --yes
 
 migration:  ## 새 alembic revision 생성 (msg="..." 인자 필수)
@@ -108,7 +108,7 @@ lint:  ## 프론트 eslint + 백엔드 ruff
 	cd frontend && npm run lint
 	cd backend && . .venv/bin/activate && ruff check .
 
-e2e:  ## Playwright E2E (전제: 계정 서버 :3300 기동(AUTH_DEV_PASSWORD_LOGIN=true) + infra·migrate·auth-migrate·backend, frontend .env 의 ASHFIELD_CLIENT_SECRET)
+e2e:  ## Playwright E2E (전제: 계정 서버 :3300 기동(AUTH_DEV_PASSWORD_LOGIN=true) + infra, migrate, auth-migrate, backend, frontend .env 의 ASHFIELD_CLIENT_SECRET)
 	cd frontend && PORT=$(FRONTEND_PORT) npx playwright test
 
 e2e-ui:  ## Playwright UI 모드
@@ -186,7 +186,7 @@ prod-dc: prod-check-env  ## 임의 docker compose 명령 (escape hatch, 사용: 
 prod-migrate: prod-check-env  ## alembic upgrade head
 	$(PROD_COMPOSE) exec -T backend python -m alembic upgrade head
 
-prod-auth-migrate: prod-check-env  ## Better Auth 테이블 생성·갱신 (스키마 auth)
+prod-auth-migrate: prod-check-env  ## Better Auth 테이블 생성과 갱신 (스키마 auth)
 	$(PROD_COMPOSE) run --rm auth-migrate
 
 prod-logs: prod-check-env  ## 전체 로그 follow
@@ -195,7 +195,7 @@ prod-logs: prod-check-env  ## 전체 로그 follow
 prod-logs-backend: prod-check-env  ## 백엔드 로그만
 	$(PROD_COMPOSE) logs -f --tail=100 backend
 
-prod-logs-worker: prod-check-env  ## 워커 로그만 (알림·PII 마스킹 cron 추적)
+prod-logs-worker: prod-check-env  ## 워커 로그만 (알림과 PII 마스킹 cron 추적)
 	$(PROD_COMPOSE) logs -f --tail=100 worker
 
 prod-status: prod-check-env  ## 컨테이너 상태 + 헬스

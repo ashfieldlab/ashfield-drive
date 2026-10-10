@@ -56,7 +56,7 @@ services:
 
   # S3-compatible storage (ADR-0005): 개발 전용. 운영은 S3-compatible storage.
   # minio/minio 이미지는 더 이상 받을 수 없다 (Docker Hub 배포 중단). 같은 MinIO 서버를 빌드한
-  # Chainguard 이미지(무료 티어는 latest 태그만)를 쓴다: env·데이터 형식·S3 API 동일. 버킷은 앱이 만든다.
+  # Chainguard 이미지(무료 티어는 latest 태그만)를 쓴다: env, 데이터 형식, S3 API 동일. 버킷은 앱이 만든다.
   minio:
     image: cgr.dev/chainguard/minio:latest
     container_name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}-minio

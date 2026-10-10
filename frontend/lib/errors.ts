@@ -24,7 +24,7 @@ type ErrorMessage = string | ((params: ParamMap) => string)
 
 /**
  * HTTP status 별 기본 한국어. code 가 없거나 unknown 일 때 fallback.
- * 추가·변경은 한 곳에서.
+ * 추가와 변경은 한 곳에서.
  */
 export const HTTP_STATUS_MESSAGES: Record<number, string> = {
   // 4xx: 클라이언트 측 문제

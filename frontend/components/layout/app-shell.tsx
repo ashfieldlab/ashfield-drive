@@ -55,7 +55,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, sp])
 
-  // 사이드바 = 파일 기능 + 하단 공통(활동·설정). 일정 앱 링크는 헤더 우측 AppCrossLink.
+  // 사이드바 = 파일 기능 + 하단 공통(활동과 설정). 일정 앱 링크는 헤더 우측 AppCrossLink.
   const sidebarItems: NavItem[] = useMemo(() => {
     const common: NavItem[] = [
       { id: "activity", label: "활동", href: "/activity", icon: <Activity size={16} />, active: pathname.startsWith("/activity") },
@@ -104,7 +104,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         user={{ name: authUser.name ?? authUser.email ?? undefined }}
         isServiceAdmin={isSystemAdmin}
         onLogout={async () => {
-          // Better Auth 세션 종료 후 받은 주소로 하드 이동 (가드·AppContext 를 새로 태움).
+          // Better Auth 세션 종료 후 받은 주소로 하드 이동 (가드와 AppContext 를 새로 태움).
           window.location.href = await signOutAction()
         }}
         onBasicSettings={() => router.push("/settings")}

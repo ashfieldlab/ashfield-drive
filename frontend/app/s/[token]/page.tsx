@@ -102,7 +102,7 @@ function Body({ token, meta }: { token: string; meta: PublicNodeMeta }) {
         <h1 className="break-all text-lg font-semibold text-foreground">{meta.name}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
           {meta.kind === "file" ? formatBytes(meta.size_bytes) : "폴더"}
-          {meta.mime && ` · ${meta.mime}`}
+          {meta.mime && `, ${meta.mime}`}
         </p>
 
         {meta.requires_password && (

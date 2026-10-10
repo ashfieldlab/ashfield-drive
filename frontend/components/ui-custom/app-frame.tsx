@@ -1,9 +1,9 @@
 "use client"
 
 /**
- * 앱 공통 레이아웃 프레임: 상단 헤더(브랜드·워크스페이스 전환·우측 위젯) + 좌측 내비게이션 + 본문.
+ * 앱 공통 레이아웃 프레임: 상단 헤더(브랜드, 워크스페이스 전환, 우측 위젯) + 좌측 내비게이션 + 본문.
  *
- * 도메인 지식은 없다. 메뉴 항목·우측 위젯·링크 렌더링(next/link 등)은 호출부
+ * 도메인 지식은 없다. 메뉴 항목, 우측 위젯, 링크 렌더링(next/link 등)은 호출부
  * (components/layout/app-shell.tsx)가 넘긴다. 좁은 화면(< md)에서는 사이드바가
  * 햄버거 버튼으로 여는 드로어가 된다.
  */
@@ -46,7 +46,7 @@ export interface AppFrameProps {
   brand: {
     name: string
     logo?: React.ReactNode
-    /** 로고·서비스명 클릭 */
+    /** 로고와 서비스명 클릭 */
     onClick?: () => void
   }
   /** 소속 워크스페이스가 있을 때만 넘긴다: 없으면 전환 UI 숨김 */
@@ -55,7 +55,7 @@ export interface AppFrameProps {
     selectedId?: string
     onSelect: (workspace: WorkspaceOption) => void
   }
-  /** 헤더 우측 영역 (검색·알림·사용자 메뉴 등) */
+  /** 헤더 우측 영역 (검색, 알림, 사용자 메뉴 등) */
   headerTrailing?: React.ReactNode
   navItems: NavItem[]
   /** 기본은 <a href>. 클라이언트 라우팅이 필요하면 next/link 로 렌더 */

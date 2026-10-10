@@ -4,11 +4,11 @@
  * 전제 (README "E2E"):
  *   - 계정 서버가 ACCOUNT_URL(기본 http://localhost:3300)에 AUTH_DEV_PASSWORD_LOGIN=true 로 떠 있고
  *     `make migrate seed` 완료: 이 앱의 client_secret 이 frontend/.env 의 ASHFIELD_CLIENT_SECRET.
- *   - 이 앱의 backend·infra.
+ *   - 이 앱의 backend, infra.
  *
  * 로그인: 앱 /login → "Ashfield 계정으로 로그인" → 계정 서버 DEV 이메일+비밀번호 폼(처음 쓰는 이메일은
  * 가입 → 개인 워크스페이스 자동 생성) → 앱으로 복귀. 계정 서버에 이미 로그인돼 있으면 폼 없이 복귀(SSO).
- * 계정 서버·앱이 모두 localhost 라 쿠키를 공유한다: clearCookies 는 둘 다 로그아웃시킨다.
+ * 계정 서버와 앱이 모두 localhost 라 쿠키를 공유한다: clearCookies 는 둘 다 로그아웃시킨다.
  */
 
 import { expect, type Page } from "@playwright/test"
@@ -82,7 +82,7 @@ export async function signOutAppOnly(page: Page): Promise<void> {
   })
 }
 
-/** 앱·계정 서버 모두 로그아웃 (사용자 전환용). */
+/** 앱과 계정 서버 모두 로그아웃 (사용자 전환용). */
 export async function signOut(page: Page): Promise<void> {
   await signOutAppOnly(page)
   await page.context().clearCookies()

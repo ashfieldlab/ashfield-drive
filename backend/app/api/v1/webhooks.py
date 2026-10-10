@@ -89,7 +89,7 @@ async def list_endpoints(
     "",
     response_model=WebhookEndpointResponse,
     status_code=201,
-    summary="endpoint 등록: secret 생성·1회 노출",
+    summary="endpoint 등록: secret 생성, 1회 노출",
     responses={
         403: {"description": "admin 아님"},
         201: {

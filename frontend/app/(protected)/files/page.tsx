@@ -63,7 +63,7 @@ export default function FilesPage() {
     !isTeamFolder
   // 비멤버가 들어온 보안 폴더: 업로드/액션 막고 명시적으로 안내.
   const vaultNoAccess = vaultCtx.vaultRootId !== null && !vaultCtx.hasAccess
-  // 멤버지만 아직 잠금해제 안 함: 목록 자체를 숨김 (개수·크기·수정일·종류 노출 방지).
+  // 멤버지만 아직 잠금해제 안 함: 목록 자체를 숨김 (개수, 크기, 수정일, 종류 노출 방지).
   const vaultLocked =
     vaultCtx.vaultRootId !== null && vaultCtx.hasAccess && !e2eUnlocked
 
@@ -100,7 +100,7 @@ export default function FilesPage() {
     void toolbarRef.current?.handleDrop(e.dataTransfer)
   }
 
-  // vault 진입 시 잠금 상태면 자동으로 잠금해제 모달 (파일명·내용 복호화 위해).
+  // vault 진입 시 잠금 상태면 자동으로 잠금해제 모달 (파일명과 내용 복호화 위해).
   // 접근 권한 없는 vault 면 잠금해제해도 못 보므로 모달 띄우지 않음.
   useEffect(() => {
     if (vaultCtx.vaultRootId && vaultCtx.hasAccess && !e2eUnlocked) void requestUnlock()
@@ -144,7 +144,7 @@ export default function FilesPage() {
           <p className="text-sm font-semibold text-foreground">
             여기에 놓아 업로드
           </p>
-          <p className="text-xs text-muted-foreground">파일 · 폴더 모두 가능</p>
+          <p className="text-xs text-muted-foreground">파일, 폴더 모두 가능</p>
         </div>
       )}
       {/* 스크롤은 이 안에서만: overlay(위 absolute)는 바깥 anchor 에 붙어 항상 보이는 영역을 덮음 */}
@@ -201,7 +201,7 @@ export default function FilesPage() {
                   data-testid="files-vault-badge"
                   title="이 폴더는 종단간 암호화됩니다"
                 >
-                  🔒 보안 폴더{!vaultCtx.canWrite && " · 읽기 전용"}
+                  🔒 보안 폴더{!vaultCtx.canWrite && ", 읽기 전용"}
                 </span>
               )}
               {isTeamFolder && (

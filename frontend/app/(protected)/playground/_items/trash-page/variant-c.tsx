@@ -186,7 +186,7 @@ export function VariantC() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{it.name}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {it.originalPath} · {relativeTime(it.deletedAt)} 삭제
+                      {it.originalPath}, {relativeTime(it.deletedAt)} 삭제
                     </span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-0.5 transition-all duration-200 group-hover:-translate-x-6 group-hover:opacity-0">

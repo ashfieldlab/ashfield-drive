@@ -1,14 +1,14 @@
 """
-인증 요청마다 로컬 사용자·소속 준비 (ADR-0004, ADR-0024).
+인증 요청마다 로컬 사용자와 소속 준비 (ADR-0004, ADR-0024).
 
 신원과 소속의 원천은 Ashfield 계정 서버다. 액세스 토큰(JWT)에 실린 값으로 로컬 캐시를 맞춘다.
 
-  1. users upsert: JWT sub 를 PK 로 email·name·picture 저장 (바뀐 경우에만 UPDATE).
-  2. `workspaces` 클레임 → 로컬 워크스페이스·멤버십 동기화. 클레임의 해시가 users.workspaces_claim_hash
+  1. users upsert: JWT sub 를 PK 로 email, name, picture 저장 (바뀐 경우에만 UPDATE).
+  2. `workspaces` 클레임 → 로컬 워크스페이스와 멤버십 동기화. 클레임의 해시가 users.workspaces_claim_hash
      와 같으면 건너뛴다 (보통의 요청은 쓰기 없음). 다르면:
        - 워크스페이스마다 workspaces 행 upsert (account_workspace_id 로 찾고, 없으면
          id = account_workspace_id = 워크스페이스 ID 로 생성, 이름이 바뀌었으면 갱신)
-       - 이 사용자의 멤버십 upsert (role: owner·admin → admin, member → member)
+       - 이 사용자의 멤버십 upsert (role: owner, admin → admin, member → member)
        - 클레임에서 빠진 계정 워크스페이스의 멤버십 삭제 (레거시 로컬 워크스페이스 멤버십은 그대로)
      모두 ON CONFLICT 기반이라 같은 사용자의 동시 요청이 겹쳐도 결과가 같다.
   3. user_workspace_memberships 조회 → UserContext.groups.
@@ -103,7 +103,7 @@ def identity_from_claims(claims: dict) -> Identity:
 
 
 def workspaces_hash(workspaces: tuple[WorkspaceClaim, ...]) -> str:
-    """동기화 결과를 바꾸는 값(id·name·앱 역할)만으로 만든 안정적인 해시."""
+    """동기화 결과를 바꾸는 값(id, name, 앱 역할)만으로 만든 안정적인 해시."""
     canonical = json.dumps(
         [[w.id, w.name, w.role] for w in workspaces], ensure_ascii=False, separators=(",", ":")
     )

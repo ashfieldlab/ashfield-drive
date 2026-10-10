@@ -1,7 +1,7 @@
 """
 FastAPI dependencies: 인증/인가 (ADR-0024).
 
-  get_current_user       : Bearer JWT(계정 서버 액세스 토큰, JWKS 검증) + 로컬 사용자·소속 동기화 → UserContext
+  get_current_user       : Bearer JWT(계정 서버 액세스 토큰, JWKS 검증) + 로컬 사용자와 소속 동기화 → UserContext
   require_active_workspace : X-Active-Workspace-Id 헤더 검증 (로컬 멤버십에 포함되는지)
   require_admin          : System Admin 검증
   require_workspace_admin  : 활성 워크스페이스의 admin (System Admin 은 super-set, ADR-0010)
@@ -25,7 +25,7 @@ async def get_current_user(
     """자격 증명은 `Authorization: Bearer <JWT>` 하나뿐이다: Ashfield 계정 서버의 액세스 토큰.
 
     웹은 BFF 가 Better Auth 계정 테이블에 저장된 토큰(만료 전 refresh)을 붙이고, 데스크톱
-    클라이언트도 계정 서버에서 받은 같은 모양의 토큰을 쓴다. 우회 경로(dev 키·세션 헤더) 없음.
+    클라이언트도 계정 서버에서 받은 같은 모양의 토큰을 쓴다. 우회 경로(dev 키, 세션 헤더) 없음.
     가입 허용 여부(허용 이메일 등)는 계정 서버가 판단한다.
     """
     if not authorization or not authorization.lower().startswith("bearer "):

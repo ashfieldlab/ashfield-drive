@@ -114,7 +114,7 @@
 <div class="pair">
   <div class="pairbox pub">
     <h4>📢 공개키 (public key)</h4>
-    <p style="margin:4px 0"><span class="can">잠그기(암호화)만 가능</span> · <span class="cant">풀기는 불가능</span></p>
+    <p style="margin:4px 0"><span class="can">잠그기(암호화)만 가능</span>, <span class="cant">풀기는 불가능</span></p>
     <ul>
       <li>푸는 능력이 없으니 <b>아무에게나 줘도 안전</b> → 그래서 이름이 "<b>공개</b>"</li>
       <li>누구든 이 키로 "그 사람에게 보낼 데이터"를 잠글 수 있음</li>
@@ -123,7 +123,7 @@
   </div>
   <div class="pairbox prv">
     <h4>🔑 개인키 (private key)</h4>
-    <p style="margin:4px 0"><span class="can">풀기(복호화)만 가능</span> · 짝꿍 공개키로 잠근 것만</p>
+    <p style="margin:4px 0"><span class="can">풀기(복호화)만 가능</span>, 짝꿍 공개키로 잠근 것만</p>
     <ul>
       <li>공개키로 잠근 걸 푸는 <b>유일한</b> 열쇠</li>
       <li>이게 새면 모든 게 뚫리므로 <b>절대 남에게 주지 않음</b></li>
@@ -153,7 +153,7 @@
     <tr><td style="width:90px; border:none; color:var(--brand); font-weight:800">1976</td>
         <td style="border:none"><b>Diffie & Hellman</b>: "잠그는 열쇠와 푸는 열쇠를 다르게 만들면 되잖아?" 라는 발상으로 <b>공개키 개념</b>을 세상에 발표. 키를 미리 나눠 갖지 않아도 안전하게 통신 가능해짐.</td></tr>
     <tr><td style="border:none; color:var(--brand); font-weight:800">1977</td>
-        <td style="border:none"><b>RSA</b> (Rivest·Shamir·Adleman, MIT): 그 개념을 실제로 동작하는 방식으로 구현. <b>큰 수를 소인수분해하기 어렵다</b>는 수학에 기반. 오늘날까지 널리 쓰임.</td></tr>
+        <td style="border:none"><b>RSA</b> (Rivest, Shamir, Adleman, MIT): 그 개념을 실제로 동작하는 방식으로 구현. <b>큰 수를 소인수분해하기 어렵다</b>는 수학에 기반. 오늘날까지 널리 쓰임.</td></tr>
     <tr><td style="border:none; color:var(--sub); font-weight:800">1997</td>
         <td style="border:none">재밌는 사실: 사실 영국 정보기관(GCHQ)이 <b>1970년대 초에 이미 비밀리에 같은 걸 발견</b>했지만 기밀로 묻어뒀다가 이때 공개됨.</td></tr>
   </table>
@@ -164,7 +164,7 @@
   <tr><th>여기</th><th>비대칭 암호가 하는 일</th></tr>
   <tr><td>🔒 <b>브라우저 자물쇠 (HTTPS)</b></td><td>사이트 접속할 때마다: 사이트가 진짜인지 확인 + 안전하게 통신 열쇠 교환</td></tr>
   <tr><td>🎫 <b>로그인 토큰 서명</b></td><td>우리 워크스페이스 로그인 토큰(Better Auth JWT)도 비대칭 키로 <b>서명</b>해 위조 방지</td></tr>
-  <tr><td>💬 <b>메신저 E2E</b></td><td>시그널·왓츠앱의 종단간 암호화: <b>우리 보안 폴더와 같은 원리</b></td></tr>
+  <tr><td>💬 <b>메신저 E2E</b></td><td>시그널과 왓츠앱의 종단간 암호화: <b>우리 보안 폴더와 같은 원리</b></td></tr>
   <tr><td>🖥️ <b>서버 접속 (SSH)</b>, 🪙 <b>블록체인 지갑</b></td><td>비밀번호 대신 키 쌍으로 로그인 / 지갑 주소가 곧 공개키</td></tr>
 </table>
 
@@ -218,7 +218,7 @@
 <div class="keycard k-dek">
   <h4>🔴 DEK (파일 열쇠)</h4>
   <div class="grid">
-    <span class="lab">역할</span><span><b>파일 하나하나</b>를 실제로 암·복호화하는 열쇠. 파일마다 다름</span>
+    <span class="lab">역할</span><span><b>파일 하나하나</b>를 실제로 암호화하고 복호화하는 열쇠. 파일마다 다름</span>
     <span class="lab">왜 필요</span><span>파일별로 분리해야 <b>파일 하나만 따로</b> 다루거나, 한 파일 열쇠가 새도 <b>그 파일만</b> 노출. 또 빠른 방식(대칭)이라 큰 파일도 빠름</span>
   </div>
 </div>
@@ -280,7 +280,7 @@
 <table>
   <tr><th>일반 폴더</th><th>보안 폴더</th></tr>
   <tr><td>파일 이름으로 검색 ✅</td><td>불가 ❌: 파일 이름도 암호라 서버가 모름</td></tr>
-  <tr><td>미리보기·썸네일 ✅</td><td>없음 ❌: 풀어봐야 알 수 있음</td></tr>
+  <tr><td>미리보기와 썸네일 ✅</td><td>없음 ❌: 풀어봐야 알 수 있음</td></tr>
   <tr><td>큰 파일 바로 열기 ✅</td><td>전체를 받아 풀어야 열림 (조금 느림)</td></tr>
   <tr><td>비번 분실 시 관리자 복구 ✅</td><td>불가 ❌: 복구 코드가 유일</td></tr>
 </table>
@@ -293,8 +293,8 @@
 </div>
 
 <footer>
-  Ashfield Drive · 보안 폴더(E2E 암호화, ADR-0016) 원리 설명 · 2026-06-14<br>
-  기술 상세: <code>docs/adr/0016-*.md</code> · 이 문서는 비개발자용 개념 설명입니다.
+  Ashfield Drive, 보안 폴더(E2E 암호화, ADR-0016) 원리 설명, 2026-06-14<br>
+  기술 상세: <code>docs/adr/0016-*.md</code>, 이 문서는 비개발자용 개념 설명입니다.
 </footer>
 
 </div>

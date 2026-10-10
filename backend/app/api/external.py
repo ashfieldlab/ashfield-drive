@@ -3,7 +3,7 @@
 `api/v1` prefix 아님. JWT/X-Active-Workspace-Id 안 받음. 토큰 자체가 capability.
 
 흐름:
-  1. `GET /s/{token}` → 공개 메타 (이름·MIME·크기·has_password 등). 없거나 만료·철회면 404.
+  1. `GET /s/{token}` → 공개 메타 (이름, MIME, 크기, has_password 등). 없거나 만료 또는 철회면 404.
   2. has_password=true 면 `POST /s/{token}/download` 의 body 에 password 포함. 틀리면 401.
   3. 응답의 presigned URL 로 S3 직접 GET.
 
@@ -62,7 +62,7 @@ async def public_link_meta(
     summary="공개 링크로 presigned GET URL 발급",
     responses={
         401: {"description": "password 없음/틀림"},
-        404: {"description": "링크 없음·만료·철회"},
+        404: {"description": "링크 없음, 만료, 철회"},
         409: {"description": "파일이 아니거나 업로드 미완료"},
     },
 )

@@ -59,7 +59,7 @@ export function VariantB() {
               ))}
             </div>
             <span>
-              {versions.length}개 버전 · {RETENTION_DAYS}일 보관
+              {versions.length}개 버전, {RETENTION_DAYS}일 보관
             </span>
           </div>
         </div>
@@ -118,15 +118,11 @@ export function VariantB() {
                             <span className="shrink-0 text-muted-foreground">{formatTime(v.savedAt)}</span>
                           </span>
                           <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <span>v{v.no}</span>
-                            <span className="opacity-50">·</span>
+                            <span>v{v.no},</span>
                             <span className="tabular-nums">{formatBytes(v.size)}</span>
                             <Delta n={deltaOf(versions, v)} />
                             {v.restoredFrom && (
-                              <>
-                                <span className="opacity-50">·</span>
-                                <span>v{v.restoredFrom}에서 복원</span>
-                              </>
+                              <span className="-ml-1.5">, v{v.restoredFrom}에서 복원</span>
                             )}
                           </span>
                         </span>
@@ -167,7 +163,7 @@ export function VariantB() {
                       {asking && (
                         <div className="mx-3 mb-3 rounded-md bg-amber-50 px-3 py-2.5 dark:bg-amber-950/40">
                           <p className="text-xs text-amber-900 dark:text-amber-200">
-                            v{v.no}으로 복원 · 현재 버전은 기록에 남음
+                            v{v.no}으로 복원, 현재 버전은 기록에 남음
                           </p>
                           <div className="mt-2 flex justify-end gap-1.5">
                             <Button

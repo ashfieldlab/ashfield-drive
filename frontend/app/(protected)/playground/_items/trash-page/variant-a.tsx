@@ -23,7 +23,7 @@ export function VariantA() {
       <header className="mb-5 flex h-9 items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">휴지통</h1>
         <span className="text-sm text-muted-foreground tabular-nums">
-          {t.items.length}개 · {formatBytes(t.totalSize)}
+          {t.items.length}개, {formatBytes(t.totalSize)}
         </span>
         <div className="flex-1" />
         {t.items.length > 0 && !confirmEmpty && (

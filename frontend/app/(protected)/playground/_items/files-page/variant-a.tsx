@@ -318,7 +318,7 @@ function FolderSummary({ drive }: { drive: Drive }) {
       <div className="px-4 pt-4 pb-3">
         <h2 className="text-[15px] font-semibold">{f ? f.name : "내 파일"}</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          폴더 {folders} · 파일 {files.length} · {formatBytes(total)}
+          폴더 {folders}, 파일 {files.length}, {formatBytes(total)}
         </p>
       </div>
       <Section title="저장 공간">

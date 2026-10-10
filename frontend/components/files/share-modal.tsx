@@ -255,7 +255,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
                   {s.grantee_name ?? s.grantee_email ?? s.grantee_sub}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {s.permission} · {formatDateTime(s.granted_at)}
+                  {s.permission}, {formatDateTime(s.granted_at)}
                 </div>
               </div>
               <button
@@ -427,9 +427,9 @@ function LinksTab({ node }: { node: NodeResponse }) {
                     {urlFor(l.token)}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {l.has_password ? "🔒 비밀번호 필요 · " : ""}
+                    {l.has_password ? "🔒 비밀번호 필요, " : ""}
                     접근 {l.access_count}회
-                    {l.expires_at && ` · 만료 ${formatDateTime(l.expires_at)}`}
+                    {l.expires_at && `, 만료 ${formatDateTime(l.expires_at)}`}
                   </div>
                 </div>
                 <button

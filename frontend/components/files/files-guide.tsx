@@ -7,7 +7,7 @@ import { HelpCircle } from "lucide-react"
 import { logger } from "@/lib/utils/logger"
 
 // 내 파일 화면 사용법 투어 (driver.js). 행 액션 버튼은 id 가 동적이라 접미사
-// 셀렉터로 첫 행을 잡는다. selector 가 DOM 에 없는 스텝(권한·데이터에 따라 없는
+// 셀렉터로 첫 행을 잡는다. selector 가 DOM 에 없는 스텝(권한과 데이터에 따라 없는
 // 버튼)은 실행 직전 걸러낸다.
 interface GuideStep {
   selector?: string
@@ -37,7 +37,7 @@ const STEPS: GuideStep[] = [
     selector: '[data-testid$="-share"]',
     title: "공유",
     description:
-      "이 버튼을 누르면 공유 창이 열립니다. ‘사용자’ 탭에서 워크스페이스 구성원에게 읽기·쓰기 권한을 지정해 공유하고, ‘외부 링크’ 탭에서 링크(비밀번호 설정 가능)로 공유합니다.",
+      "이 버튼을 누르면 공유 창이 열립니다. ‘사용자’ 탭에서 워크스페이스 구성원에게 읽기와 쓰기 권한을 지정해 공유하고, ‘외부 링크’ 탭에서 링크(비밀번호 설정 가능)로 공유합니다.",
   },
   {
     selector: '[data-testid$="-delete"]',

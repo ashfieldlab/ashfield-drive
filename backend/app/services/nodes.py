@@ -81,7 +81,7 @@ _ANCESTOR_GROUP_SHARE_SQL = text(
     """
 )
 
-# 조상(자신 포함) 중 vault 가 있으면 그 vault 의 node_id·created_by 반환 (ADR-0016).
+# 조상(자신 포함) 중 vault 가 있으면 그 vault 의 node_id, created_by 반환 (ADR-0016).
 # vault 내부 노드는 scope 기본권한(shared=전원 write) 대신 vault 전용 ACL 적용.
 _VAULT_ANCESTOR_SQL = text(
     """
@@ -97,7 +97,7 @@ _VAULT_ANCESTOR_SQL = text(
     """
 )
 
-# 조상(자신 포함) 중 팀 폴더가 있으면 그 부서 id·생성자 반환 (docs/group-sharing.html 4단계).
+# 조상(자신 포함) 중 팀 폴더가 있으면 그 부서 id, 생성자 반환 (docs/group-sharing.html 4단계).
 # 팀폴더 서브트리는 "워크스페이스 전원 write" 대신 부서 ACL (그 부서+하위만) 적용: vault 의 부서판.
 _TEAM_FOLDER_ANCESTOR_SQL = text(
     """
@@ -229,8 +229,8 @@ async def assert_access(
 ) -> None:
     if node.workspace_id != workspace_id:
         raise HTTPException(404, "Node not found")
-    # 휴지통(soft-deleted) 노드는 조회·다운로드 등 일반 접근 전부 차단.
-    # 복원·휴지통 비우기는 별도 라우트(assert_access 미경유)에서 처리.
+    # 휴지통(soft-deleted) 노드는 조회와 다운로드 등 일반 접근 전부 차단.
+    # 복원과 휴지통 비우기는 별도 라우트(assert_access 미경유)에서 처리.
     if node.deleted_at is not None:
         raise HTTPException(404, "Node not found")
     rank = await effective_permission(db, node, user=user, workspace_id=workspace_id)
@@ -272,7 +272,7 @@ _ANCESTORS_SQL = text(
 async def list_ancestors(
     db: AsyncSession, *, leaf_id: str, workspace_id: str, user: UserContext
 ) -> list[dict]:
-    """leaf 노드의 root → leaf 순서 조상 체인. 권한·워크스페이스 가드 통과한 노드만.
+    """leaf 노드의 root → leaf 순서 조상 체인. 권한과 워크스페이스 가드 통과한 노드만.
 
     leaf 자신이 다른 워크스페이스 노드면 404 마스킹.
     """
@@ -422,7 +422,7 @@ async def list_subtree(
 
     personal = 본인 소유 전부 / shared = 워크스페이스 전체. (FileShare 외부 노드는 별도)
 
-    접근 불가한 보안 폴더(vault)·팀 폴더의 내용은 sync 에서도 제외: 웹
+    접근 불가한 보안 폴더(vault), 팀 폴더의 내용은 sync 에서도 제외: 웹
     (list_children/effective_permission)과 동일한 비공개 보장. 비-멤버 멤버에게
     내용이 새지 않게 한다.
       - vault: 루트는 부모 목록에 보이므로 유지, 하위만 숨김 (ADR-0016).

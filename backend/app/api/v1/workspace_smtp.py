@@ -171,7 +171,7 @@ async def delete_workspace_smtp(
 @router.post(
     "/connection-test",
     summary="발송 없이 SMTP 연결+인증만 확인 (Workspace Admin)",
-    responses={400: {"description": "연결·인증 실패"}},
+    responses={400: {"description": "연결, 인증 실패"}},
 )
 async def test_workspace_smtp_connection(
     body: SmtpConnectionTestRequest,

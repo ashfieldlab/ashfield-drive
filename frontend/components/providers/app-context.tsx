@@ -46,7 +46,7 @@ export interface AppContextType {
 }
 
 /**
- * `/api/v1/me`: 신원·워크스페이스·권한의 단일 출처.
+ * `/api/v1/me`: 신원, 워크스페이스, 권한의 단일 출처.
  * BFF 가 Better Auth 세션으로 JWT 를 받아 백엔드에 넘기고, 백엔드가 검증한 신원 + 로컬 DB 소속을 반환.
  * 브라우저 JS 엔 토큰이 없으므로 여기서 신원을 얻는다.
  */
@@ -126,7 +126,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const [bootstrapped, setBootstrapped] = useState(false)
   const channelRef = useRef<BroadcastChannel | null>(null)
 
-  // 신원·워크스페이스·권한 = 백엔드가 검증한 /me.
+  // 신원, 워크스페이스, 권한 = 백엔드가 검증한 /me.
   const { data: me } = useApiGet<MeResponse>("/api/v1/me")
 
   const workspaces: string[] = useMemo(() => me?.groups ?? [], [me])
@@ -194,7 +194,7 @@ export function AppProvider({ children }: AppProviderProps) {
     })
   }, [workspaces])
 
-  // 다른 탭에서 온 워크스페이스 변경 메시지 수신: state·cookie 동기화 후 전체 refetch.
+  // 다른 탭에서 온 워크스페이스 변경 메시지 수신: state, cookie 동기화 후 전체 refetch.
   useEffect(() => {
     const channel = createWorkspaceChannel()
     channelRef.current = channel
@@ -224,7 +224,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
   // Cross-service 동기화: 부모 도메인 공유 cookie + 탭 포커스 재읽기.
   // 다른 서비스(예: drive ↔ calendar, 같은 부모 도메인)에서 워크스페이스를 바꾸면 공유 cookie 가
-  // 갱신되고, 이 탭이 다시 포커스될 때 cookie 를 재읽어 state·데이터를 맞춘다.
+  // 갱신되고, 이 탭이 다시 포커스될 때 cookie 를 재읽어 state, 데이터를 맞춘다.
   // BroadcastChannel 은 same-origin 만 닿으므로 cross-service 는 이 경로가 담당.
   // (운영 + COOKIE_DOMAIN 설정 시 의미. dev/host-only 면 사실상 no-op.)
   useEffect(() => {

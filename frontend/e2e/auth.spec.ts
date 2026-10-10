@@ -18,7 +18,7 @@ test.describe("인증 (Ashfield 계정 서버 SSO)", () => {
     await expect(page.getByTestId("login-ashfield-button")).toHaveText(/Ashfield 계정으로 로그인/)
   })
 
-  test("계정 서버 가입·로그인 → 앱 복귀, 개인 워크스페이스 동기화, 로그아웃은 계정 서버까지", async ({
+  test("계정 서버 가입과 로그인 → 앱 복귀, 개인 워크스페이스 동기화, 로그아웃은 계정 서버까지", async ({
     page,
   }) => {
     const user = {

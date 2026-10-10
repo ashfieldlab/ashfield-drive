@@ -64,12 +64,12 @@ class Node(Base, TimestampMixin):
         String(512), nullable=True
     )
     # E2E vault 파일의 wrapped DEK (ADR-0016): DEK 를 vault_key 로 암호화한 것.
-    # vault 밖 일반 파일은 NULL. 서버는 이걸 보관·전달만 (복호화 불가).
+    # vault 밖 일반 파일은 NULL. 서버는 이걸 보관과 전달만 (복호화 불가).
     wrapped_dek: Mapped[str | None] = mapped_column(Text, nullable=True)
     # overwrite 진행 중 새 내용의 wrapped DEK: 완료 시 wrapped_dek 로 승격.
     pending_wrapped_dek: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # 현재 내용을 마지막으로 저장한 사람·시각 (ADR-0022 버전 묶기 기준).
+    # 현재 내용을 마지막으로 저장한 사람과 시각 (ADR-0022 버전 묶기 기준).
     # updated_at 은 이름 변경에도 바뀌어서 쓸 수 없다. 버전 도입 전 노드는 NULL.
     content_updated_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
     content_updated_at: Mapped[datetime | None] = mapped_column(

@@ -198,7 +198,7 @@ async def mark_all_read(
         Notification.workspace_id == workspace_id,
         Notification.read_at.is_(None),
     ]
-    # 뱃지·목록이 현재 앱 알림만 보여주므로, "모두 읽음"도 그 앱 범위만
+    # 뱃지와 목록이 현재 앱 알림만 보여주므로, "모두 읽음"도 그 앱 범위만
     # 처리해야 함: 안 그러면 안 본 다른 앱 알림까지 읽음 처리되어 놓친다.
     if entity_types:
         conds.append(Notification.entity_type.in_(entity_types))

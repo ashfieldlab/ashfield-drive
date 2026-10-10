@@ -1,8 +1,8 @@
-# 파일·폴더: 단일 `nodes` 테이블 + parent_id 트리 + scope 컬럼
+# 파일과 폴더: 단일 `nodes` 테이블 + parent_id 트리 + scope 컬럼
 
-File과 Folder를 별도 테이블로 분리하지 않고 **단일 `nodes` 테이블 + `kind: file|folder` 컬럼**으로 통합한다 (Linux inode 패턴). Nextcloud·Dropbox·Google Drive 모두 같은 모델.
+File과 Folder를 별도 테이블로 분리하지 않고 **단일 `nodes` 테이블 + `kind: file|folder` 컬럼**으로 통합한다 (Linux inode 패턴). Nextcloud, Dropbox, Google Drive 모두 같은 모델.
 
-**트리 구조**: `parent_id` self-reference. 루트는 `parent_id IS NULL`. 이동·rename은 한 row update: 폴더 안에 천 개 파일 있어도 비용 동일.
+**트리 구조**: `parent_id` self-reference. 루트는 `parent_id IS NULL`. 이동과 rename은 한 row update: 폴더 안에 천 개 파일 있어도 비용 동일.
 
 **Scope 컬럼**: `scope: 'personal' | 'shared'`. Phase 1 권한 모델의 토대.
 - `personal`: owner만 접근. 자식은 부모 owner 강제.
@@ -19,4 +19,4 @@ File과 Folder를 별도 테이블로 분리하지 않고 **단일 `nodes` 테�
 
 **휴지통**: `deleted_at` soft delete + 30일 후 hard delete cron. 폴더 삭제는 자손 cascade.
 
-**대안 검토 (path-based)**: 폴더 rename = 자식 path 전부 update. 폴더 큰 경우 lock·성능 문제. 채택 안 함.
+**대안 검토 (path-based)**: 폴더 rename = 자식 path 전부 update. 폴더 큰 경우 lock, 성능 문제. 채택 안 함.

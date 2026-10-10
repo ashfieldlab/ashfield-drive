@@ -1,4 +1,4 @@
-"""/api/v1/admin/workspaces: System Admin 의 워크스페이스·멤버 role 관리 (ADR-0010).
+"""/api/v1/admin/workspaces: System Admin 의 워크스페이스와 멤버 role 관리 (ADR-0010).
 
 System Admin 은 모든 워크스페이스 super-set 권한. 본인이 그 워크스페이스 멤버일 필요 X.
 워크스페이스 admin (role='admin') 임명/강등 = 여기서만 가능.

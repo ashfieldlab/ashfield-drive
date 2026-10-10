@@ -1,7 +1,7 @@
 """FileVersion: 파일의 과거 내용 한 벌 (ADR-0022).
 
-덮어쓰기·복원 때 밀려난 내용의 S3 객체를 지우지 않고 여기에 붙들어 둔다.
-saved_by/saved_at = 그 내용을 저장했던 사람·시각. created_at = 버전이 된 시각(만료 기준).
+덮어쓰기와 복원 때 밀려난 내용의 S3 객체를 지우지 않고 여기에 붙들어 둔다.
+saved_by/saved_at = 그 내용을 저장했던 사람과 시각. created_at = 버전이 된 시각(만료 기준).
 """
 
 from datetime import datetime

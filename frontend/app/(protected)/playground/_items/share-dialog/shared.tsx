@@ -15,7 +15,7 @@ import {
 import { LINK, ME, MEMBERS, NODES, SHARES, formatBytes } from "../_mock"
 
 export const NODE = NODES.find((n) => n.id === "f-design")!
-export const NODE_META = `폴더 · ${NODE.count}개 항목 · ${formatBytes(NODE.size)}`
+export const NODE_META = `폴더, ${NODE.count}개 항목, ${formatBytes(NODE.size)}`
 
 export type Perm = "read" | "write" | "manage"
 export type LinkPerm = "read" | "write"

@@ -38,7 +38,7 @@ const FILTER_LABELS: Record<FileFilter, string> = {
   other: "기타",
 }
 
-// 정렬 기준·방향. 폴더는 항상 파일보다 위(파일 매니저 관례).
+// 정렬 기준과 방향. 폴더는 항상 파일보다 위(파일 매니저 관례).
 type SortKey = "name" | "size" | "updated"
 type SortDir = "asc" | "desc"
 
@@ -69,7 +69,7 @@ interface Props {
   vaultRootId?: string | null
   ensureUnlocked?: () => Promise<void>
   unlocked?: boolean
-  // 쓰기 권한 (write/manage). false 면 편집·공유·삭제 버튼 숨김 (읽기전용 멤버).
+  // 쓰기 권한 (write/manage). false 면 편집, 공유, 삭제 버튼 숨김 (읽기전용 멤버).
   canWrite?: boolean
 }
 
@@ -95,7 +95,7 @@ export function FilesList({
   const [versioning, setVersioning] = useState<NodeResponse | null>(null)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
-  // 정렬·필터 (UI 환경설정: localStorage 로 새로고침 후 유지).
+  // 정렬과 필터 (UI 환경설정: localStorage 로 새로고침 후 유지).
   const [filter, setFilter] = useState<FileFilter>("all")
   const [sortKey, setSortKey] = useState<SortKey>("name")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
@@ -159,7 +159,7 @@ export function FilesList({
 
   // 표시용 이름: 3상태:
   //   vault 밖     → 원본
-  //   vault+잠김   → "🔒 잠김" (원본 ciphertext·평문 절대 노출 X)
+  //   vault+잠김   → "🔒 잠김" (원본 ciphertext, 평문 절대 노출 X)
   //   vault+해제   → 복호화본 (진행 중이면 "🔒 …")
   const displayName = (n: NodeResponse): string => {
     if (!vaultRootId) return n.name
@@ -231,7 +231,7 @@ export function FilesList({
     return filtered
   }, [selected, nodes])
 
-  // 전체선택·표시는 현재 필터로 보이는 행 기준.
+  // 전체선택과 표시는 현재 필터로 보이는 행 기준.
   const allChecked =
     displayNodes.length > 0 && displayNodes.every((n) => validSelection.has(n.id))
   const someChecked = validSelection.size > 0 && !allChecked
@@ -333,7 +333,7 @@ export function FilesList({
     toast.success(
       fail === 0
         ? `${ok}개 항목 휴지통으로 이동`
-        : `${ok}개 이동 · ${fail}개 실패`,
+        : `${ok}개 이동, ${fail}개 실패`,
     )
     setSelected(new Set())
     invalidateApi("/api/v1/nodes")
@@ -372,7 +372,7 @@ export function FilesList({
     const ok = results.filter((r) => r.status === "fulfilled").length
     const fail = results.length - ok
     toast.success(
-      fail === 0 ? `${ok}개 항목 복원` : `${ok}개 복원 · ${fail}개 실패`,
+      fail === 0 ? `${ok}개 항목 복원` : `${ok}개 복원, ${fail}개 실패`,
     )
     setSelected(new Set())
     invalidateApi("/api/v1/nodes")

@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     s3_endpoint_url: str = "http://localhost:19200"
     # presigned URL 응답 시 host 부분 치환: dev 의 same-origin proxy(Next rewrites) 우회용.
     # 비어있으면 frontend_port 기반으로 자동 derive (`localhost:{FRONTEND_PORT}/_minio`).
-    # 운영(컨테이너·k8s)에선 명시(예: `https://files.example.com`).
+    # 운영(컨테이너, k8s)에선 명시(예: `https://files.example.com`).
     s3_public_endpoint_url: str = ""
 
     @property
@@ -112,7 +112,7 @@ class Settings(BaseSettings):
             self.auth_jwks_url and self.auth_issuer and self.auth_audience
         ):
             raise RuntimeError(
-                "AUTH_JWKS_URL·AUTH_ISSUER·AUTH_AUDIENCE 는 운영에서 필수입니다 (안전 가드)"
+                "AUTH_JWKS_URL, AUTH_ISSUER, AUTH_AUDIENCE 는 운영에서 필수입니다 (안전 가드)"
             )
         return self
 

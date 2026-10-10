@@ -4,7 +4,7 @@
   scope=workspace: 활성 워크스페이스의 감사 로그. 그 워크스페이스 admin(또는 System Admin).
   scope=system : workspace_id NULL 인 시스템 레벨 로그. System Admin 만.
 
-필터: 기간(from/to)·entity_type·action·actor_sub. CSV export 제공(같은 필터).
+필터: 기간(from/to), entity_type, action, actor_sub. CSV export 제공(같은 필터).
 """
 
 import csv
@@ -156,7 +156,7 @@ async def list_audit(
 
 @router.get(
     "/export.csv",
-    summary="감사 로그 CSV 내보내기 (같은 접근·필터)",
+    summary="감사 로그 CSV 내보내기 (같은 접근과 필터)",
     responses={403: {"description": "권한 없음"}},
 )
 async def export_audit_csv(

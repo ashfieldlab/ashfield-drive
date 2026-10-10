@@ -19,7 +19,7 @@ from app.services.nodes import purge_subtree_storage
 
 
 async def purge_expired_trash(ctx: dict) -> int:
-    """retention 지난 soft-deleted 노드를 hard delete. 발견·삭제한 top-level 노드 수 반환."""
+    """retention 지난 soft-deleted 노드를 hard delete. 발견하고 삭제한 top-level 노드 수 반환."""
     cutoff = datetime.now(UTC) - timedelta(days=settings.trash_retention_days)
 
     async with AsyncSessionLocal() as db:

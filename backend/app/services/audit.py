@@ -32,7 +32,7 @@ async def write_audit(
       - 명시값(예: 'public' for 공개 라우트) 이 있으면 override.
     """
     audit_meta = dict(meta or {})
-    # 보안 폴더(vault) 콘텐츠는 암호문 이름·크기를 활동/감사 로그에 노출하지 않는다.
+    # 보안 폴더(vault) 콘텐츠는 암호문 이름과 크기를 활동/감사 로그에 노출하지 않는다.
     # 호출부마다 분기하지 않게 여기서 중앙 마스킹 (ADR-0016).
     if entity_type == "node" and entity_id and entity_id != "*":
         from app.services.nodes import is_vault_content

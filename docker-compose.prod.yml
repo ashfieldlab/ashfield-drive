@@ -1,6 +1,6 @@
 # 운영 배포: 단일 호스트 docker compose.
 #
-# 인프라(redis·postgres·minio·mailpit) + 앱(backend·worker·frontend) 모두 컨테이너로.
+# 인프라(redis, postgres, minio, mailpit) + 앱(backend, worker, frontend) 모두 컨테이너로.
 # 모든 서비스 `restart: unless-stopped`: 죽으면 즉시 재시작 (운영 supervision).
 #
 # 시작:
@@ -190,7 +190,7 @@ services:
       start_period: 20s
       retries: 3
 
-  # Better Auth 테이블 생성·갱신 (스키마 auth): 일회성. `make prod-auth-migrate`.
+  # Better Auth 테이블 생성과 갱신 (스키마 auth): 일회성. `make prod-auth-migrate`.
   # 런타임 이미지엔 CLI 가 없어 builder 단계 이미지(전체 node_modules + 소스)로 실행.
   auth-migrate:
     build:

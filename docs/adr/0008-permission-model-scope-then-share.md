@@ -22,7 +22,7 @@
 
 ## 3차: ExternalLink (Phase 1.5)
 
-익명·외부 사용자에게 링크 공유. `external_links (token, expires_at?, password_hash?, permission, access_count, ...)`.
+익명과 외부 사용자에게 링크 공유. `external_links (token, expires_at?, password_hash?, permission, access_count, ...)`.
 
 워크스페이스 간 공유는 ExternalLink 외엔 안 함: 계정 간 직접 공유는 보안 복잡. 외부 링크가 충분.
 

@@ -1,6 +1,6 @@
 """/api/v1/workspaces/{id}/members: Workspace Admin 의 멤버 조회 (읽기 전용, ADR-0024).
 
-멤버 추가·제거·역할 변경은 Ashfield 계정 서버가 한다: 앱엔 쓰기 API 가 없다.
+멤버 추가, 제거, 역할 변경은 Ashfield 계정 서버가 한다: 앱엔 쓰기 API 가 없다.
 """
 
 import pytest
@@ -93,7 +93,7 @@ async def test_workspace_admin_cannot_touch_other_workspace(client, auth_headers
     ],
 )
 async def test_membership_writes_are_gone(client, auth_headers, db_session, method, path, body):
-    """멤버 추가·제거·역할 변경은 계정 서버에서만: 앱엔 라우트가 없다 (405/404)."""
+    """멤버 추가, 제거, 역할 변경은 계정 서버에서만: 앱엔 라우트가 없다 (405/404)."""
     admin_h = await _make_admin(client, auth_headers, db_session, "frank", "acme-corp")
     res = await client.request(method, path, headers=admin_h, json=body)
     assert res.status_code in (404, 405)

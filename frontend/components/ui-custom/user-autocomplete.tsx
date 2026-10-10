@@ -17,7 +17,7 @@ interface Props {
  * 워크스페이스 멤버 자동완성: 디바운스 200ms.
  *
  * 표시 ↔ 값 분리:
- *   - 입력 박스에는 사람이 보는 문자열(name·email)
+ *   - 입력 박스에는 사람이 보는 문자열(name, email)
  *   - 선택 후 hidden value 에 sub 저장
  *   - 빈 문자열 입력 시 onChange("", null) 호출 → grantee 클리어
  */

@@ -48,7 +48,7 @@ async function proxy(
   const targetUrl = new URL(targetPath, BACKEND_URL)
   targetUrl.search = req.nextUrl.search
 
-  // 헤더 구성: 인증·테넌트만 명시적으로, content-type은 passthrough
+  // 헤더 구성: 인증과 테넌트만 명시적으로, content-type은 passthrough
   const headers = new Headers()
   for (const [k, v] of Object.entries(authHeaders)) headers.set(k, v)
 
@@ -89,7 +89,7 @@ async function proxy(
   } catch (err) {
     // 백엔드 도달 자체 실패: ECONNREFUSED, DNS, timeout 등.
     // 무처리로 throw 하면 Next.js 가 generic 500 을 뱉어 사용자가 원인을 모름.
-    // 명시적 502 + JSON 응답으로 BFF·backend 경계의 책임을 분명히.
+    // 명시적 502 + JSON 응답으로 BFF, backend 경계의 책임을 분명히.
      
     console.error("[bff] backend unreachable", {
       target: targetUrl.toString(),
@@ -98,7 +98,7 @@ async function proxy(
     })
     return NextResponse.json(
       {
-        detail: `Backend unreachable (${BACKEND_URL}). 백엔드 서버가 띄워졌는지·포트가 맞는지 확인.`,
+        detail: `Backend unreachable (${BACKEND_URL}). 백엔드 서버가 띄워졌는지, 포트가 맞는지 확인.`,
         target: BACKEND_URL,
       },
       { status: 502, headers: { "Cache-Control": "no-store" } },
@@ -110,7 +110,7 @@ async function proxy(
   if (resCt) resHeaders.set("content-type", resCt)
   const resReqId = upstream.headers.get("x-request-id")
   if (resReqId) resHeaders.set("x-request-id", resReqId)
-  // 브라우저·Next 가 응답을 캐시해서 삭제 직후 stale 이 살아남는 것 방지
+  // 브라우저와 Next 가 응답을 캐시해서 삭제 직후 stale 이 살아남는 것 방지
   resHeaders.set("Cache-Control", "no-store, must-revalidate")
 
   return new NextResponse(upstream.body, {

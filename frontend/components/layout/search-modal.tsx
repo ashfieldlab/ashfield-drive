@@ -12,7 +12,7 @@ interface SearchResponse {
 }
 
 const KIND_OPTIONS: [string, string][] = [
-  ["", "파일·폴더"],
+  ["", "파일과 폴더"],
   ["file", "파일만"],
   ["folder", "폴더만"],
 ]
@@ -23,7 +23,7 @@ const CATEGORY_OPTIONS: [string, string][] = [
   ["other", "기타"],
 ]
 
-// 상세 검색 모달: 종류·수정일 필터. 제출식.
+// 상세 검색 모달: 종류와 수정일 필터. 제출식.
 export function SearchModal({
   initialQuery,
   onClose,

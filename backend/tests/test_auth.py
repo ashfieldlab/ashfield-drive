@@ -1,4 +1,4 @@
-"""계정 서버 액세스 토큰 인증 + 로컬 사용자·워크스페이스 동기화 (ADR-0024, ADR-0004)."""
+"""계정 서버 액세스 토큰 인증 + 로컬 사용자와 워크스페이스 동기화 (ADR-0024, ADR-0004)."""
 
 import asyncio
 from uuid import uuid4
@@ -167,7 +167,7 @@ async def test_profile_change_updates_user(client, db_session):
 
 
 # ---------------------------------------------------------------------------
-# 계약 모양 (aud 배열 · iss · picture)
+# 계약 모양 (aud 배열, iss, picture)
 # ---------------------------------------------------------------------------
 
 
@@ -206,7 +206,7 @@ async def test_small_clock_skew_tolerated(client):
 
 
 # ---------------------------------------------------------------------------
-# workspaces 클레임 → 로컬 워크스페이스·멤버십 동기화
+# workspaces 클레임 → 로컬 워크스페이스와 멤버십 동기화
 # ---------------------------------------------------------------------------
 
 
@@ -300,7 +300,7 @@ async def test_workspace_removed_from_claim_drops_membership(client, db_session)
     body = (await client.get("/api/v1/me", headers=bearer(token))).json()
     assert body["groups"] == ["wsKeep"]
     assert await _memberships(db_session, "acc-rm") == {"wsKeep": "member"}
-    # 워크스페이스 행 자체는 남는다 (다른 멤버·데이터가 있을 수 있음)
+    # 워크스페이스 행 자체는 남는다 (다른 멤버와 데이터가 있을 수 있음)
     assert await db_session.get(Workspace, "wsLeave") is not None
 
     res = await client.get(
@@ -407,7 +407,7 @@ async def test_malformed_workspace_entries_ignored(client, db_session):
 
 @pytest.mark.asyncio
 async def test_concurrent_first_sync_race_safe():
-    """같은 사용자의 동시 첫 요청: 별개 트랜잭션들이 동시에 동기화해도 워크스페이스·멤버십은 하나씩."""
+    """같은 사용자의 동시 첫 요청: 별개 트랜잭션들이 동시에 동기화해도 워크스페이스와 멤버십은 하나씩."""
     sub = f"race-{uuid4().hex[:12]}"
     wsid = f"wsRace{uuid4().hex[:8]}"
     ident = Identity(

@@ -1,4 +1,4 @@
-"""dispatch_relay: 즉시발송이 놓친 미처리 알림·웹훅 수거 cron (#2).
+"""dispatch_relay: 즉시발송이 놓친 미처리 알림과 웹훅 수거 cron (#2).
 
 즉시경로(PendingDispatch.fire)가 성공 시 각 durable row 를 done 표시하고, 이 relay 는
 아직 미처리인 것만(2분+ 경과) 주워 발송한다 → 워커/API 재시작에도 유실 방지.
@@ -26,7 +26,7 @@ _GRACE = timedelta(minutes=2)
 
 
 async def dispatch_pending(ctx: dict) -> int:
-    """미처리 웹훅·이메일을 수거 발송. 처리 건수 반환."""
+    """미처리 웹훅과 이메일을 수거 발송. 처리 건수 반환."""
     upper = datetime.now(UTC) - _GRACE
     processed = 0
 

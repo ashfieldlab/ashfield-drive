@@ -129,7 +129,7 @@ export default function AdminSmtpPage() {
           tls_mode: tlsMode,
         },
       })
-      toast.success("SMTP 서버 연결·인증 성공")
+      toast.success("SMTP 서버 연결과 인증 성공")
     } catch (e) {
       toast.error(`연결 실패: ${(e as Error).message}`)
     } finally {
@@ -200,7 +200,7 @@ export default function AdminSmtpPage() {
               autoComplete="new-password"
             />
           </Row>
-          <Row label="암호화" hint="STARTTLS=587 표준 · SSL/TLS=465 implicit · 없음=25/2525 평문(권장 X)">
+          <Row label="암호화" hint="STARTTLS=587 표준, SSL/TLS=465 implicit, 없음=25/2525 평문(권장 X)">
             <select
               value={tlsMode}
               onChange={(e) => setTlsMode(e.target.value as TlsMode)}
@@ -239,7 +239,7 @@ export default function AdminSmtpPage() {
               disabled={busy || !host || !port}
               data-testid="admin-smtp-connection-test-button"
               className="rounded border border-input bg-card px-4 py-2 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
-              title="발송 없이 서버 연결·인증만 확인"
+              title="발송 없이 서버 연결과 인증만 확인"
             >
               연결 확인
             </button>

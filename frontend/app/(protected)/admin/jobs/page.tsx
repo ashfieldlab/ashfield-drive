@@ -85,7 +85,7 @@ export default function AdminJobsPage() {
         {data && (
           <span className="ml-2 text-xs text-muted-foreground" data-testid="admin-jobs-summary">
             {failed > 0 && <b className="text-rose-600 dark:text-rose-400">실패 {failed}</b>}
-            {failed > 0 && never > 0 && " · "}
+            {failed > 0 && never > 0 && ", "}
             {never > 0 && <span className="text-muted-foreground">미실행 {never}</span>}
             {failed === 0 && never === 0 && <span className="text-emerald-600 dark:text-emerald-400">전부 정상</span>}
           </span>
@@ -128,8 +128,8 @@ function JobCard({ job }: { job: JobSummary }) {
           {last ? (
             <p className="mt-1 text-xs text-muted-foreground" title={formatDateTime(last.started_at)}>
               마지막 실행 {relativeTime(last.started_at)}
-              {last.duration_ms != null && ` · ${formatDuration(last.duration_ms)}`}
-              {last.item_count != null && ` · ${last.item_count}건`}
+              {last.duration_ms != null && `, ${formatDuration(last.duration_ms)}`}
+              {last.item_count != null && `, ${last.item_count}건`}
             </p>
           ) : (
             <p className="mt-1 text-xs text-muted-foreground/70">아직 실행된 적 없음</p>
@@ -156,7 +156,7 @@ function JobCard({ job }: { job: JobSummary }) {
             <span
               key={run.id}
               className={`h-2 w-2 rounded-sm ${DOT[run.status]}`}
-              title={`${run.status} · ${formatDateTime(run.started_at)}`}
+              title={`${run.status}, ${formatDateTime(run.started_at)}`}
             />
           ))}
         </div>

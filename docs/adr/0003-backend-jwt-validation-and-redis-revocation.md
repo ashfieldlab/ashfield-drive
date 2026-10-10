@@ -1,6 +1,6 @@
 # 백엔드는 JWT를 직접 검증한다 (Redis revocation 은 폐기)
 
-백엔드는 프록시가 풀어준 X-* 신원 헤더를 신뢰하는 대신 `Authorization: Bearer <JWT>`를 받아 JWKS로 로컬 검증한다(RS256 + iss / aud / exp / nbf / iat, JWKS 1시간 캐싱, 모르는 kid 면 재조회). 이로써 백엔드는 다른 서비스 없이 단독 검증·테스트가 가능하다. 토큰 발급자는 Better Auth JWT 플러그인이다 (ADR-0023).
+백엔드는 프록시가 풀어준 X-* 신원 헤더를 신뢰하는 대신 `Authorization: Bearer <JWT>`를 받아 JWKS로 로컬 검증한다(RS256 + iss / aud / exp / nbf / iat, JWKS 1시간 캐싱, 모르는 kid 면 재조회). 이로써 백엔드는 다른 서비스 없이 단독 검증과 테스트가 가능하다. 토큰 발급자는 Better Auth JWT 플러그인이다 (ADR-0023).
 
 ## 개정 (2026-10, ADR-0023)
 

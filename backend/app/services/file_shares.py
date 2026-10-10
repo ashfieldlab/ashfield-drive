@@ -1,6 +1,6 @@
 """FileShare 도메인.
 
-생성·삭제는 node.owner_id 만 (Phase 1.5 단순 모델). manage 권한 분리는 Phase 2.
+생성과 삭제는 node.owner_id 만 (Phase 1.5 단순 모델). manage 권한 분리는 Phase 2.
 """
 
 from __future__ import annotations

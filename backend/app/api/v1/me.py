@@ -1,6 +1,6 @@
 """GET /api/v1/me: 현재 사용자 정보 반환.
 
-JWT 검증 → 로컬 사용자·소속 동기화(토큰 `workspaces` 클레임, ADR-0024) 흐름을
+JWT 검증 → 로컬 사용자와 소속 동기화(토큰 `workspaces` 클레임, ADR-0024) 흐름을
 한 번에 시연하는 가장 단순한 라우트.
 """
 
@@ -41,16 +41,16 @@ class MyStorageResponse(BaseModel):
     "/me",
     summary="현재 사용자 정보",
     responses={
-        401: {"description": "JWT 없음·만료·서명·iss·aud 불일치"},
+        401: {"description": "JWT 없음, 만료, 서명, iss, aud 불일치"},
     },
 )
 async def get_me(
     user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """신원 + 우리 DB 의 소속 워크스페이스·role.
+    """신원 + 우리 DB 의 소속 워크스페이스와 role.
 
-    부수효과: `users` 행 upsert, 토큰 `workspaces` 가 바뀌었으면 워크스페이스·멤버십 동기화.
+    부수효과: `users` 행 upsert, 토큰 `workspaces` 가 바뀌었으면 워크스페이스와 멤버십 동기화.
     groups: 소속 워크스페이스 ID 목록. workspaces: 같은 목록의 {id, name, account_workspace_id}
     (account_workspace_id = 계정 서버 워크스페이스 ID, 로컬 레거시 워크스페이스는 null).
     workspace_roles: 워크스페이스별 role (ADR-0010, frontend isWorkspaceAdmin 계산용).
@@ -89,7 +89,7 @@ async def get_me(
 @router.get(
     "/me/storage",
     response_model=MyStorageResponse,
-    summary="내 저장 사용량·한도 (활성 워크스페이스 기준)",
+    summary="내 저장 사용량과 한도 (활성 워크스페이스 기준)",
 )
 async def get_my_storage(
     user: UserContext = Depends(get_current_user),

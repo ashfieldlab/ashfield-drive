@@ -1,4 +1,4 @@
-"""사용자별(워크스페이스 멤버) 스토리지 quota: 설정·조회·enforcement."""
+"""사용자별(워크스페이스 멤버) 스토리지 quota: 설정, 조회, enforcement."""
 
 import pytest
 

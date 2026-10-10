@@ -16,7 +16,7 @@ export function proxy(req: NextRequest) {
 }
 
 // 제외: API(BFF 가 자체 401), Next 정적 자원, MinIO presigned 경로, 외부 공유 링크(/s, 비로그인),
-// 아이콘·매니페스트 등 public 파일.
+// 아이콘과 매니페스트 등 public 파일.
 export const config = {
   matcher: ["/((?!api/|_next/|_minio/|s/|icons/|logos/|favicon|manifest-|.*\\.(?:png|ico|svg|webmanifest)$).*)"],
 }

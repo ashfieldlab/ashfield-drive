@@ -7,11 +7,11 @@
  *
  *   - 만료 60초 전부터 refresh_token 으로 갱신 (Better Auth `refreshToken` API: 새 토큰을 저장).
  *   - 계정 서버는 refresh_token 을 회전시키고 재사용을 감지하면 토큰 패밀리를 폐기한다 →
- *     같은 계정의 토큰 조회·갱신은 이 프로세스 안에서 전부 직렬화한다 (single-flight + 진입 후 재조회).
+ *     같은 계정의 토큰 조회와 갱신은 이 프로세스 안에서 전부 직렬화한다 (single-flight + 진입 후 재조회).
  *     Better Auth `getAccessToken` 도 만료 5초 전이면 스스로 갱신하므로 저장된 토큰 조회까지
  *     single-flight 안에서만 한다. 대기 맵은 globalThis 에 둔다 (dev 에서 모듈이 다시 평가돼도 하나).
  *     여러 인스턴스로 띄우면 인스턴스 간 잠금이 필요하다 (ADR-0024).
- *   - 갱신 실패(폐기·만료·연결 해제) → 재로그인 필요 (`reauth`). BFF 가 세션을 지우고 401.
+ *   - 갱신 실패(폐기, 만료, 연결 해제) → 재로그인 필요 (`reauth`). BFF 가 세션을 지우고 401.
  */
 
 import "server-only"
@@ -23,7 +23,7 @@ import { createSingleFlight, expiresWithin } from "@/lib/auth/token-refresh"
 import { authEnv } from "@/lib/env"
 import { logger } from "@/lib/utils/logger"
 
-/** 이보다 적게 남으면 미리 갱신 (백엔드 도착 전 만료·시계 오차 대비). */
+/** 이보다 적게 남으면 미리 갱신 (백엔드 도착 전 만료와 시계 오차 대비). */
 const REFRESH_MARGIN_MS = 60_000
 
 export type BackendAuth =
@@ -97,7 +97,7 @@ export async function resolveBackendAuth(headers: Headers): Promise<BackendAuth>
     return { ok: true, headers: { Authorization: `Bearer ${token}` } }
   } catch (err) {
     if (err instanceof ReauthRequired) return { ok: false, status: 401, reauth: true }
-    // getAccessToken 의 복호화·조회 실패 등: 세션은 유효하나 토큰을 못 씀 → 재로그인.
+    // getAccessToken 의 복호화와 조회 실패 등: 세션은 유효하나 토큰을 못 씀 → 재로그인.
     if (err instanceof APIError && (err.statusCode === 400 || err.statusCode === 401)) {
       return { ok: false, status: 401, reauth: true }
     }

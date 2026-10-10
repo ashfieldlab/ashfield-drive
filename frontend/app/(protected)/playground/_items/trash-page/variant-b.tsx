@@ -130,7 +130,7 @@ export function VariantB() {
               (confirm === "empty" ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground tabular-nums">
-                    {t.items.length}개 · {formatBytes(t.totalSize)}
+                    {t.items.length}개, {formatBytes(t.totalSize)}
                   </span>
                   <button
                     type="button"
@@ -200,7 +200,7 @@ export function VariantB() {
                   <h2 className="text-sm font-semibold">{g.label}</h2>
                 </button>
                 <span className="text-xs text-muted-foreground tabular-nums">
-                  {g.items.length} · {formatBytes(g.items.reduce((s, i) => s + i.size, 0))}
+                  {g.items.length}, {formatBytes(g.items.reduce((s, i) => s + i.size, 0))}
                 </span>
               </div>
               <div className="grid grid-cols-4 gap-4">

@@ -5,11 +5,11 @@ pytest 공통 fixtures.
   - 테스트 전용 DB(ashfield_drive_test): 동일 컨테이너의 별도 DB
   - 각 테스트는 자기 트랜잭션 안에서 실행 → 끝나면 롤백 (테스트 간 격리)
   - 인증은 mocking 없이 진짜 JWT: Ashfield 계정 서버 액세스 토큰과 같은 모양(RS256, typ at+jwt,
-    iss, aud 배열, picture, workspaces)으로 테스트 프로세스가 만든 RSA 키로 서명 → validator·소속
+    iss, aud 배열, picture, workspaces)으로 테스트 프로세스가 만든 RSA 키로 서명 → validator, 소속
     동기화 코드 경로 동일. JWKS 는 네트워크 대신 그 키의 공개 JWK 를 돌려주도록 `_fetch_jwks` 만 바꾼다.
-  - `workspaces=[...]` 는 실제 클레임 → 운영 코드(provisioning.sync_workspaces)가 워크스페이스·멤버십을 맞춘다.
-  - `groups=[...]`·`roles=[...]` 는 테스트 전용 `_test_seed` claim: 계정 서버 도입 전의 로컬(레거시)
-    워크스페이스 멤버십·System Admin 을 테스트 transport 가 요청 직전에 DB 에 심는다. 운영 코드는 이 claim 을
+  - `workspaces=[...]` 는 실제 클레임 → 운영 코드(provisioning.sync_workspaces)가 워크스페이스와 멤버십을 맞춘다.
+  - `groups=[...]`, `roles=[...]` 는 테스트 전용 `_test_seed` claim: 계정 서버 도입 전의 로컬(레거시)
+    워크스페이스 멤버십과 System Admin 을 테스트 transport 가 요청 직전에 DB 에 심는다. 운영 코드는 이 claim 을
     모른다. 도메인 테스트 대부분이 이 경로로 활성 워크스페이스를 준비한다.
 """
 
@@ -106,7 +106,7 @@ TestSessionLocal = async_sessionmaker(
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)
 async def _setup_test_db():
-    """세션 전체 한 번: 테스트 DB 스키마 생성·삭제."""
+    """세션 전체 한 번: 테스트 DB 스키마 생성과 삭제."""
     # DB 자체는 사전에 docker-compose의 postgres가 띄워져 있어야 함.
     # CREATE DATABASE는 별도 sync 커넥션으로.
     import asyncpg
@@ -171,7 +171,7 @@ def test_jwks(monkeypatch):
 
 
 async def _apply_test_seed(db: AsyncSession, authorization: str | None) -> None:
-    """테스트 토큰의 `_test_seed`(groups·roles)를 로컬 DB 에 반영.
+    """테스트 토큰의 `_test_seed`(groups, roles)를 로컬 DB 에 반영.
 
     예전 IdP groups 클레임 시맨틱을 테스트에서 재현: 사용자 행을 만들고, 소속을 정확히
     groups 로 맞추며(role 은 보존), roles 에 admin 이 있으면 System Admin.
@@ -276,7 +276,7 @@ async def client(db_session: AsyncSession, monkeypatch) -> AsyncIterator[AsyncCl
     monkeypatch.setattr(notif_mod, "AsyncSessionLocal", fake_factory)
 
     # 배경 dispatch 를 테스트에선 동기(await)로: create_task 가 공유 db_session 을
-    # 동시 사용/commit 해 IllegalStateChange·ResourceClosed 로 flaky 하던 것 제거.
+    # 동시 사용/commit 해 IllegalStateChange, ResourceClosed 로 flaky 하던 것 제거.
     # (운영은 그대로 create_task; 각자 세션이라 문제 없음.)
     async def _sync_dispatch(delivery_ids: list[str]) -> None:
         for d_id in delivery_ids:
@@ -322,7 +322,7 @@ def mint_jwt(
     private_pem: str = TEST_PRIVATE_PEM,
     kid: str = TEST_KID,
 ) -> str:
-    """seed=True 면 `_test_seed` 로 groups·roles 를 DB 에 심는다 (테스트 transport, 레거시 워크스페이스).
+    """seed=True 면 `_test_seed` 로 groups, roles 를 DB 에 심는다 (테스트 transport, 레거시 워크스페이스).
     seed=False 는 실제 첫 로그인처럼 아무 소속 없이 들어오는 토큰.
     workspaces 를 주면 실제 `workspaces` 클레임으로 싣는다 (None 이면 클레임 없음)."""
     now = int(time.time())

@@ -31,7 +31,7 @@ interface MemberListResponse {
 }
 
 /**
- * 워크스페이스 멤버 조회 + 저장 한도(앱 고유 설정). 추가·제거·역할 변경은 Ashfield 계정
+ * 워크스페이스 멤버 조회 + 저장 한도(앱 고유 설정). 추가, 제거, 역할 변경은 Ashfield 계정
  * 서버에서 하고, 바뀐 소속은 다음 토큰 갱신(최대 15분) 또는 재로그인 때 이 앱에 반영된다.
  */
 export default function WorkspaceMembersView({
@@ -235,7 +235,7 @@ export default function WorkspaceMembersView({
           >
             <h3 className="text-base font-semibold text-foreground">저장 한도</h3>
             <p className="text-xs text-muted-foreground">
-              {quotaFor.name ?? quotaFor.user_sub} · 현재 사용{" "}
+              {quotaFor.name ?? quotaFor.user_sub}, 현재 사용{" "}
               {formatBytes(quotaFor.storage_bytes_used)}
             </p>
             <div className="flex items-center gap-2">

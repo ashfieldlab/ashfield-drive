@@ -371,7 +371,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
         setBusy(false)
         setTimeout(() => setProgress((p) => (p?.state === "success" ? null : p)), 2000)
       } else {
-        const msg = `${okCount}개 성공 · ${failedFiles.length}개 실패`
+        const msg = `${okCount}개 성공, ${failedFiles.length}개 실패`
         toast.error(`업로드: ${msg}`)
         setProgress({
           state: "failed",
@@ -474,7 +474,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
           setBusy(false)
           setTimeout(() => setProgress((p) => (p?.state === "success" ? null : p)), 2000)
         } else {
-          const msg = `${okCount}개 성공 · ${failed.length}개 실패`
+          const msg = `${okCount}개 성공, ${failed.length}개 실패`
           toast.error(`폴더 업로드: ${msg}`)
           setProgress({
             state: "failed",
@@ -635,7 +635,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
           type="file"
           data-testid="files-upload-folder-input"
           className="hidden"
-          // webkitdirectory·directory 는 표준 DOM 타입에 없어 spread 로 주입 (브라우저별 폴더 선택).
+          // webkitdirectory, directory 는 표준 DOM 타입에 없어 spread 로 주입 (브라우저별 폴더 선택).
           {...({ webkitdirectory: "", directory: "" } as Record<string, string>)}
           multiple
           onChange={(e) => {
@@ -730,11 +730,11 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">
-                  {progress.state === "uploading" ? `${elapsedSec}s · ` : ""}
+                  {progress.state === "uploading" ? `${elapsedSec}s, ` : ""}
                   {progress.current} / {progress.total}
                   {progress.state === "uploading" &&
                   progress.bytesPct !== undefined
-                    ? ` · ${progress.bytesPct}%`
+                    ? `, ${progress.bytesPct}%`
                     : ""}
                 </span>
                 <button

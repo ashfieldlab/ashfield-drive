@@ -68,7 +68,7 @@ function ExpiryChip() {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
       <Clock className="size-3" />
-      {EXPIRES}까지 · {daysLeft()}일 남음
+      {EXPIRES}까지, {daysLeft()}일 남음
     </span>
   )
 }
@@ -171,7 +171,7 @@ function FileCard() {
       <div className="px-8 pb-8 pt-5 text-center">
         <h1 className="break-all text-base font-semibold">{FILE.name}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          {formatBytes(FILE.size)} · {kindLabel(FILE.kind)}
+          {formatBytes(FILE.size)}, {kindLabel(FILE.kind)}
         </p>
         <div className="mt-4 flex flex-col items-center gap-2">
           <SharedBy />
@@ -199,7 +199,7 @@ function FolderCard() {
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-base font-semibold">{FOLDER.name}</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {FOLDER.count}개 · {formatBytes(FOLDER.size)}
+            {FOLDER.count}개, {formatBytes(FOLDER.size)}
           </p>
         </div>
       </div>
@@ -230,7 +230,7 @@ function FolderCard() {
           <SharedBy />
           <ExpiryChip />
         </div>
-        <DownloadButton label={`모두 다운로드 · ZIP ${formatBytes(FOLDER.size)}`} testid="pg-public-link-a-download-all" />
+        <DownloadButton label={`모두 다운로드, ZIP ${formatBytes(FOLDER.size)}`} testid="pg-public-link-a-download-all" />
       </div>
     </>
   )

@@ -4,7 +4,7 @@ JWT 검증: Ashfield 계정 서버 JWKS 공개키 + RS256, iss/aud 필수 (ADR-0
 계약(ashfield-account ADR-0001 §5): iss == ACCOUNT_URL, aud(배열)에 이 앱의 resource 포함,
 exp(시계 오차 60초 허용), sub 필수. python-jose 의 audience= 는 배열 aud 에서 포함 여부로 검사한다.
 
-검증 생략 모드는 없다. AUTH_ISSUER·AUTH_AUDIENCE 가 비어 있으면 503 (설정 오류를
+검증 생략 모드는 없다. AUTH_ISSUER, AUTH_AUDIENCE 가 비어 있으면 503 (설정 오류를
 "아무 토큰이나 통과" 로 바꾸지 않기 위함).
 """
 
@@ -37,7 +37,7 @@ def _unverified(token: str) -> dict:
 
 
 async def validate_jwt(token: str) -> dict:
-    """JWT 검증 + claims 반환. 실패 시 HTTPException(401), 설정·JWKS 문제는 503."""
+    """JWT 검증 + claims 반환. 실패 시 HTTPException(401), 설정과 JWKS 문제는 503."""
     if not (settings.auth_issuer and settings.auth_audience):
         logger.error("auth_issuer_or_audience_missing", extra={"category": "auth"})
         raise HTTPException(
@@ -77,7 +77,7 @@ def _unverified_kid(token: str) -> str | None:
 
 
 def _decode(token: str, keys: list[dict]) -> dict:
-    """python-jose decode: multi-key JWKS 지원, kid 로 매칭. exp·iss·aud·sub 필수."""
+    """python-jose decode: multi-key JWKS 지원, kid 로 매칭. exp, iss, aud, sub 필수."""
     return jwt.decode(
         token,
         {"keys": keys},

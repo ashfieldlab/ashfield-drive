@@ -1,8 +1,8 @@
 # ashfield-drive
 
-멀티테넌트 파일 SaaS. 파일 저장·공유 (Ashfield 계정 서버 SSO + FastAPI JWKS 검증 + Multi-tenant, ADR-0024). 일정은 별도 레포 ashfield-calendar (2026-10-08 분리).
+멀티테넌트 파일 SaaS. 파일 저장과 공유 (Ashfield 계정 서버 SSO + FastAPI JWKS 검증 + Multi-tenant, ADR-0024). 일정은 별도 레포 ashfield-calendar (2026-10-08 분리).
 
-회원가입·워크스페이스 등록·빌링·impersonate는 외부 시스템 책임 (ADR-0009). 본 서비스는 JWT 받아 처리만.
+회원가입, 워크스페이스 등록, 빌링, impersonate는 외부 시스템 책임 (ADR-0009). 본 서비스는 JWT 받아 처리만.
 
 ## Language
 
@@ -15,7 +15,7 @@ _Avoid_: "Drive", "Cloud" (혼동)
 _Avoid_: "Item", "Entry"
 
 **File**:
-실제 바이트를 가진 Node. S3-compatible storage에 저장. 메타데이터(이름·MIME·size·트리 위치)는 DB.
+실제 바이트를 가진 Node. S3-compatible storage에 저장. 메타데이터(이름, MIME, size, 트리 위치)는 DB.
 _Avoid_: "Document" (Office 편집 기능 의미 따로)
 
 **Folder**:
@@ -36,7 +36,7 @@ _Avoid_: "Visibility", "Privacy"
 워크스페이스 전 멤버가 공유하는 영역. `nodes.scope='shared'`. 워크스페이스의 공통 공간.
 
 **File Version (파일 버전)**:
-File 의 과거 내용 한 벌. 같은 File 의 내용이 덮어써지거나 옛 버전으로 복원될 때 생긴다. 이름 변경·이동은 버전이 아니다. 같은 이름으로 새로 올린 파일과 데스크톱 싱크의 "충돌본"은 버전이 아니라 별개의 File 이다.
+File 의 과거 내용 한 벌. 같은 File 의 내용이 덮어써지거나 옛 버전으로 복원될 때 생긴다. 이름 변경과 이동은 버전이 아니다. 같은 이름으로 새로 올린 파일과 데스크톱 싱크의 "충돌본"은 버전이 아니라 별개의 File 이다.
 _Avoid_: "Revision", "사본"
 
 **Trash**:
@@ -44,14 +44,14 @@ _Avoid_: "Revision", "사본"
 _Avoid_: "Recycle Bin"
 
 **Vault (보안 폴더)** (설계 단계):
-E2E 암호화가 적용된 Folder. 서브트리의 파일 내용·이름이 클라이언트에서만 복호화됨: 서버·관리자는 암호문만 봄 (ADR-0016). 멤버 추가 = 소유자 클라이언트의 vault_key 재포장 (서버가 대신 못 함). 비밀번호+복구코드 모두 분실 = 영구 손실. Vault 내에선 서버 검색·zip 불가.
+E2E 암호화가 적용된 Folder. 서브트리의 파일 내용과 이름이 클라이언트에서만 복호화됨: 서버와 관리자는 암호문만 봄 (ADR-0016). 멤버 추가 = 소유자 클라이언트의 vault_key 재포장 (서버가 대신 못 함). 비밀번호+복구코드 모두 분실 = 영구 손실. Vault 내에선 서버 검색과 zip 불가.
 _Avoid_: "암호화 폴더" (서버측 암호화 SSE 와 혼동), "비밀 폴더"
 
 **FileShare** :
 Node를 워크스페이스 내 특정 사용자에게 명시적으로 공유. `file_shares (node_id, grantee_sub, permission)`. 폴더 공유 시 자손에 자동 상속.
 
 **ExternalLink** :
-Node를 워크스페이스 밖 외부 사용자가 token URL로 접근. 만료·비밀번호 선택. readonly이 기본.
+Node를 워크스페이스 밖 외부 사용자가 token URL로 접근. 만료와 비밀번호 선택. readonly이 기본.
 
 **Desktop Client** (`ashfield-sync`, 별도 repo):
 Windows-only 데스크톱 sync 앱. 사용자 표시 이름 "Ashfield". ashfield-drive backend 의 클라이언트: 새 파일 시스템 X (ADR-0015).
@@ -66,23 +66,23 @@ Windows-only 데스크톱 sync 앱. 사용자 표시 이름 "Ashfield". ashfield
 _Avoid_: "Sync App" (모호), "Drive Client" (Drive 용어 회피)
 
 **File Access (열람)**:
-누군가 파일 내용을 받아 갈 수 있는 주소를 발급받은 사실. 다운로드·미리보기·버전 다운로드·폴더 zip·외부 링크 접근이 모두 열람이다. 실제로 받았는지는 알 수 없고, 발급 시점을 열람으로 본다. 워크스페이스 관리자만 보며 1년 보관한다.
-_Avoid_: "조회 기록", "다운로드 로그" (미리보기·외부 링크까지 포함하므로)
+누군가 파일 내용을 받아 갈 수 있는 주소를 발급받은 사실. 다운로드, 미리보기, 버전 다운로드, 폴더 zip, 외부 링크 접근이 모두 열람이다. 실제로 받았는지는 알 수 없고, 발급 시점을 열람으로 본다. 워크스페이스 관리자만 보며 1년 보관한다.
+_Avoid_: "조회 기록", "다운로드 로그" (미리보기와 외부 링크까지 포함하므로)
 
 **Audit Log**:
-사용자·외부 링크의 mutation 행동 기록. `audit_logs`. create/update/delete/restore/share/unshare 만. read는 기록 안 함.
+사용자와 외부 링크의 mutation 행동 기록. `audit_logs`. create/update/delete/restore/share/unshare 만. read는 기록 안 함.
 
 **Presigned URL**:
 S3가 발급하는 단기 인증 URL. 우리 백엔드가 권한 확인 후 S3에 요청해 받음. 클라이언트가 그 URL로 S3와 직접 통신 (백엔드 대역폭 안 거침). 만료 짧음 (60s upload / 30s download).
 
 **HR Event (인사 이벤트)**:
-입사·퇴사·부서 이동처럼 사람과 워크스페이스의 관계가 바뀌었다는 사실. 인사 원천 시스템이 이 서비스에 명시적으로 알린다. 로그인 토큰의 워크스페이스 목록 변화는 인사 이벤트가 아니다.
+입사, 퇴사, 부서 이동처럼 사람과 워크스페이스의 관계가 바뀌었다는 사실. 인사 원천 시스템이 이 서비스에 명시적으로 알린다. 로그인 토큰의 워크스페이스 목록 변화는 인사 이벤트가 아니다.
 _Avoid_: "멤버십 동기화", "자동 감지"
 
 ## Relationships
 
 - **Workspace**: 테넌트. 계정 서버 워크스페이스와 1:1 (`workspaces.account_workspace_id`)
-- 한 **User**는 1~N개의 **Workspace**에 속함 (`user_workspace_memberships`). 소속의 원천은 Ashfield 계정 서버: 가입 때 개인 워크스페이스가 생기고, 초대·역할은 계정 서버에서 관리한다. 앱은 토큰 `workspaces` 클레임으로 로컬 멤버십을 동기화한다 (owner·admin → admin, member → member, ADR-0024).
+- 한 **User**는 1~N개의 **Workspace**에 속함 (`user_workspace_memberships`). 소속의 원천은 Ashfield 계정 서버: 가입 때 개인 워크스페이스가 생기고, 초대와 역할은 계정 서버에서 관리한다. 앱은 토큰 `workspaces` 클레임으로 로컬 멤버십을 동기화한다 (owner, admin → admin, member → member, ADR-0024).
 - 한 **Workspace** 안에 **Node**들이 트리 구조. 트리 루트는 사용자별 personal + 워크스페이스 shared (2종)
 - **Node**는 정확히 한 부모를 가짐 (`parent_id`, NULL이면 루트)
 - 자식 **Node**의 `scope`는 부모와 일치 (강제)

@@ -131,7 +131,7 @@ export function AvatarStack({ members, max = 3, className, ring = "ring-backgrou
   )
 }
 
-/** 즐겨찾기·보안·공유·링크 표시 */
+/** 즐겨찾기, 보안, 공유, 링크 표시 */
 export function Badges({ node, className }: { node: MockNode; className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-1 text-muted-foreground", className)}>

@@ -4,7 +4,7 @@
 @import "./theme.css";
 
 /* 보안 폴더(vault) 파일 목록: 어두운 회색 배경으로 일반 폴더와 구분 (ADR-0016).
-   라이트·다크 모두 같은 고정 slate 톤 (앱 다크 배경보다 푸른 회색이라 다크에서도 구분된다). */
+   라이트와 다크 모두 같은 고정 slate 톤 (앱 다크 배경보다 푸른 회색이라 다크에서도 구분된다). */
 .files-table-dark {
   background: theme("colors.gray.800");
   border-color: theme("colors.gray.700");

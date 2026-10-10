@@ -149,7 +149,7 @@ function FileView() {
             {FILE.name}
           </span>
         }
-        meta={`${formatBytes(FILE.size)} · ${kindLabel(FILE.kind)}`}
+        meta={`${formatBytes(FILE.size)}, ${kindLabel(FILE.kind)}`}
       >
         <Sharer />
         <DownloadAction label="다운로드" testid="pg-public-link-b-download" />
@@ -217,11 +217,11 @@ function FolderView() {
             {FOLDER.name}
           </span>
         }
-        meta={`${FOLDER.count}개 · ${formatBytes(FOLDER.size)}`}
+        meta={`${FOLDER.count}개, ${formatBytes(FOLDER.size)}`}
       >
         <Sharer />
         {selected.size > 0 && (
-          <DownloadAction variant="outline" label={`${selected.size}개 · ${formatBytes(selSize)}`} testid="pg-public-link-b-download-selected" />
+          <DownloadAction variant="outline" label={`${selected.size}개, ${formatBytes(selSize)}`} testid="pg-public-link-b-download-selected" />
         )}
         <DownloadAction label="모두 다운로드" testid="pg-public-link-b-download-all" />
       </TopBar>
@@ -325,7 +325,7 @@ function ExpiredView() {
         </div>
         <h1 className="mt-8 text-xl font-semibold">링크가 만료되었습니다</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          {EXPIRED_AT} · {SHARER.name}
+          {EXPIRED_AT}, {SHARER.name}
         </p>
       </div>
     </>

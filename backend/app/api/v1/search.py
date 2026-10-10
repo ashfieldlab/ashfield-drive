@@ -1,7 +1,7 @@
 """/api/v1/search: 파일 검색.
 
 이름 ILIKE 매치 후보를 effective_permission 으로 사후 필터(ADR-0020).
-검색 가시성 = 열람 권한. 필터: kind·종류·수정일. FTS 는 보류(ILIKE).
+검색 가시성 = 열람 권한. 필터: kind, 종류, 수정일. FTS 는 보류(ILIKE).
 """
 
 from datetime import datetime

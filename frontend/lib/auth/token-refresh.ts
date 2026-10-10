@@ -18,7 +18,7 @@ export function expiresWithin(
   return t - now < marginMs
 }
 
-/** 키마다 진행 중인 작업 하나. 끝나면(성공·실패) 비운다: 다음 호출은 새로 돈다. */
+/** 키마다 진행 중인 작업 하나. 끝나면(성공 또는 실패) 비운다: 다음 호출은 새로 돈다. */
 export function createSingleFlight<T>() {
   const inflight = new Map<string, Promise<T>>()
   return function run(key: string, task: () => Promise<T>): Promise<T> {

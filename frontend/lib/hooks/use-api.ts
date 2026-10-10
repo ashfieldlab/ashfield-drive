@@ -24,8 +24,8 @@ export function useApiGet<T>(
   config?: SWRConfiguration<T, ApiError>,
 ): UseApiState<T> {
   const result = useSWR<T, ApiError>(path, fetcher, {
-    // 4xx(403 권한·404 없음 등)는 재시도해도 안 풀림 → 재시도 중단(백엔드 스팸 방지).
-    // 5xx·네트워크 오류만 백오프 재시도 (최대 5회). caller config 로 덮어쓰기 가능.
+    // 4xx(403 권한, 404 없음 등)는 재시도해도 안 풀림 → 재시도 중단(백엔드 스팸 방지).
+    // 5xx, 네트워크 오류만 백오프 재시도 (최대 5회). caller config 로 덮어쓰기 가능.
     onErrorRetry: (error, _key, _cfg, revalidate, { retryCount }) => {
       const status = (error as ApiError | undefined)?.status
       if (status !== undefined && status >= 400 && status < 500) return
@@ -51,7 +51,7 @@ export function invalidateApi(prefix: string): void {
   // 미래에 `/api/v1/nodes-batch` 같은 라우트가 생겨도 우연히 무효화되지 않도록.
   //
   // 데이터를 비우지 않고 다시 받기만 한다(stale-while-revalidate). 비우면 그 데이터로 그린
-  // 목록이 "불러오는 중"으로 바뀌며 목록 안에 띄운 창(공유·버전 등)까지 사라진다.
+  // 목록이 "불러오는 중"으로 바뀌며 목록 안에 띄운 창(공유와 버전 등)까지 사라진다.
   void mutate((key) => {
     if (typeof key !== "string") return false
     if (key === prefix) return true

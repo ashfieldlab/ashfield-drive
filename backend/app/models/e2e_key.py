@@ -12,7 +12,7 @@
   - enc_private_key: 개인키를 KEK(비밀번호) 로 암호화한 것
   - enc_private_key_recovery: 개인키를 복구코드로 암호화한 것 (분실 대비)
 
-비밀번호·KEK·개인키 평문·복구코드 는 어디에도 저장 안 됨.
+비밀번호, KEK, 개인키 평문, 복구코드 는 어디에도 저장 안 됨.
 """
 
 from datetime import datetime

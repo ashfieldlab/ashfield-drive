@@ -59,7 +59,7 @@ async def test_failure_records_failed_and_is_swallowed(patched_runner):
     async def boom(ctx: dict) -> int:
         raise ValueError("kaboom")
 
-    # 예외가 전파되지 않아야 한다 (워커·다른 잡 보호)
+    # 예외가 전파되지 않아야 한다 (워커와 다른 잡 보호)
     result = await recorded("boom_job", boom)({})
 
     assert result is None

@@ -511,7 +511,7 @@ async def patch_node(
     db: AsyncSession = Depends(get_db),
     if_match: str | None = Header(default=None, alias="If-Match"),
 ) -> NodeResponse:
-    """필드만 보낸 것만 변경. parent_id 변경 시 사이클·scope 일관 검사.
+    """필드만 보낸 것만 변경. parent_id 변경 시 사이클과 scope 일관 검사.
 
     Desktop sync 클라이언트가 If-Match 헤더 보내면 etag 비교: mismatch 시 412.
     """
@@ -609,7 +609,7 @@ async def _hard_delete_vault_node(
 @router.delete(
     "/{node_id}",
     status_code=204,
-    summary="휴지통 이동 (soft delete) · 보안 폴더는 즉시 영구 삭제",
+    summary="휴지통 이동 (soft delete), 보안 폴더는 즉시 영구 삭제",
     responses={
         403: {"description": "write 권한 없음"},
         404: {"description": "노드 없음 또는 마스킹"},
@@ -1129,7 +1129,7 @@ async def complete_overwrite(
     stale_keys += await file_versions.reclaim_space(db, node, actor=user)
     await db.commit()
     await db.refresh(node)
-    # 묶기로 버려진 옛 내용·한도 정리분 삭제: 실패해도 교체는 성공 (고아 객체만 남음)
+    # 묶기로 버려진 옛 내용과 한도 정리분 삭제: 실패해도 교체는 성공 (고아 객체만 남음)
     await file_versions.delete_objects(stale_keys)
 
     logger.info(

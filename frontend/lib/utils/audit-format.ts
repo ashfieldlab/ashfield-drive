@@ -64,7 +64,7 @@ export function actionLabel(action: string): string {
  */
 export function metaSummary(item: AuditItemLike): string {
   const m = item.meta
-  // 보안 폴더 항목: 암호문 이름·크기를 절대 노출하지 않음 (백엔드가 vault 마커만 내려줌).
+  // 보안 폴더 항목: 암호문 이름과 크기를 절대 노출하지 않음 (백엔드가 vault 마커만 내려줌).
   if (m.vault === true) return ""
   const subject =
     typeof m.name === "string"
@@ -79,7 +79,7 @@ export function metaSummary(item: AuditItemLike): string {
   if (typeof m.size === "number") parts.push(formatBytes(m.size))
   if (typeof m.purged === "number") parts.push(`${m.purged}개 항목`)
   if (typeof m.ip === "string") parts.push(`IP ${m.ip}`)
-  return parts.join(" · ")
+  return parts.join(", ")
 }
 
 /**
@@ -92,7 +92,7 @@ export function describe(item: AuditItemLike): string {
   const m = item.meta
   // 보안 폴더 항목: 구체 이름 없이 일반 라벨로.
   if (m.vault === true) {
-    return `${actor} · 🔒 보안 폴더 항목을(를) ${actionLabel(item.action)}`
+    return `${actor}, 🔒 보안 폴더 항목을(를) ${actionLabel(item.action)}`
   }
   const subject =
     typeof m.name === "string"
@@ -102,8 +102,8 @@ export function describe(item: AuditItemLike): string {
         : null
   const entity = entityLabel(item.entity_type)
   const action = actionLabel(item.action)
-  if (subject) return `${actor} · ${subject} ${entity}을(를) ${action}`
-  return `${actor} · ${entity} ${action}`
+  if (subject) return `${actor}, ${subject} ${entity}을(를) ${action}`
+  return `${actor}, ${entity} ${action}`
 }
 
 function formatBytes(b: number): string {

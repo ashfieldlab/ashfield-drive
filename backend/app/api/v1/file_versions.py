@@ -1,6 +1,6 @@
 """파일 버전 API (ADR-0022).
 
-열람·다운로드·복원 = 쓰기 권한 이상, 삭제 = 관리 권한. 읽기 공유·외부 링크로는
+열람, 다운로드, 복원 = 쓰기 권한 이상, 삭제 = 관리 권한. 읽기 공유와 외부 링크로는
 현재 내용만 보인다 (지운 내용이 공유받은 사람에게 새지 않게).
 """
 
@@ -101,7 +101,7 @@ async def version_download_url(
     "/{version_id}/restore",
     response_model=NodeResponse,
     summary="버전 복원: 현재 내용은 새 버전으로 남고 이 버전이 현재가 된다",
-    responses={409: {"description": "업로드·교체가 진행 중인 파일"}},
+    responses={409: {"description": "업로드나 교체가 진행 중인 파일"}},
 )
 async def restore_version(
     node_id: str,

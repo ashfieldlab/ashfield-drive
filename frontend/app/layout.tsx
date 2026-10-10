@@ -20,7 +20,7 @@ const pretendard = localFont({
 
 export const metadata: Metadata = {
   title: env.appName,
-  description: "Ashfield Drive. 워크스페이스 파일 저장·공유.",
+  description: "Ashfield Drive. 워크스페이스 파일 저장과 공유.",
   icons: {
     icon: [
       { url: "/icons/ashfield/favicon.ico", sizes: "any" },

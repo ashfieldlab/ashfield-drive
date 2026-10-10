@@ -218,7 +218,7 @@ export default function WebhooksPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-mono text-sm">{ep.url}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {ep.events.join(", ")} · {formatDateTime(ep.created_at)}
+                      {ep.events.join(", ")}, {formatDateTime(ep.created_at)}
                     </p>
                   </div>
                   <label className="flex items-center gap-1.5 text-xs text-muted-foreground">

@@ -83,7 +83,7 @@ export default tseslint.config(
       react: { version: "detect" },
     },
   },
-  // 테스트·스토리는 testid 룰 끔 + Playwright의 `use`는 React hook 아님
+  // 테스트와 스토리는 testid 룰 끔 + Playwright의 `use`는 React hook 아님
   {
     files: ["**/*.stories.{ts,tsx}", "e2e/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
     rules: {

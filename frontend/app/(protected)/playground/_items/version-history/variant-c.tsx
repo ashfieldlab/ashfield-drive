@@ -69,7 +69,7 @@ export function VariantC() {
         <FileText size={18} className="shrink-0 text-blue-600 dark:text-blue-400" />
         <h3 className="min-w-0 truncate text-sm font-semibold">{FILE.name}</h3>
         <span className="text-xs text-muted-foreground">
-          버전 기록 · {RETENTION_DAYS}일 보관
+          버전 기록, {RETENTION_DAYS}일 보관
         </span>
         <div className="flex-1" />
         <button
@@ -137,7 +137,7 @@ export function VariantC() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {memberLabel(v.savedBy)} · {formatDateTime(v.savedAt)}
+                {memberLabel(v.savedBy)}, {formatDateTime(v.savedAt)}
               </p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export function VariantC() {
                 <RotateCcw size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
                 <span className="min-w-0 flex-1 truncate text-sm">
                   <span className="font-medium">v{v.no}</span>으로 복원
-                  <span className="text-muted-foreground"> · 현재 버전은 기록에 남음</span>
+                  <span className="text-muted-foreground">, 현재 버전은 기록에 남음</span>
                 </span>
                 <Button variant="ghost" size="sm" onClick={() => setAsking(false)} data-testid={`${T}-restore-cancel`}>
                   취소

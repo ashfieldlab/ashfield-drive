@@ -6,7 +6,7 @@ test.describe("file sharing", () => {
     page,
     loginAs,
   }) => {
-    // admin 의 공유 워크스페이스(계정 서버에서 생성·초대)에 member_a 가 들어온다.
+    // admin 의 공유 워크스페이스(계정 서버에서 생성과 초대)에 member_a 가 들어온다.
     const { workspaceId, memberSub } = await setupSharedWorkspace(
       page,
       E2E_USERS.admin,
@@ -25,7 +25,7 @@ test.describe("file sharing", () => {
     const row = page.locator(`tr[data-testid^="files-row-"]`, { hasText: name })
     await expect(row).toBeVisible()
 
-    // 공유 버튼 → 모달 → 콤보박스에서 member_a 검색·선택
+    // 공유 버튼 → 모달 → 콤보박스에서 member_a 검색과 선택
     await row.locator(`[data-testid$="-share"]`).click()
     await expect(page.getByTestId("share-modal")).toBeVisible()
     await page

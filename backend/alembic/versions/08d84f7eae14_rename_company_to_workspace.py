@@ -123,7 +123,7 @@ def _rename(direction: str) -> None:
 
 
 def upgrade() -> None:
-    """companies → workspaces 이름 변경 (테이블·컬럼·제약·인덱스·저장값)."""
+    """companies → workspaces 이름 변경 (테이블, 컬럼, 제약, 인덱스, 저장값)."""
     _rename("up")
 
 

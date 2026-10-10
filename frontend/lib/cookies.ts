@@ -14,7 +14,7 @@ import { COOKIE_PREFIX } from "@/lib/env"
 
 // 서비스 간 공유용 cookie 도메인. 운영에서 `.example.com` 같은 부모 도메인을 주면
 // 서브도메인(drive/calendar…)이 active_workspace 를 공유 → 한 서비스에서 워크스페이스 변경 시
-// 다른 서비스가 (탭 포커스 시) 따라온다. 빈 값(기본·dev)이면 host-only (공유 안 함).
+// 다른 서비스가 (탭 포커스 시) 따라온다. 빈 값(기본, dev)이면 host-only (공유 안 함).
 export const COOKIE_DOMAIN = process.env.NEXT_PUBLIC_COOKIE_DOMAIN || ""
 
 // ── 앱 자체 cookie ────────────────────────────────────────────────────────

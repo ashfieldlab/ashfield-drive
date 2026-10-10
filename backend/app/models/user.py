@@ -1,6 +1,6 @@
-"""User: 로컬 사용자 행. 인증 요청마다 액세스 토큰(sub·email·name·picture)으로 upsert.
+"""User: 로컬 사용자 행. 인증 요청마다 액세스 토큰(sub, email, name, picture)으로 upsert.
 
-id = 계정 서버 사용자 ID (JWT sub). 표시·외래키·join 용 + System Admin 플래그. ADR-0004, ADR-0024.
+id = 계정 서버 사용자 ID (JWT sub). 표시, 외래키, join 용 + System Admin 플래그. ADR-0004, ADR-0024.
 """
 
 from sqlalchemy import Boolean, String, Text, false

@@ -42,7 +42,7 @@ async def search_members(
     workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
 ) -> WorkspaceMembersResponse:
-    """active workspace 멤버 ILIKE 검색: email · name 매칭. 본인은 결과에서 제외.
+    """active workspace 멤버 ILIKE 검색: email, name 매칭. 본인은 결과에서 제외.
 
     q 가 비면 최근 활성 멤버 limit 만큼 반환 (단순 정렬: email asc).
     캐시는 한 번 로그인한 사용자만 보유하므로, 한 번도 안 들어온 멤버는 안 보임.

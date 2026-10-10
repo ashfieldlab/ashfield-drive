@@ -3,7 +3,7 @@
 System Admin 도 통과 (require_workspace_admin super-set). 다른 워크스페이스 침범은 path
 검증으로 막힘.
 
-멤버 추가·제거·역할 변경은 Ashfield 계정 서버에서 한다 (ADR-0024): 앱의 멤버십은
+멤버 추가, 제거, 역할 변경은 Ashfield 계정 서버에서 한다 (ADR-0024): 앱의 멤버십은
 토큰 `workspaces` 클레임으로 동기화되는 캐시다. 응답의 account_workspace_id 로
 프론트가 계정 서버 워크스페이스 화면(`${ACCOUNT_URL}/workspaces/{id}`) 링크를 만든다.
 목록은 이 앱에 한 번 이상 접속한 멤버만 담는다. 저장 한도(quota)는 앱 고유 설정이라 여기 남는다.

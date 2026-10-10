@@ -65,7 +65,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             if (!open) settle(false)
           }}
         >
-          {/* 앱 모달(z-50~60)·시스템 배너(z-150) 위에서 열릴 수 있어 z-index 를 올린다. */}
+          {/* 앱 모달(z-50~60), 시스템 배너(z-150) 위에서 열릴 수 있어 z-index 를 올린다. */}
           <AlertDialogContent
             className="z-[200]"
             overlayClassName="z-[200]"

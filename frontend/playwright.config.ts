@@ -22,7 +22,7 @@ import { APP_PORT } from "./e2e/env"
 export default defineConfig({
   testDir: "./e2e",
   globalSetup: "./e2e/global-setup.ts",
-  fullyParallel: false, // 계정 서버·dev DB 상태 공유: 직렬 실행이 안전
+  fullyParallel: false, // 계정 서버와 dev DB 상태 공유: 직렬 실행이 안전
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,

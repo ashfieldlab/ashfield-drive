@@ -57,7 +57,7 @@ export const authEnv = {
     if (authEnv.isBuildPhase) return "build-phase-placeholder-secret-not-used-at-runtime"
     return undefined
   },
-  /** `next build` 실행 중 (DB·비밀값 없이 모듈만 평가되는 단계). */
+  /** `next build` 실행 중 (DB, 비밀값 없이 모듈만 평가되는 단계). */
   get isBuildPhase(): boolean {
     return process.env.NEXT_PHASE === "phase-production-build"
   },
@@ -65,7 +65,7 @@ export const authEnv = {
   get databaseURL(): string {
     return process.env.DATABASE_URL || ""
   },
-  /** Ashfield 계정 서버 주소 = OIDC issuer (끝 슬래시 없음). 디스커버리·회원 관리 링크의 기준. */
+  /** Ashfield 계정 서버 주소 = OIDC issuer (끝 슬래시 없음). 디스커버리와 회원 관리 링크의 기준. */
   get accountURL(): string {
     return (process.env.ACCOUNT_URL || "http://localhost:3300").replace(/\/$/, "")
   },

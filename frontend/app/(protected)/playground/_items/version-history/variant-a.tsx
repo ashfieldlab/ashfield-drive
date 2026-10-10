@@ -35,7 +35,7 @@ export function VariantA() {
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[15px] font-semibold">{FILE.name}</h3>
           <p className="text-xs text-muted-foreground">
-            버전 {versions.length}개 · {RETENTION_DAYS}일 보관
+            버전 {versions.length}개, {RETENTION_DAYS}일 보관
           </p>
         </div>
         <button
@@ -85,8 +85,7 @@ export function VariantA() {
                   </div>
                   <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Avatar m={v.savedBy} size={16} />
-                    <span>{v.savedBy.name}</span>
-                    <span className="opacity-50">·</span>
+                    <span>{v.savedBy.name},</span>
                     <span className="tabular-nums">{formatBytes(v.size)}</span>
                     <Delta n={deltaOf(versions, v)} />
                   </div>
@@ -124,7 +123,7 @@ export function VariantA() {
               {asking && (
                 <div className="flex items-center gap-2 border-t border-border/70 px-3.5 py-2.5 pl-[3.25rem]">
                   <span className="min-w-0 flex-1 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">v{v.no}</span>으로 복원 · 현재 버전은 기록에 남음
+                    <span className="font-medium text-foreground">v{v.no}</span>으로 복원, 현재 버전은 기록에 남음
                   </span>
                   <Button
                     variant="ghost"

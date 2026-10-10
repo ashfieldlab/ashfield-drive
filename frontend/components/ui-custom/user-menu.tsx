@@ -21,7 +21,7 @@ interface UserMenuProps {
   onServiceSettings?: () => void
 }
 
-/** 헤더 우측 사용자 메뉴: 이니셜 아바타 + 설정·테마·로그아웃 드롭다운. */
+/** 헤더 우측 사용자 메뉴: 이니셜 아바타 + 설정, 테마, 로그아웃 드롭다운. */
 export function UserMenu({
   user,
   isServiceAdmin = false,

@@ -1,7 +1,7 @@
 """cron 잡 등록표(registry.JOBS) 정합성: 스케줄이 데이터라 테스트 가능(#4).
 
-worker 가 이 등록표로 cron 을 만들고 admin 엔드포인트가 읽으므로, 이름 유일성·
-스케줄 표기·worker 반영을 회귀로 못 박는다.
+worker 가 이 등록표로 cron 을 만들고 admin 엔드포인트가 읽으므로, 이름 유일성,
+스케줄 표기, worker 반영을 회귀로 못 박는다.
 """
 
 from app.jobs.registry import JOBS

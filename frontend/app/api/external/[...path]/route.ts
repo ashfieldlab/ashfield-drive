@@ -1,7 +1,7 @@
 /**
  * 인증 없이 백엔드 `/s/*` 로 forward.
  *
- * 보호 BFF(/api/v1)와 분리: Authorization·X-Active-Workspace-Id 헤더를 절대 붙이지 않는다.
+ * 보호 BFF(/api/v1)와 분리: Authorization, X-Active-Workspace-Id 헤더를 절대 붙이지 않는다.
  * 외부 링크 페이지(`/s/[token]`)가 같은 오리진에서 안전하게 호출하게 해 주는 얇은 프록시.
  */
 

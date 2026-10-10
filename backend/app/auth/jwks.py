@@ -2,7 +2,7 @@
 JWKS 공개키 캐시: Ashfield 계정 서버의 `${ACCOUNT_URL}/api/auth/jwks` (ADR-0024).
 
 AUTH_JWKS_URL 에서 가져와 1시간 캐싱. 토큰 kid 가 캐시에 없으면 validator 가 강제 재조회
-(키 회전 대응, 30초에 한 번까지). 개발·운영 경로가 같다: 로컬 우회 키 같은 분기 없음.
+(키 회전 대응, 30초에 한 번까지). 개발과 운영 경로가 같다: 로컬 우회 키 같은 분기 없음.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ async def get_jwks(*, force_refresh: bool = False) -> list[dict]:
 
 
 def invalidate_jwks_cache() -> None:
-    """캐시 전체 초기화 (재조회 간격 기록 포함). 테스트·운영 도구용."""
+    """캐시 전체 초기화 (재조회 간격 기록 포함). 테스트와 운영 도구용."""
     global _jwks_cache, _jwks_cache_expiry, _last_forced_refresh
     _jwks_cache = None
     _jwks_cache_expiry = 0.0

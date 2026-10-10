@@ -1,4 +1,4 @@
-"""/api/v1/admin/workspaces: System Admin 워크스페이스·멤버 관리 (ADR-0010)."""
+"""/api/v1/admin/workspaces: System Admin 워크스페이스와 멤버 관리 (ADR-0010)."""
 
 import pytest
 

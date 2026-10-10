@@ -169,7 +169,7 @@ export interface TeamFolderItem {
   created_at: string
 }
 
-// 파일 버전 (ADR-0022): 최신순. saved_* = 그 내용을 저장했던 사람·시각.
+// 파일 버전 (ADR-0022): 최신순. saved_* = 그 내용을 저장했던 사람과 시각.
 export interface FileVersionResponse {
   id: string
   size_bytes: number

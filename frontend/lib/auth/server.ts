@@ -1,8 +1,8 @@
 /**
- * Better Auth 서버 인스턴스: 로그인·세션의 단일 출처 (ADR-0024).
+ * Better Auth 서버 인스턴스: 로그인과 세션의 단일 출처 (ADR-0024).
  *
  * 이 앱의 Better Auth 는 **Ashfield 계정 서버(OIDC 제공자)의 클라이언트**일 뿐이다.
- * 로그인 수단(Google·GitHub·DEV 비밀번호)·가입 허용·워크스페이스는 계정 서버가 맡는다.
+ * 로그인 수단(Google, GitHub, DEV 비밀번호), 가입 허용, 워크스페이스는 계정 서버가 맡는다.
  *
  *   - 핸들러: app/api/auth/[...all]/route.ts (`/api/auth/*`). 콜백 `/api/auth/callback/ashfield`.
  *   - DB: 백엔드와 같은 Postgres, 테이블은 별도 스키마 `auth` (Alembic 은 무시).
@@ -10,13 +10,13 @@
  *   - genericOAuth provider `ashfield`: 디스커버리, client_secret_basic + PKCE,
  *     scope `openid profile email offline_access`, 모든 토큰 요청에 `resource=<이 앱 URL>`
  *     (그래야 액세스 토큰이 백엔드가 JWKS 로 검증할 수 있는 JWT 로 나온다: 계약 §3).
- *   - 계정 서버가 준 액세스·리프레시·ID 토큰은 Better Auth `account` 테이블에 저장되고,
+ *   - 계정 서버가 준 액세스, 리프레시, ID 토큰은 Better Auth `account` 테이블에 저장되고,
  *     BFF 가 액세스 토큰을 백엔드에 Bearer 로 넘긴다 (lib/auth/session.ts).
  *
  * 디스커버리는 인스턴스 초기화 때 한 번 받는다. 그때 계정 서버가 꺼져 있었으면 provider 가
  * 빠진 채 뜨므로, `getAuth()` 가 provider 가 없는 인스턴스를 (10초에 한 번까지) 다시 만든다.
  *
- * Better Auth CLI 가 이 파일을 직접 읽으므로 "server-only"·경로 별칭(@/)을 쓰지 않는다.
+ * Better Auth CLI 가 이 파일을 직접 읽으므로 "server-only", 경로 별칭(@/)을 쓰지 않는다.
  * 서버 코드에서만 import 할 것.
  */
 
@@ -32,7 +32,7 @@ import { logger } from "../utils/logger"
 /** Better Auth 테이블 스키마. backend/alembic/env.py 의 EXCLUDED_SCHEMAS 와 같아야 한다. */
 export const AUTH_DB_SCHEMA = "auth"
 
-/** genericOAuth provider id: 콜백 경로·account.providerId 에 쓰인다. 계정 서버 redirect_uri 와 짝. */
+/** genericOAuth provider id: 콜백 경로와 account.providerId 에 쓰인다. 계정 서버 redirect_uri 와 짝. */
 export const ACCOUNT_PROVIDER_ID = "ashfield"
 
 /** 계약(ADR-0001 §3)의 scope: offline_access 가 있어야 refresh_token 이 나온다. */
@@ -58,7 +58,7 @@ function accountProvider() {
       }
     : {
         discoveryUrl: `${authEnv.accountURL}/.well-known/openid-configuration`,
-        // id_token 서명·iss·aud·nonce 검증에 필요한 issuer·jwks 가 디스커버리에 없으면 provider 를 띄우지 않는다.
+        // id_token 서명, iss, aud, nonce 검증에 필요한 issuer, jwks 가 디스커버리에 없으면 provider 를 띄우지 않는다.
         requireIdTokenVerification: true,
       }
   return genericOAuth({
@@ -75,7 +75,7 @@ function accountProvider() {
         authorizationUrlParams: resource,
         tokenUrlParams: resource,
         refreshTokenParams: resource,
-        // 계정 서버가 원천: 로그인할 때마다 이름·사진을 계정 서버 값으로.
+        // 계정 서버가 원천: 로그인할 때마다 이름과 사진을 계정 서버 값으로.
         overrideUserInfo: true,
         // RP-initiated logout 후 돌아올 곳 (계정 서버에 등록된 post_logout_redirect_uri 와 일치).
         postLogoutRedirectURI: `${authEnv.baseURL}/login`,
@@ -94,10 +94,10 @@ function createAuth() {
       type: "postgres",
       schemaName: AUTH_DB_SCHEMA,
     },
-    // 로컬 이메일·비밀번호 로그인 없음: 계정 서버만.
+    // 로컬 이메일과 비밀번호 로그인 없음: 계정 서버만.
     emailAndPassword: { enabled: false },
     account: {
-      // 예전 앱 내부 로그인(Google·GitHub)으로 만든 같은 이메일 사용자에 계정 서버 계정을 연결.
+      // 예전 앱 내부 로그인(Google, GitHub)으로 만든 같은 이메일 사용자에 계정 서버 계정을 연결.
       accountLinking: { enabled: true, trustedProviders: [ACCOUNT_PROVIDER_ID] },
     },
     advanced: {

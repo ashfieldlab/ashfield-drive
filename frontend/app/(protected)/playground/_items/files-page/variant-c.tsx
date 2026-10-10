@@ -171,7 +171,7 @@ export function VariantC() {
 
         <div className="flex h-9 shrink-0 items-center justify-between border-t bg-muted/30 px-3 text-xs text-muted-foreground">
           <span className="tabular-nums">
-            {drive.selected.length > 0 ? `${drive.selected.length}개 선택 · ` : ""}
+            {drive.selected.length > 0 ? `${drive.selected.length}개 선택, ` : ""}
             {total}개 항목
           </span>
           <div className="flex items-center gap-3">
@@ -198,7 +198,7 @@ function Preview({ node, drive }: { node: MockNode; drive: Drive }) {
       </div>
       <h2 className="mt-5 max-w-full text-center text-base font-semibold break-all">{node.name}</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        {meta.label} · {formatBytes(node.size)}
+        {meta.label}, {formatBytes(node.size)}
       </p>
       <div className="mt-4 flex gap-2">
         <Button data-testid={`${T}-preview-open`} size="sm" variant="outline" onClick={() => drive.act("open", node)}>

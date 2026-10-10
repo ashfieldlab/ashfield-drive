@@ -13,7 +13,7 @@ import type { FileVersionDownloadUrl, FileVersionResponse, NodeResponse } from "
 import { formatBytes, formatDateTime } from "@/lib/utils/format"
 
 /**
- * 파일 버전 기록 (ADR-0022). 열람·다운로드·복원 = 쓰기 권한(행 버튼 노출 조건),
+ * 파일 버전 기록 (ADR-0022). 열람, 다운로드, 복원 = 쓰기 권한(행 버튼 노출 조건),
  * 삭제 = 관리 권한: 내 개인 파일이거나 시스템 관리자일 때만 버튼을 보인다.
  */
 export function VersionHistoryModal({
@@ -149,7 +149,7 @@ export function VersionHistoryModal({
                   <div className="min-w-0 flex-1">
                     <div className="text-sm text-foreground">{formatDateTime(v.saved_at)}</div>
                     <div className="text-xs text-muted-foreground">
-                      {v.saved_by_name ?? v.saved_by} · {formatBytes(v.size_bytes)}
+                      {v.saved_by_name ?? v.saved_by}, {formatBytes(v.size_bytes)}
                     </div>
                   </div>
                   <button

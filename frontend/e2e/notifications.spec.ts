@@ -6,7 +6,7 @@ test.describe("notification bell", () => {
     page,
     loginAs,
   }) => {
-    // admin 의 공유 워크스페이스(계정 서버에서 생성·초대)에 member_a 가 들어온다.
+    // admin 의 공유 워크스페이스(계정 서버에서 생성과 초대)에 member_a 가 들어온다.
     const { workspaceId, memberSub } = await setupSharedWorkspace(
       page,
       E2E_USERS.admin,

@@ -12,7 +12,7 @@ Ashfield 계정 서버를 먼저 띄우고, 그다음 이 앱을 띄운다. 로�
 | Calendar | 3100 | 8100 | 15542 | 16489 | 11035 / 18035 | CalDAV 18090 |
 | **Drive** | **3200** | **8200** | **15532** | **16479** | **11025 / 18025** | **S3(MinIO) 19200, 콘솔 19201** |
 
-포트를 바꾸려면 루트 `.env` 의 `*_HOST_PORT`·`FRONTEND_PORT`·`BACKEND_PORT` 와 `frontend/.env` 의 `BETTER_AUTH_URL` 을 함께 바꾸고, 계정 서버의 `DRIVE_URL` 도 바꾼 뒤 계정 서버에서 `make seed` 를 다시 실행한다.
+포트를 바꾸려면 루트 `.env` 의 `*_HOST_PORT`, `FRONTEND_PORT`, `BACKEND_PORT` 와 `frontend/.env` 의 `BETTER_AUTH_URL` 을 함께 바꾸고, 계정 서버의 `DRIVE_URL` 도 바꾼 뒤 계정 서버에서 `make seed` 를 다시 실행한다.
 
 ## 1. 계정 서버 (`../ashfield-account`)
 
@@ -76,7 +76,7 @@ make worker      # arq 백그라운드 워커 (선택, compose 의 worker 와 �
 
 ## E2E
 
-`make e2e` 는 실제 계정 서버로 로그인한다. 계정 서버의 DEV 비밀번호 폼으로 가입·로그인해 앱으로 돌아오고(SSO, 토큰 갱신, 로그아웃 포함), 계정 서버 화면에서 워크스페이스와 초대 링크를 만들어 공유 시나리오를 돈다.
+`make e2e` 는 실제 계정 서버로 로그인한다. 계정 서버의 DEV 비밀번호 폼으로 가입하고 로그인해 앱으로 돌아오고(SSO, 토큰 갱신, 로그아웃 포함), 계정 서버 화면에서 워크스페이스와 초대 링크를 만들어 공유 시나리오를 돈다.
 
 필요한 것:
 

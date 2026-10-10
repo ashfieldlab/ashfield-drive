@@ -3,7 +3,7 @@
 worker.py 등록부에서 `cron(recorded("이름", fn), ...)` 로 사용. 한 곳에서:
   1. 시작 시 status=running row INSERT (별도 트랜잭션, 즉시 commit)
   2. 잡 실행
-  3. 종료 시 같은 row 를 ok/failed 로 UPDATE (duration·건수·에러 기록)
+  3. 종료 시 같은 row 를 ok/failed 로 UPDATE (duration, 건수, 에러 기록)
 
 예외는 잡아서 failed 로 기록만 하고 삼킴: 한 잡의 실패가 워커나 다른 잡을 안 죽임.
 잡 함수는 그대로 (`async def fn(ctx) -> int | None`); 반환값(건수)은 item_count 로.
@@ -47,7 +47,7 @@ def recorded(name: str, fn: JobFn) -> JobFn:
         await _finish(run_id, "ok", t0, count, None)
         return count
 
-    # arq 는 코루틴 __name__ 으로 잡을 식별·로깅 → 원래 잡 이름 보존
+    # arq 는 코루틴 __name__ 으로 잡을 식별과 로깅 → 원래 잡 이름 보존
     wrapped.__name__ = fn.__name__
     wrapped.__qualname__ = fn.__qualname__
     return wrapped

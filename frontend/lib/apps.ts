@@ -2,6 +2,6 @@
 export const APP = {
   title: "파일",
   home: "/files",
-  // 활동·알림 필터용 audit entity_type (이 앱 소유 이벤트만 노출)
+  // 활동과 알림 필터용 audit entity_type (이 앱 소유 이벤트만 노출)
   entityTypes: ["node"],
 } as const
