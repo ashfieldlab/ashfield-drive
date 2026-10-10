@@ -14,6 +14,8 @@ export const env = {
   // 일정 앱(ashfield-calendar) origin. 헤더 크로스링크에 사용, 빈 값이면 숨김.
   // 예: https://calendar.example.com
   calendarUrl: (process.env.NEXT_PUBLIC_CALENDAR_URL || "").replace(/\/$/, ""),
+  /** 개발용 UI 플레이그라운드(/playground). 개발 모드는 항상, 운영은 NEXT_PUBLIC_PLAYGROUND=true 일 때만. */
+  playground: process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_PLAYGROUND === "true",
 }
 
 // 쿠키 이름 namespace: 같은 localhost 에서 여러 앱이 cookie 충돌 안 나도록.

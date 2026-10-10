@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import {
   Activity,
+  FlaskConical,
   Folder,
   Settings,
   Share2,
@@ -27,6 +28,7 @@ import { GlobalSearch } from "@/components/layout/global-search"
 import { NotificationBell } from "@/components/layout/notification-bell"
 import { signOutAction } from "@/lib/actions/auth"
 import { APP } from "@/lib/apps"
+import { env } from "@/lib/env"
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { authUser, workspaces, workspaceNames, activeWorkspaceId, setActiveWorkspace, isSystemAdmin } =
@@ -58,6 +60,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const common: NavItem[] = [
       { id: "activity", label: "활동", href: "/activity", icon: <Activity size={16} />, active: pathname.startsWith("/activity") },
       { id: "settings", label: "설정", href: "/settings", icon: <Settings size={16} />, active: pathname.startsWith("/settings") },
+      ...(env.playground
+        ? [{ id: "playground", label: "플레이그라운드", href: "/playground", icon: <FlaskConical size={16} />, active: pathname.startsWith("/playground") }]
+        : []),
     ]
     return [
       { id: "files-personal", label: "내 파일", href: "/files?scope=personal", icon: <Folder size={16} />, active: filesActive?.personal },
