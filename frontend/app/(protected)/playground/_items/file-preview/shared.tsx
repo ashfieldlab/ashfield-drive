@@ -75,12 +75,15 @@ export function usePreviewNav(count: number, onClose?: () => void, initial = 0) 
     function onKey(e: KeyboardEvent) {
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return
+      if (!["ArrowRight", "ArrowLeft", "Escape"].includes(e.key)) return
+      // 플레이그라운드 안 전환(←/→)보다 먼저 받아서 막는다
+      e.stopImmediatePropagation()
       if (e.key === "ArrowRight") setIndex((i) => (i + 1) % count)
       if (e.key === "ArrowLeft") setIndex((i) => (i - 1 + count) % count)
       if (e.key === "Escape") onClose?.()
     }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
+    window.addEventListener("keydown", onKey, true)
+    return () => window.removeEventListener("keydown", onKey, true)
   }, [count, onClose])
   return {
     index,

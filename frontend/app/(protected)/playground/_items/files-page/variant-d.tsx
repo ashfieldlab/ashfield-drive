@@ -4,8 +4,9 @@ import { useState } from "react"
 import { LayoutGrid, List } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Breadcrumb, NewMenu, SortMenu, T, useDrive } from "./shared"
-import { DetailPanel, FilesToolbar, ListTable, activeNode } from "./variant-a"
+import { PreviewWindow } from "../file-preview/variant-c"
+import { Breadcrumb, NewMenu, QuotaBar, SortMenu, T, useDrive } from "./shared"
+import { FilesToolbar, ListTable } from "./variant-a"
 import { Gallery } from "./variant-b"
 
 type View = "list" | "grid"
@@ -15,12 +16,12 @@ const VIEWS: { key: View; label: string; icon: typeof List }[] = [
   { key: "grid", label: "갤러리", icon: LayoutGrid },
 ]
 
-// A + B: 목록/갤러리 전환, 상세 패널은 둘 다 공통
+// A + B: 목록/갤러리 전환. 파일을 누르면 미리보기(file-preview C), 폴더를 누르면 들어간다
 export function VariantD() {
   const drive = useDrive()
   const [view, setView] = useState<View>("list")
-  const [activeId, setActiveId] = useState<string | null>("n-plan")
-  const active = activeNode(drive, activeId)
+  const [previewId, setPreviewId] = useState<string | null>(null)
+  const files = drive.items.filter((n) => n.kind !== "folder")
 
   return (
     <div>
@@ -51,18 +52,18 @@ export function VariantD() {
         </div>
       </div>
 
-      <FilesToolbar drive={drive}>{view === "grid" && <SortMenu drive={drive} />}</FilesToolbar>
+      <FilesToolbar drive={drive}>
+        <QuotaBar />
+        {view === "grid" && <SortMenu drive={drive} />}
+      </FilesToolbar>
 
-      <div className="flex items-start gap-5">
-        <div className="min-w-0 flex-1">
-          {view === "list" ? (
-            <ListTable drive={drive} activeId={active?.id ?? null} onActivate={setActiveId} />
-          ) : (
-            <Gallery drive={drive} activeId={active?.id ?? null} onSelect={setActiveId} />
-          )}
-        </div>
-        <DetailPanel drive={drive} active={active} onClose={() => setActiveId(null)} />
-      </div>
+      {view === "list" ? (
+        <ListTable drive={drive} activeId={null} onActivate={setPreviewId} />
+      ) : (
+        <Gallery drive={drive} onSelect={setPreviewId} />
+      )}
+
+      {previewId && <PreviewWindow fixed files={files} initialId={previewId} onClose={() => setPreviewId(null)} />}
     </div>
   )
 }

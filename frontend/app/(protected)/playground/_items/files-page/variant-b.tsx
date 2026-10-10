@@ -79,7 +79,7 @@ export function VariantB() {
   )
 }
 
-/** 폴더 타일 + 파일 카드. onSelect 를 주면 파일 카드를 누를 때 열지 않고 선택만 한다 */
+/** 폴더 타일 + 파일 카드. onSelect 를 주면 파일 카드를 누를 때 기본 열기 대신 그걸 부른다 */
 export function Gallery({
   drive,
   view = "grid",
@@ -225,7 +225,6 @@ function FileCard({ node, drive, active, onSelect }: { node: MockNode; drive: Dr
     <div
       data-testid={`${T}-row-${node.id}`}
       onClick={() => (drive.selected.length > 0 ? drive.toggle(node.id) : onSelect ? onSelect(node.id) : drive.act("open", node))}
-      onDoubleClick={() => onSelect && drive.act("open", node)}
       className={cn(
         "group relative cursor-pointer overflow-hidden rounded-xl border bg-card transition-shadow",
         checked ? "border-primary/60 ring-2 ring-primary/40" : active ? "border-primary/50 ring-1 ring-primary/30" : "hover:shadow-md",
