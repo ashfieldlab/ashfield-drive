@@ -60,6 +60,8 @@ export interface AppFrameProps {
   navItems: NavItem[]
   /** 기본은 <a href>. 클라이언트 라우팅이 필요하면 next/link 로 렌더 */
   renderNavLink?: (item: NavItem, props: NavLinkRenderProps) => React.ReactNode
+  /** 사이드바 메뉴 아래에 붙는 화면별 내용 (예: 일정 화면의 캘린더 목록) */
+  sidebarExtra?: React.ReactNode
   /** 루트 (기본 min-h-screen; 페이지 내부 스크롤이면 h-screen) */
   className?: string
   /** <main> */
@@ -78,6 +80,7 @@ export function AppFrame({
   headerTrailing,
   navItems,
   renderNavLink,
+  sidebarExtra,
   className,
   mainClassName,
   containerClassName,
@@ -111,6 +114,12 @@ export function AppFrame({
     </nav>
   )
 
+  const extra = sidebarExtra ? (
+    <div className="border-t p-3" data-testid="app-sidebar-extra">
+      {sidebarExtra}
+    </div>
+  ) : null
+
   return (
     <div className={cn("flex min-h-screen flex-col bg-background", className)}>
       <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 md:gap-3 md:px-4">
@@ -143,6 +152,7 @@ export function AppFrame({
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-56 shrink-0 overflow-y-auto border-r bg-sidebar md:block">
           {nav}
+          {extra}
         </aside>
 
         {mobileNavOpen && (
@@ -171,6 +181,7 @@ export function AppFrame({
                 </Button>
               </div>
               {nav}
+              {extra}
             </aside>
           </div>
         )}
