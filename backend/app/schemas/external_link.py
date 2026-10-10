@@ -25,6 +25,16 @@ class ExternalLinkCreate(BaseModel):
     password: str | None = Field(default=None, min_length=4, max_length=128)
 
 
+class ExternalLinkPatch(BaseModel):
+    """URL(토큰)은 그대로 두고 설정만 바꾼다. 보낸 필드만 반영.
+
+    expires_at: 값 = 그 시각, null = 만료 없음. password: 문자열 = 설정, null = 해제.
+    """
+
+    expires_at: datetime | None = None
+    password: str | None = Field(default=None, min_length=4, max_length=128)
+
+
 class ExternalLinkList(BaseModel):
     links: list[ExternalLinkResponse]
 

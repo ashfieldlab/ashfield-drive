@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures"
+import { createFolder, test, expect } from "./fixtures"
 
 test.describe("global search", () => {
   test("폴더 생성 후 검색바로 매칭 → 클릭 시 /files 로 이동", async ({
@@ -10,9 +10,7 @@ test.describe("global search", () => {
     const term = `srch${Date.now()}`
     const name = `${term}-folder`
 
-    await page.getByTestId("files-new-folder-button").click()
-    await page.getByTestId("files-new-folder-input").fill(name)
-    await page.getByTestId("files-new-folder-confirm").click()
+    await createFolder(page, name)
 
     // 헤더 검색
     await page.getByTestId("global-search-input").fill(term)

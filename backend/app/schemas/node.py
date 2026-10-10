@@ -28,6 +28,13 @@ class NodeResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None
+    # 현재 내용을 마지막으로 저장한 사람과 시각 (ADR-0022). 버전 도입 전 노드, 폴더는 None.
+    content_updated_by: str | None = None
+    content_updated_by_name: str | None = None
+    content_updated_at: datetime | None = None
+    # 목록 배지용 (services/node_view.py 가 채움): 만료 안 된 공유 수, 활성 외부 링크 유무
+    share_count: int = 0
+    has_link: bool = False
 
 
 class FolderCreate(BaseModel):
@@ -90,6 +97,15 @@ class NodePatch(BaseModel):
 
 class TreeResponse(BaseModel):
     nodes: list[NodeResponse]
+
+
+class TrashResponse(TreeResponse):
+    # 휴지통 자동 비우기 기간 (settings.trash_retention_days): 남은 기간 표시용
+    retention_days: int
+
+
+class TrashPurgeRequest(BaseModel):
+    ids: list[str] = Field(min_length=1, max_length=1000)
 
 
 # Desktop sync: delta polling 응답 (GET /api/v1/nodes/changes?since=)

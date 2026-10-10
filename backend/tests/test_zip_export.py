@@ -100,3 +100,22 @@ async def test_zip_too_many_files(
         )
     r = await client.get(f"/api/v1/nodes/{root['id']}/zip", headers=h)
     assert r.status_code == 413
+
+
+async def test_zip_korean_folder_name(client: AsyncClient, auth_headers, mock_storage):
+    from urllib.parse import quote
+
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    root = (await client.post("/api/v1/nodes", json={"name": "보고서 2026"}, headers=h)).json()
+    r = await client.get(f"/api/v1/nodes/{root['id']}/zip", headers=h)
+    assert r.status_code == 200
+    cd = r.headers["content-disposition"]
+    cd.encode("latin-1")  # 헤더는 latin-1 로 표현 가능해야 한다
+    assert 'filename="' in cd
+    assert f"filename*=UTF-8''{quote('보고서 2026.zip', safe='')}" in cd
+    # 한글만 있는 이름은 ASCII 대체 이름이 비지 않게
+    root2 = (await client.post("/api/v1/nodes", json={"name": "자료"}, headers=h)).json()
+    cd2 = (await client.get(f"/api/v1/nodes/{root2['id']}/zip", headers=h)).headers[
+        "content-disposition"
+    ]
+    assert 'filename="folder.zip"' in cd2

@@ -76,6 +76,34 @@ test.describe("/files", () => {
     await expect(rowOf(page, b)).toBeVisible()
   })
 
+  test("휴지통 항목 하나만 영구 삭제", async ({ page, loginAs }) => {
+    await loginAs("member_a")
+    await page.goto("/files")
+    const keep = `남김-${Date.now()}`
+    const gone = `영구-${Date.now()}`
+    for (const n of [keep, gone]) {
+      await createFolder(page, n)
+      await expect(rowOf(page, n)).toBeVisible()
+      await rowOf(page, n).hover()
+      await rowOf(page, n).locator(`[data-testid$="-menu"]`).click()
+      await page.getByTestId("files-menu-delete").click()
+      await confirmDialog(page)
+      await expect(rowOf(page, n)).toHaveCount(0)
+    }
+
+    await page.goto("/files?trash=1")
+    const row = rowOf(page, gone)
+    await expect(row).toBeVisible()
+    await row.hover()
+    await row.locator(`[data-testid$="-purge"]`).click()
+    await row.locator(`[data-testid$="-purge-confirm"]`).click()
+    await expect(rowOf(page, gone)).toHaveCount(0)
+    await expect(rowOf(page, keep)).toBeVisible()
+    await page.reload()
+    await expect(rowOf(page, keep)).toBeVisible()
+    await expect(rowOf(page, gone)).toHaveCount(0)
+  })
+
   test("업로드: 목록 안 진행 → 새 항목 + 사이드바 표시, 보기 전환 기억", async ({ page, loginAs }) => {
     await loginAs("member_a")
     await page.goto("/files")

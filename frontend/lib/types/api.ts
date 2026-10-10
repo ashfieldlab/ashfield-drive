@@ -35,10 +35,22 @@ export interface NodeResponse {
   created_at: string
   updated_at: string
   deleted_at: string | null
+  // 현재 내용을 마지막으로 저장한 사람과 시각 (ADR-0022). 버전 도입 전 노드와 폴더는 null.
+  content_updated_by?: string | null
+  content_updated_by_name?: string | null
+  content_updated_at?: string | null
+  // 목록 배지: 만료 안 된 공유 수, 활성 외부 링크 유무
+  share_count?: number
+  has_link?: boolean
 }
 
 export interface TreeResponse {
   nodes: NodeResponse[]
+}
+
+export interface TrashResponse extends TreeResponse {
+  // 휴지통 자동 비우기 기간 (백엔드 settings.trash_retention_days)
+  retention_days: number
 }
 
 export interface AncestorItem {
@@ -77,9 +89,12 @@ export type SharePermission = "read" | "write" | "manage"
 export interface FileShareResponse {
   id: string
   node_id: string
-  grantee_sub: string
+  // 개인 공유면 grantee_sub, 그룹(부서) 공유면 grantee_group_id 중 하나만 채워진다
+  grantee_sub: string | null
   grantee_email: string | null
   grantee_name: string | null
+  grantee_group_id: string | null
+  group_name: string | null
   permission: SharePermission
   granted_by_sub: string
   granted_at: string
@@ -105,6 +120,12 @@ export interface ExternalLinkResponse {
   last_accessed_at: string | null
   created_at: string
   revoked_at: string | null
+}
+
+// PATCH /nodes/{id}/external-links/{link_id}: 보낸 필드만 반영. password null = 해제
+export interface ExternalLinkPatch {
+  expires_at?: string | null
+  password?: string | null
 }
 
 export interface ExternalLinkList {

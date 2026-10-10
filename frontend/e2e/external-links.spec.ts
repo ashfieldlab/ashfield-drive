@@ -34,6 +34,15 @@ test.describe("external links", () => {
     await page.getByTestId("link-copy-button").click()
     await expect(page.getByTestId("link-copy-button")).toHaveText(/복사됨/)
 
+    // 만료 변경은 URL 을 유지한다 (PATCH)
+    await page.getByTestId("link-expiry-trigger").click()
+    await page.getByTestId("link-expiry-7").click()
+    await expect(page.getByTestId("link-expiry-trigger")).not.toHaveText(/없음/)
+    await expect(page.getByTestId("link-url")).toHaveText(tokenUrl)
+    await page.getByTestId("share-modal-close").click()
+    // 목록 배지: 링크 공유
+    await expect(row.locator(`[data-testid$="-link"]`)).toBeVisible()
+
     // 새 컨텍스트(인증 없음)로 접근
     const anonCtx = await browser.newContext()
     const anonPage = await anonCtx.newPage()

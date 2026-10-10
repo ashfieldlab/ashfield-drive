@@ -31,20 +31,14 @@ interface Props {
   onClose: () => void
 }
 
-// 백엔드 응답에는 그룹(부서) 공유 필드도 있다 (팀 폴더). 개인 공유면 grantee_sub, 그룹이면 grantee_group_id.
-type ShareRow = Omit<FileShareResponse, "grantee_sub"> & {
-  grantee_sub: string | null
-  grantee_group_id?: string | null
-  group_name?: string | null
-}
-
-const shareLabel = (s: ShareRow) =>
+const shareLabel = (s: FileShareResponse) =>
   s.grantee_group_id
     ? (s.group_name ?? "부서")
     : (s.grantee_name ?? s.grantee_email ?? s.grantee_sub ?? "")
 
 /** 공유: 왼쪽 사람(사용자 공유), 오른쪽 외부 링크 */
 export function ShareModal({ node, displayName, onClose }: Props) {
+  const vaultCtx = useVaultContext(node.id)
   const [showUnlock, setShowUnlock] = useState(false)
   const [retry, setRetry] = useState(0)
 
@@ -79,7 +73,7 @@ export function ShareModal({ node, displayName, onClose }: Props) {
             retry={retry}
             onNeedUnlock={() => setShowUnlock(true)}
           />
-          <ShareLinkPanel node={node} onClose={onClose} />
+          <ShareLinkPanel node={node} vault={vaultCtx.loading ? null : !!vaultCtx.vaultRootId} onClose={onClose} />
         </div>
       </div>
       {showUnlock && (
@@ -117,7 +111,7 @@ function PeoplePane({
   const [busy, setBusy] = useState(false)
   const [rowBusy, setRowBusy] = useState<string | null>(null)
 
-  const shares = (data?.shares ?? []) as ShareRow[]
+  const shares = data?.shares ?? []
   const isOwner = !!authUser && authUser.id === node.owner_id
   const stack = [
     ...(isOwner && authUser ? [{ key: authUser.id, label: authUser.name ?? authUser.email, group: false }] : []),
@@ -177,7 +171,7 @@ function PeoplePane({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retry])
 
-  async function changePermission(s: ShareRow, p: SharePermission) {
+  async function changePermission(s: FileShareResponse, p: SharePermission) {
     if (p === s.permission) return
     setRowBusy(s.id)
     try {
@@ -196,7 +190,7 @@ function PeoplePane({
     }
   }
 
-  async function removeShare(s: ShareRow) {
+  async function removeShare(s: FileShareResponse) {
     const ok = await confirm({
       title: "공유 해제",
       description: `'${shareLabel(s)}' 의 공유를 해제하시겠습니까?`,

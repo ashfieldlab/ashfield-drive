@@ -14,8 +14,6 @@
 access_count, last_accessed_at 은 다운로드(파일, zip)마다 +1. 목록 조회는 세지 않는다.
 """
 
-from urllib.parse import quote
-
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,7 +44,7 @@ from app.services.external_links import (
     subtree_has_vault,
     touch_access,
 )
-from app.services.zip_export import build_folder_zip
+from app.services.zip_export import build_folder_zip, zip_content_disposition
 
 router = APIRouter(prefix="/s", tags=["external"])
 
@@ -225,16 +223,8 @@ async def public_zip(
         meta={"link_id": link.id, "ip": _client_ip(request)},
     )
     await db.commit()
-    # 헤더는 latin-1 만 허용: ASCII 대체 이름 + RFC 5987 UTF-8 이름 (한글 폴더명)
-    ascii_name = "".join(c if c.isascii() and c.isalnum() else "_" for c in folder.name)[:40]
-    utf8_name = quote(f"{folder.name}.zip", safe="")
     return Response(
         content=data,
         media_type="application/zip",
-        headers={
-            "Content-Disposition": (
-                f'attachment; filename="{ascii_name or "folder"}.zip"; '
-                f"filename*=UTF-8''{utf8_name}"
-            )
-        },
+        headers={"Content-Disposition": zip_content_disposition(folder.name)},
     )

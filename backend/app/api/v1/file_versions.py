@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.nodes import _to_response
 from app.auth.context import UserContext
 from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.config import settings
@@ -23,6 +22,7 @@ from app.schemas.file_version import FileVersionDownloadUrl, FileVersionResponse
 from app.schemas.node import NodeResponse
 from app.services import file_versions
 from app.services.audit import record_file_access, write_audit
+from app.services.node_view import to_response
 from app.services.nodes import Permission, assert_access, get_node_or_404
 
 router = APIRouter(prefix="/nodes/{node_id}/versions", tags=["file-versions"])
@@ -134,7 +134,7 @@ async def restore_version(
     await db.commit()
     await db.refresh(node)
     await file_versions.delete_objects(stale_keys)
-    return _to_response(node)
+    return await to_response(db, node)
 
 
 @router.delete("/{version_id}", status_code=204, summary="버전 삭제 (관리 권한)")

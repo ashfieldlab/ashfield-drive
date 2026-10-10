@@ -1099,6 +1099,9 @@ GET    /api/v1/nodes/{id}                          (메타 조회)
 PATCH  /api/v1/nodes/{id}                          (rename / move: parent_id, name 수정)
 DELETE /api/v1/nodes/{id}                          (soft delete)
 POST   /api/v1/nodes/{id}/restore                  (휴지통 복원)
+GET    /api/v1/nodes/trash                         (휴지통 목록 + retention_days)
+DELETE /api/v1/nodes/trash                         (휴지통 비우기)
+POST   /api/v1/nodes/trash/purge                   (골라서 영구 삭제: {ids})
 
 GET    /api/v1/calendars                           (자동 가시 + 본인 personal)
 POST   /api/v1/calendars                           (생성)
@@ -1119,7 +1122,8 @@ GET    /api/v1/audit?from=&to=&entity_type=        (워크스페이스 admin만)
 ```
 POST   /api/v1/nodes/{id}/shares                   (FileShare 생성)
 DELETE /api/v1/nodes/{id}/shares/{share_id}
-POST   /api/v1/nodes/{id}/external-links          (ExternalLink 생성)
+POST   /api/v1/nodes/{id}/external-links          (ExternalLink 생성, 보안 폴더 항목은 400)
+PATCH  /api/v1/nodes/{id}/external-links/{link_id} (만료, 비밀번호 변경: URL 유지)
 DELETE /api/v1/nodes/{id}/external-links/{link_id}
 GET    /s/{token}                                  (외부 접근 entry: 인증 없음)
 POST   /s/{token}/verify-password                  (비밀번호 검증)

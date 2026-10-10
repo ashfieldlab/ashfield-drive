@@ -1,5 +1,5 @@
 import { E2E_USERS, setActiveWorkspace, setupSharedWorkspace, signOut } from "./auth"
-import { test, expect } from "./fixtures"
+import { createFolder, test, expect } from "./fixtures"
 
 test.describe("notification bell", () => {
   test("공유받으면 unread 배지 +1, 패널 클릭하면 항목 노출", async ({
@@ -16,9 +16,7 @@ test.describe("notification bell", () => {
     await setActiveWorkspace(page, workspaceId)
     await page.goto("/files")
     const name = `알림-${Date.now()}`
-    await page.getByTestId("files-new-folder-button").click()
-    await page.getByTestId("files-new-folder-input").fill(name)
-    await page.getByTestId("files-new-folder-confirm").click()
+    await createFolder(page, name)
     const row = page.locator(`tr[data-testid^="files-row-"]`, { hasText: name })
     await row.locator(`[data-testid$="-share"]`).click()
     await page
@@ -26,6 +24,7 @@ test.describe("notification bell", () => {
       .fill(E2E_USERS.member_a.email.split("@")[0])
     await page.getByTestId(`user-autocomplete-option-${memberSub}`).click()
     await page.getByTestId("share-add-button").click()
+    await expect(page.locator(`li[data-testid^="share-row-"]`).first()).toBeVisible()
     await page.getByTestId("share-modal-close").click()
 
     // member_a 로 전환 → 헤더 벨 확인

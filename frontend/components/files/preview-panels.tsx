@@ -217,8 +217,10 @@ export function VersionsPanel({
               현재
             </span>
           </p>
-          <p className="text-xs text-muted-foreground">
-            {relativeTime(node.updated_at)}, <span className="tabular-nums">{formatBytes(node.size_bytes)}</span>
+          <p className="truncate text-xs text-muted-foreground">
+            {node.content_updated_by_name ? `${node.content_updated_by_name}, ` : ""}
+            {relativeTime(node.content_updated_at ?? node.updated_at)},{" "}
+            <span className="tabular-nums">{formatBytes(node.size_bytes)}</span>
           </p>
         </div>
       </li>
@@ -327,10 +329,12 @@ export function SharePanel({
             <span className="text-xs text-muted-foreground">소유자</span>
           </li>
           {shares.map((s) => {
-            const label = s.grantee_name || s.grantee_email || s.grantee_sub
+            const label = s.grantee_group_id
+              ? (s.group_name ?? "부서")
+              : s.grantee_name || s.grantee_email || s.grantee_sub || ""
             return (
               <li key={s.id} className="flex items-center gap-2.5 py-1" data-testid={`${T}-share-${s.id}`}>
-                <Avatar id={s.grantee_sub} name={label} />
+                <Avatar id={s.grantee_group_id ?? s.grantee_sub ?? s.id} name={label} />
                 <span className="flex-1 truncate text-sm text-foreground" title={s.grantee_email ?? undefined}>
                   {label}
                 </span>

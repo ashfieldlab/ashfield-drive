@@ -44,6 +44,7 @@ from app.models.user import User
 from app.schemas.external_link import (
     ExternalLinkCreate,
     ExternalLinkList,
+    ExternalLinkPatch,
     ExternalLinkResponse,
 )
 from app.schemas.file_share import (
@@ -62,6 +63,8 @@ from app.schemas.node import (
     OverwriteCompleteRequest,
     OverwriteUrlRequest,
     PartUrlResponse,
+    TrashPurgeRequest,
+    TrashResponse,
     TreeResponse,
     UploadUrlRequest,
     UploadUrlResponse,
@@ -80,6 +83,7 @@ from app.services.file_shares import (
     upsert_group_share,
     upsert_share,
 )
+from app.services.node_view import to_response, to_responses
 from app.services.nodes import (
     assert_access,
     assert_no_parent_cycle,
@@ -101,7 +105,7 @@ from app.services.nodes import (
     touch_etag,
 )
 from app.services.notifications import PendingDispatch, notify
-from app.services.zip_export import build_folder_zip
+from app.services.zip_export import build_folder_zip, zip_content_disposition
 
 router = APIRouter(prefix="/nodes", tags=["nodes"])
 
@@ -127,10 +131,6 @@ def _check_if_match(node: Node, if_match: str | None) -> None:
                 "current_etag": current,
             },
         )
-
-
-def _to_response(node: Node) -> NodeResponse:
-    return NodeResponse.model_validate(node, from_attributes=True)
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +195,7 @@ async def create_folder(
         "node_created",
         extra={"category": "api", "node_id": node.id, "kind": "folder"},
     )
-    return _to_response(node)
+    return await to_response(db, node)
 
 
 @router.get(
@@ -239,29 +239,78 @@ async def get_tree(
             parent_id=parent_id,
             scope=scope,  # type: ignore[arg-type]
         )
-    return TreeResponse(nodes=[_to_response(n) for n in nodes])
+    return TreeResponse(nodes=await to_responses(db, nodes))
 
 
 @router.get(
     "/trash",
-    response_model=TreeResponse,
+    response_model=TrashResponse,
     summary="휴지통 목록",
 )
 async def get_trash(
     user: UserContext = Depends(get_current_user),
     workspace_id: str = Depends(require_active_workspace),
     db: AsyncSession = Depends(get_db),
-) -> TreeResponse:
+) -> TrashResponse:
     """본인 personal soft-deleted + 워크스페이스 shared soft-deleted 를 한 번에.
 
-    Phase 3 후속: N일 이상 묵으면 자동 청소. 지금은 영구.
+    retention_days 가 지나면 휴지통 cron (jobs/trash.py) 이 영구 삭제한다.
     """
     nodes = await list_trash(db, workspace_id=workspace_id, user=user)
-    return TreeResponse(nodes=[_to_response(n) for n in nodes])
+    return TrashResponse(
+        nodes=await to_responses(db, nodes),
+        retention_days=settings.trash_retention_days,
+    )
 
 
 class TrashEmptyResponse(BaseModel):
     purged: int
+
+
+async def _purge_trash_nodes(
+    db: AsyncSession,
+    nodes: list[Node],
+    *,
+    user: UserContext,
+    workspace_id: str,
+    action: str,
+    extra_rows: list[Node] | None = None,
+) -> int:
+    """휴지통 노드들을 hard delete + S3 object 제거 + audit.
+
+    부모만 휴지통에 들어간 폴더의 자손 파일들도 RECURSIVE CTE 로 펼쳐 S3 object 까지 제거.
+    DB row 는 FK ondelete=CASCADE 로 부모 hard-delete 시 자동 정리. 사용량은 active 파일과
+    버전 합계로 계산하므로 (services/quotas.py) 행이 사라지면 그대로 반영된다.
+    """
+    if not nodes:
+        return 0
+    storage_deleted = await purge_subtree_storage(db, [n.id for n in nodes])
+    for n in [*nodes, *(extra_rows or [])]:
+        await db.delete(n)
+    if action == "empty_trash":
+        await write_audit(
+            db,
+            workspace_id=workspace_id,
+            actor=user,
+            action="empty_trash",
+            entity_type="node",
+            entity_id="*",
+            meta={"purged": len(nodes), "storage_objects_deleted": storage_deleted},
+        )
+    else:
+        # 골라서 영구 삭제: 항목별 delete (permanent). 활동 피드와 desktop sync 가 대상을 안다.
+        for n in nodes:
+            await write_audit(
+                db,
+                workspace_id=workspace_id,
+                actor=user,
+                action="delete",
+                entity_type="node",
+                entity_id=n.id,
+                meta={"kind": n.kind, "name": n.name, "permanent": True, "from_trash": True},
+            )
+    await db.commit()
+    return len(nodes)
 
 
 @router.delete(
@@ -277,31 +326,70 @@ async def empty_trash(
 ) -> TrashEmptyResponse:
     """본인 personal soft-deleted + 워크스페이스 shared soft-deleted 노드를 hard delete + S3 object 제거.
 
-    부모만 휴지통에 들어간 폴더의 자손 파일들도 RECURSIVE CTE 로 펼쳐 S3 object 까지 제거.
-    DB row 는 FK ondelete=CASCADE 로 부모 hard-delete 시 자동 정리.
-
     워크스페이스 폴더/파일도 누구든 비울 수 있다 (휴지통은 워크스페이스 단위 공통).
     """
     nodes = await list_trash(db, workspace_id=workspace_id, user=user)
-    if not nodes:
-        return TrashEmptyResponse(purged=0)
-
-    # 자손 file S3 객체 정리(공용 seam) → row 는 top 노드 delete 시 CASCADE.
-    storage_deleted = await purge_subtree_storage(db, [n.id for n in nodes])
-    for n in nodes:
-        await db.delete(n)
-
-    await write_audit(
-        db,
-        workspace_id=workspace_id,
-        actor=user,
-        action="empty_trash",
-        entity_type="node",
-        entity_id="*",
-        meta={"purged": len(nodes), "storage_objects_deleted": storage_deleted},
+    purged = await _purge_trash_nodes(
+        db, nodes, user=user, workspace_id=workspace_id, action="empty_trash"
     )
-    await db.commit()
-    return TrashEmptyResponse(purged=len(nodes))
+    return TrashEmptyResponse(purged=purged)
+
+
+@router.post(
+    "/trash/purge",
+    response_model=TrashEmptyResponse,
+    summary="휴지통 항목 골라서 영구 삭제",
+    responses={200: {"description": "삭제된 노드 수. 휴지통에 없는 id 는 무시"}},
+)
+async def purge_trash_items(
+    body: TrashPurgeRequest,
+    user: UserContext = Depends(get_current_user),
+    workspace_id: str = Depends(require_active_workspace),
+    db: AsyncSession = Depends(get_db),
+) -> TrashEmptyResponse:
+    """휴지통 비우기의 선택 버전. 권한 규칙은 같다: 호출자의 휴지통 목록(본인 personal +
+    워크스페이스 shared)에 있는 id 만 지우고 나머지(활성 노드, 남의 것, 다른 워크스페이스)는 무시.
+
+    폴더를 고르면 같이 지워진 자손도 CASCADE 로 사라진다. 고른 폴더의 자손 id 가 같이
+    오면 따로 지우지 않는다 (CASCADE 가 처리).
+    """
+    wanted = set(body.ids)
+    trash = await list_trash(db, workspace_id=workspace_id, user=user)
+    by_id = {n.id: n for n in trash}
+
+    def under_picked(n: Node) -> bool:
+        cur = by_id.get(n.parent_id) if n.parent_id else None
+        while cur is not None:
+            if cur.id in wanted:
+                return True
+            cur = by_id.get(cur.parent_id) if cur.parent_id else None
+        return False
+
+    tops = [n for n in trash if n.id in wanted and not under_picked(n)]
+    if not tops:
+        return TrashEmptyResponse(purged=0)
+    top_ids = {n.id for n in tops}
+
+    def under_top(n: Node) -> bool:
+        cur = by_id.get(n.parent_id) if n.parent_id else None
+        while cur is not None:
+            if cur.id in top_ids:
+                return True
+            cur = by_id.get(cur.parent_id) if cur.parent_id else None
+        return False
+
+    # 같이 휴지통에 있는 자손 행도 명시적으로 지운다 (휴지통 비우기와 같은 방식: ORM 이
+    # 부모만 지울 때 자식 parent_id 를 NULL 로 바꿔 고아로 남기지 않게).
+    descendants = [n for n in trash if n.id not in top_ids and under_top(n)]
+    await _purge_trash_nodes(
+        db,
+        tops,
+        user=user,
+        workspace_id=workspace_id,
+        action="purge",
+        extra_rows=descendants,
+    )
+    return TrashEmptyResponse(purged=len(tops))
 
 
 @router.get(
@@ -319,7 +407,7 @@ async def get_shared_with_me(
     expired share 는 제외.
     """
     nodes = await list_shared_with_me(db, workspace_id=workspace_id, user=user)
-    return TreeResponse(nodes=[_to_response(n) for n in nodes])
+    return TreeResponse(nodes=await to_responses(db, nodes))
 
 
 @router.get(
@@ -375,6 +463,8 @@ async def get_changes(
     if has_more:
         rows = rows[:limit]
 
+    live = list({n.id: n for _, n in rows if n is not None}.values())
+    views = {r.id: r for r in await to_responses(db, live)}
     changes: list[NodeChange] = []
     for audit, node in rows:
         changes.append(
@@ -382,7 +472,7 @@ async def get_changes(
                 occurred_at=audit.created_at,
                 action=audit.action,
                 node_id=audit.entity_id,
-                node=_to_response(node) if node is not None else None,
+                node=views[node.id] if node is not None else None,
             )
         )
 
@@ -490,7 +580,7 @@ async def get_node(
     """단건 메타 조회. 본문은 별도 `/download-url` 로."""
     node = await get_node_or_404(db, node_id)
     await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
-    return _to_response(node)
+    return await to_response(db, node)
 
 
 @router.patch(
@@ -569,7 +659,7 @@ async def patch_node(
 
     await db.commit()
     await db.refresh(node)
-    return _to_response(node)
+    return await to_response(db, node)
 
 
 async def _hard_delete_vault_node(
@@ -699,7 +789,7 @@ async def restore_node(
     if node.scope == "personal" and node.owner_id != user.sub:
         raise HTTPException(403, "Forbidden")
     if node.deleted_at is None:
-        return _to_response(node)
+        return await to_response(db, node)
     # 복원 시 동명 충돌 처리
     node.name = await resolve_name_conflict(db, parent_id=node.parent_id, name=node.name)
     restore(node)
@@ -714,7 +804,7 @@ async def restore_node(
     )
     await db.commit()
     await db.refresh(node)
-    return _to_response(node)
+    return await to_response(db, node)
 
 
 # ---------------------------------------------------------------------------
@@ -922,7 +1012,7 @@ async def complete_multipart(
     await db.commit()
     await db.refresh(node)
     await file_versions.delete_objects(stale_keys)
-    return _to_response(node)
+    return await to_response(db, node)
 
 
 @router.post(
@@ -945,7 +1035,7 @@ async def complete_upload(
     if node.kind != "file":
         raise HTTPException(400, "Not a file")
     if node.status == "ready":
-        return _to_response(node)
+        return await to_response(db, node)
     if node.storage_key is None:
         raise HTTPException(500, "Node missing storage_key")
 
@@ -974,7 +1064,7 @@ async def complete_upload(
         "node_upload_completed",
         extra={"category": "api", "node_id": node.id, "size": node.size_bytes},
     )
-    return _to_response(node)
+    return await to_response(db, node)
 
 
 @router.post(
@@ -1137,7 +1227,7 @@ async def complete_overwrite(
         "node_overwrite_completed",
         extra={"category": "api", "node_id": node.id, "size": node.size_bytes},
     )
-    return _to_response(node)
+    return await to_response(db, node)
 
 
 @router.post(
@@ -1211,11 +1301,10 @@ async def download_folder_zip(
         raise HTTPException(400, "Not a folder")
 
     body = await build_folder_zip(db, root=node)
-    safe = "".join(c if c.isalnum() else "_" for c in node.name)[:40] or "folder"
     return Response(
         content=body,
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{safe}.zip"'},
+        headers={"Content-Disposition": zip_content_disposition(node.name)},
     )
 
 
@@ -1453,6 +1542,7 @@ async def list_external_links(
     status_code=201,
     summary="외부 링크 발급: 인증 없이 `/s/{token}` 으로 접근 가능",
     responses={
+        400: {"description": "보안 폴더(E2E) 항목: 링크로 열 수 없어 발급 불가"},
         403: {"description": "manage 권한 없음"},
         404: {"description": "노드 없음"},
     },
@@ -1467,6 +1557,9 @@ async def create_external_link(
     node = await get_node_or_404(db, node_id)
     await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
     await assert_can_manage_shares(db, node, user=user)
+    # 보안 폴더 내용은 서버가 복호화할 수 없고 공개 페이지도 열지 않는다 (resolve_in_link 403).
+    if await is_vault_content(db, node.id):
+        raise HTTPException(400, "보안 폴더 항목은 외부 링크를 만들 수 없습니다.")
     link = ExternalLink(
         id=new_link_id(),
         node_id=node.id,
@@ -1486,6 +1579,54 @@ async def create_external_link(
         entity_id=node.id,
         meta={"external": True, "permission": body.permission},
     )
+    await db.commit()
+    await db.refresh(link)
+    return _link_to_response(link)
+
+
+@router.patch(
+    "/{node_id}/external-links/{link_id}",
+    response_model=ExternalLinkResponse,
+    summary="외부 링크 설정 변경: 만료, 비밀번호 (URL 유지)",
+    responses={
+        403: {"description": "manage 권한 없음"},
+        404: {"description": "링크/노드 없음, 또는 철회된 링크"},
+    },
+)
+async def patch_external_link(
+    node_id: str,
+    link_id: str,
+    body: ExternalLinkPatch,
+    user: UserContext = Depends(get_current_user),
+    workspace_id: str = Depends(require_active_workspace),
+    db: AsyncSession = Depends(get_db),
+) -> ExternalLinkResponse:
+    """보낸 필드만 바꾼다. expires_at: null = 만료 없음. password: 문자열 = 설정,
+    null = 해제, 필드 없음 = 유지."""
+    node = await get_node_or_404(db, node_id)
+    await assert_access(db, node, user=user, workspace_id=workspace_id, permission="read")
+    await assert_can_manage_shares(db, node, user=user)
+    link = await db.get(ExternalLink, link_id)
+    if link is None or link.node_id != node.id or link.revoked_at is not None:
+        raise HTTPException(404, "Link not found")
+    fields = body.model_fields_set
+    changed: list[str] = []
+    if "expires_at" in fields:
+        link.expires_at = body.expires_at
+        changed.append("expires_at")
+    if "password" in fields:
+        link.password_hash = hash_password(body.password) if body.password else None
+        changed.append("password")
+    if changed:
+        await write_audit(
+            db,
+            workspace_id=workspace_id,
+            actor=user,
+            action="update",
+            entity_type="node",
+            entity_id=node.id,
+            meta={"external": True, "link_id": link.id, "changed": changed},
+        )
     await db.commit()
     await db.refresh(link)
     return _link_to_response(link)

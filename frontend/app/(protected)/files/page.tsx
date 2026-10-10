@@ -22,7 +22,7 @@ import * as e2e from "@/lib/e2e/session"
 import { readDataTransfer, type DropBatch } from "@/lib/uploads/drop"
 import { destKeyOf, enqueueBatch, type UploadDest } from "@/lib/uploads/store"
 import { cn } from "@/lib/utils"
-import type { AncestorsResponse, NodeScope, TeamFolderItem, TreeResponse } from "@/lib/types/api"
+import type { AncestorsResponse, NodeScope, TeamFolderItem, TrashResponse, TreeResponse } from "@/lib/types/api"
 
 const VIEWS: { key: FilesView; label: string; icon: typeof List }[] = [
   { key: "list", label: "목록", icon: List },
@@ -69,7 +69,8 @@ export default function FilesPage() {
       ? "/api/v1/nodes/shared-with-me"
       : `/api/v1/nodes/tree?scope=${scope}${folderId ? `&parent_id=${folderId}` : ""}`
 
-  const { data, error, isLoading } = useApiGet<TreeResponse>(apiPath)
+  // 휴지통이면 TrashResponse (retention_days 포함)
+  const { data, error, isLoading } = useApiGet<TreeResponse & Partial<TrashResponse>>(apiPath)
 
   // E2E vault (ADR-0016)
   const e2eUi = useE2E()
@@ -200,7 +201,7 @@ export default function FilesPage() {
       {/* 스크롤은 이 안에서만 */}
       <div className={cn("h-full overflow-y-auto px-4 py-6 sm:px-6 lg:px-8", dragging && "bg-primary/[0.02]")}>
         {trash ? (
-          error ? errorBox : isLoading ? loadingBox : <TrashView nodes={data?.nodes ?? []} />
+          error ? errorBox : isLoading ? loadingBox : <TrashView nodes={data?.nodes ?? []} retentionDays={data?.retention_days ?? 30} />
         ) : (
           <section className="min-w-0 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">

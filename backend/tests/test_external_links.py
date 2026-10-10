@@ -301,3 +301,70 @@ async def test_folder_link_with_vault_subfolder(
     r = await client.post(f"/s/{token}/list", json={"folder_id": vault})
     assert r.status_code == 403
     assert (await client.post(f"/s/{token}/zip", json={})).status_code == 403
+
+
+async def test_patch_link_keeps_token(client: AsyncClient, auth_headers, mock_storage):
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    nid = await _upload(client, h, "p.txt")
+    created = (
+        await client.post(f"/api/v1/nodes/{nid}/external-links", json={}, headers=h)
+    ).json()
+    url = f"/api/v1/nodes/{nid}/external-links/{created['id']}"
+
+    # 만료 설정
+    later = (datetime.now(UTC) + timedelta(days=7)).replace(microsecond=0)
+    r = await client.patch(url, json={"expires_at": later.isoformat()}, headers=h)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["token"] == created["token"]
+    assert datetime.fromisoformat(body["expires_at"]) == later
+    assert body["has_password"] is False
+
+    # 비밀번호 설정: 만료는 그대로 (필드 없음 = 유지)
+    r = await client.patch(url, json={"password": "s3cret!"}, headers=h)
+    assert r.json()["has_password"] is True
+    assert datetime.fromisoformat(r.json()["expires_at"]) == later
+    token = created["token"]
+    assert (await client.post(f"/s/{token}/download", json={})).status_code == 401
+    r = await client.post(f"/s/{token}/download", json={"password": "s3cret!"})
+    assert r.status_code == 200
+
+    # 만료 제거 + 비밀번호 해제
+    r = await client.patch(url, json={"expires_at": None, "password": None}, headers=h)
+    assert r.json()["expires_at"] is None
+    assert r.json()["has_password"] is False
+    assert r.json()["token"] == token
+    assert (await client.post(f"/s/{token}/download", json={})).status_code == 200
+
+    # 짧은 비밀번호는 거절
+    assert (await client.patch(url, json={"password": "ab"}, headers=h)).status_code == 422
+
+
+async def test_patch_link_permissions(client: AsyncClient, auth_headers, mock_storage):
+    a = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    b = auth_headers(BOB, groups=[ACME], active_workspace=ACME)
+    nid = await _upload(client, a, "q.txt")
+    link = (await client.post(f"/api/v1/nodes/{nid}/external-links", json={}, headers=a)).json()
+    url = f"/api/v1/nodes/{nid}/external-links/{link['id']}"
+    # 남의 파일: 마스킹 404
+    assert (await client.patch(url, json={"expires_at": None}, headers=b)).status_code == 404
+    # 철회된 링크는 수정 불가
+    await client.delete(url, headers=a)
+    assert (await client.patch(url, json={"expires_at": None}, headers=a)).status_code == 404
+
+
+async def test_vault_content_cannot_get_link(client: AsyncClient, auth_headers, mock_storage):
+    h = auth_headers(ALICE, groups=[ACME], active_workspace=ACME)
+    vault = await _folder(client, h, "금고")
+    r = await client.post(
+        "/api/v1/e2e/vaults",
+        json={"node_id": vault, "wrapped_vault_key": "V1JBUFBFRA=="},
+        headers=h,
+    )
+    assert r.status_code == 200, r.text
+    inner = await _upload(client, h, "enc.bin", parent_id=vault)
+    for nid in (vault, inner):
+        r = await client.post(
+            f"/api/v1/nodes/{nid}/external-links", json={"permission": "read"}, headers=h
+        )
+        assert r.status_code == 400, r.text

@@ -4,7 +4,7 @@
  * 휴지통 (playground trash-page A): 표 + 자동 삭제까지 남은 기간.
  *
  * 원래 위치: 노드의 parent_id 조상 체인(/ancestors, 지운 노드도 조회됨) + scope 루트 이름.
- * 보존 기간: 백엔드 settings.trash_retention_days(기본 30) 를 API 로 노출하지 않아 30일로 가정.
+ * 보존 기간: GET /nodes/trash 의 retention_days (백엔드 settings.trash_retention_days).
  */
 
 import { useMemo, useState } from "react"
@@ -19,21 +19,20 @@ import type { AncestorsResponse, NodeResponse } from "@/lib/types/api"
 import { useToast } from "@/components/ui-custom/use-toast"
 import { FileGlyph, kindOf, plainSize, relativeTime } from "@/components/files/file-meta"
 
-export const TRASH_RETENTION_DAYS = 30
 const DAY = 86_400_000
 /** 폴더 삭제가 자손을 cascade 로 지우는 시간 오차 */
 const CASCADE_MS = 5_000
 
-export function daysLeft(deletedAt: string, now = Date.now()): number {
+export function daysLeft(deletedAt: string, retentionDays: number, now = Date.now()): number {
   const passed = Math.floor((now - new Date(deletedAt).getTime()) / DAY)
-  return Math.max(0, TRASH_RETENTION_DAYS - passed)
+  return Math.max(0, retentionDays - passed)
 }
 
-/** 남은 기간 색: 7일 이하 rose, 14일 이하 amber */
-function urgency(left: number): { pill: string; bar: string } {
-  if (left <= 7)
+/** 남은 기간 색: 보존 기간의 1/4 이하 rose, 절반 이하 amber (30일이면 7일, 15일) */
+function urgency(left: number, retentionDays: number): { pill: string; bar: string } {
+  if (left <= Math.floor(retentionDays / 4))
     return { pill: "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300", bar: "bg-rose-500 dark:bg-rose-400" }
-  if (left <= 14)
+  if (left <= Math.floor(retentionDays / 2))
     return { pill: "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300", bar: "bg-amber-500 dark:bg-amber-400" }
   return { pill: "bg-muted text-muted-foreground", bar: "bg-muted-foreground/40" }
 }
@@ -52,7 +51,7 @@ function CheckBox({ state }: { state: "on" | "off" | "some" }) {
   )
 }
 
-export function TrashView({ nodes }: { nodes: NodeResponse[] }) {
+export function TrashView({ nodes, retentionDays }: { nodes: NodeResponse[]; retentionDays: number }) {
   const { toast } = useToast()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirmEmpty, setConfirmEmpty] = useState(false)
@@ -306,8 +305,8 @@ export function TrashView({ nodes }: { nodes: NodeResponse[] }) {
               </thead>
               <tbody>
                 {items.map((it) => {
-                  const left = it.deleted_at ? daysLeft(it.deleted_at) : TRASH_RETENTION_DAYS
-                  const u = urgency(left)
+                  const left = it.deleted_at ? daysLeft(it.deleted_at, retentionDays) : retentionDays
+                  const u = urgency(left, retentionDays)
                   const on = valid.has(it.id)
                   const confirming = confirmRow === it.id
                   const isFolder = it.kind === "folder"
@@ -370,7 +369,7 @@ export function TrashView({ nodes }: { nodes: NodeResponse[] }) {
                           <span className="hidden h-1 w-14 overflow-hidden rounded-full bg-muted sm:block">
                             <span
                               className={cn("block h-full rounded-full", u.bar)}
-                              style={{ width: `${(left / TRASH_RETENTION_DAYS) * 100}%` }}
+                              style={{ width: `${retentionDays > 0 ? (left / retentionDays) * 100 : 0}%` }}
                             />
                           </span>
                         </span>

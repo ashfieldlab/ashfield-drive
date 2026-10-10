@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Check, ChevronDown, Copy, Download, Link2, Link2Off, Loader2, Lock, RefreshCw, Trash2, X } from "lucide-react"
 
 import { api } from "@/lib/api-client"
-import { useApiGet } from "@/lib/hooks/use-api"
+import { invalidateApi, useApiGet } from "@/lib/hooks/use-api"
 import { cn } from "@/lib/utils"
 import { logger } from "@/lib/utils/logger"
 import { useToast } from "@/components/ui-custom/use-toast"
@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { QrPattern, Switch, useCopied } from "@/components/files/share-parts"
-import type { ExternalLinkList, ExternalLinkResponse, NodeResponse } from "@/lib/types/api"
+import type { ExternalLinkList, ExternalLinkPatch, ExternalLinkResponse, NodeResponse } from "@/lib/types/api"
 
 const EXPIRY_OPTIONS: { days: number | null; label: string }[] = [
   { days: null, label: "없음" },
@@ -41,12 +41,22 @@ function expiryLabel(iso: string | null): string {
 const isExpired = (iso: string | null) => !!iso && new Date(iso).getTime() < Date.now()
 
 /**
- * 외부 링크 패널 (오른쪽). 백엔드는 링크 수정 API 가 없어서 만료와 비밀번호 변경은
- * "새 링크 발급 + 기존 링크 철회" 로 처리한다 (URL 이 바뀜). 비밀번호는 해시만 저장되므로
- * 비밀번호가 걸린 링크를 다시 만들 때는 비밀번호를 다시 받는다.
+ * 외부 링크 패널 (오른쪽). 만료와 비밀번호는 PATCH 로 바꿔 URL 이 유지된다.
+ * 재발급만 새 링크 발급 + 기존 링크 철회 (URL 이 바뀜). 비밀번호는 해시만 저장되므로
+ * 비밀번호가 걸린 링크를 재발급할 때는 비밀번호를 다시 받는다.
  * 권한은 항상 read: write 는 공개 페이지에서 쓰이지 않는다.
+ * 보안 폴더(E2E) 항목은 서버가 링크를 만들지 않는다: 스위치를 잠근다.
  */
-export function ShareLinkPanel({ node, onClose }: { node: NodeResponse; onClose: () => void }) {
+export function ShareLinkPanel({
+  node,
+  vault = false,
+  onClose,
+}: {
+  node: NodeResponse
+  /** 보안 폴더 항목인지. null = 아직 모름 (스위치 잠금) */
+  vault?: boolean | null
+  onClose: () => void
+}) {
   const { toast } = useToast()
   const confirm = useConfirm()
   const { copied, copy } = useCopied()
@@ -54,26 +64,32 @@ export function ShareLinkPanel({ node, onClose }: { node: NodeResponse; onClose:
     `/api/v1/nodes/${node.id}/external-links`,
   )
   const [busy, setBusy] = useState(false)
-  const [pwEditing, setPwEditing] = useState(false)
+  // 비밀번호 입력: set = 이 링크에 설정, regen = 재발급할 새 링크에 다시 설정
+  const [pwMode, setPwMode] = useState<"set" | "regen" | null>(null)
   const [pw, setPw] = useState("")
-  // 비밀번호 재입력을 기다리는 만료 변경 (undefined = 변경 없음)
-  const [pendingExpiry, setPendingExpiry] = useState<string | null | undefined>(undefined)
 
   // 목록은 created_at desc: 첫 번째가 최신
   const active = (data?.links ?? []).filter((l) => !l.revoked_at)
   const primary = active[0] ?? null
   const others = active.slice(1)
+  const blocked = vault === true && active.length === 0
 
   function resetPw() {
-    setPwEditing(false)
+    setPwMode(null)
     setPw("")
-    setPendingExpiry(undefined)
   }
 
   async function post(expiresAt: string | null, password: string | null) {
     return api<ExternalLinkResponse>(`/api/v1/nodes/${node.id}/external-links`, {
       method: "POST",
       body: { permission: "read", password, expires_at: expiresAt },
+    })
+  }
+
+  async function patch(link: ExternalLinkResponse, body: ExternalLinkPatch) {
+    return api<ExternalLinkResponse>(`/api/v1/nodes/${node.id}/external-links/${link.id}`, {
+      method: "PATCH",
+      body,
     })
   }
 
@@ -91,23 +107,33 @@ export function ShareLinkPanel({ node, onClose }: { node: NodeResponse; onClose:
     } finally {
       setBusy(false)
       void mutate()
+      invalidateApi("/api/v1/nodes")
     }
   }
 
   function createLink() {
+    if (blocked || vault === null) return
     void run(async () => {
       await post(null, null)
       toast.success("링크를 만들었습니다")
     }, "생성 실패")
   }
 
-  /** 설정을 바꾼 새 링크 발급 후 기존 링크 철회 */
-  function reissue(link: ExternalLinkResponse, expiresAt: string | null, password: string | null) {
+  /** 같은 설정의 새 링크 발급 후 기존 링크 철회 (URL 이 바뀜) */
+  function reissue(link: ExternalLinkResponse, password: string | null) {
     void run(async () => {
-      await post(expiresAt, password)
+      await post(link.expires_at, password)
       await del(link)
       resetPw()
       toast.success("새 링크로 바꿨습니다")
+    }, "재발급 실패")
+  }
+
+  function update(link: ExternalLinkResponse, body: ExternalLinkPatch, done: string) {
+    void run(async () => {
+      await patch(link, body)
+      resetPw()
+      toast.success(done)
     }, "변경 실패")
   }
 
@@ -149,33 +175,29 @@ export function ShareLinkPanel({ node, onClose }: { node: NodeResponse; onClose:
     })
     if (!ok) return
     if (link.has_password) {
-      setPendingExpiry(link.expires_at)
-      setPwEditing(true)
+      setPw("")
+      setPwMode("regen")
       return
     }
-    reissue(link, link.expires_at, null)
+    reissue(link, null)
   }
 
   function changeExpiry(link: ExternalLinkResponse, days: number | null) {
     const iso = days == null ? null : new Date(Date.now() + days * 86400000).toISOString()
-    if (link.has_password) {
-      setPendingExpiry(iso)
-      setPwEditing(true)
-      return
-    }
-    reissue(link, iso, null)
+    update(link, { expires_at: iso }, "만료를 바꿨습니다")
   }
 
-  const shownExpiry = primary ? (pendingExpiry !== undefined ? pendingExpiry : primary.expires_at) : null
+  const shownExpiry = primary?.expires_at ?? null
 
   return (
     <section className="flex shrink-0 flex-col border-t bg-muted/40 md:w-[272px] md:rounded-r-xl md:border-t-0 md:border-l">
       <header className="flex items-center gap-2 px-4 pt-4 pb-3">
         <Link2 size={16} className="text-muted-foreground" />
         <h3 className="flex-1 text-sm font-medium">외부 링크</h3>
+        {blocked && <Lock size={13} className="text-muted-foreground" aria-hidden />}
         <Switch
           checked={active.length > 0}
-          disabled={busy || isLoading}
+          disabled={busy || isLoading || blocked || vault === null}
           onChange={(v) => (v ? createLink() : void turnOff())}
           testId="share-link-toggle"
           label="외부 링크"
@@ -261,25 +283,25 @@ export function ShareLinkPanel({ node, onClose }: { node: NodeResponse; onClose:
             <div>
               <Row label="비밀번호">
                 <Switch
-                  checked={primary.has_password || pwEditing}
-                  disabled={busy}
+                  checked={primary.has_password || pwMode === "set"}
+                  disabled={busy || pwMode === "regen"}
                   onChange={(v) => {
-                    if (v) setPwEditing(true)
-                    else if (primary.has_password)
-                      reissue(primary, pendingExpiry !== undefined ? pendingExpiry : primary.expires_at, null)
+                    if (v) setPwMode("set")
+                    else if (primary.has_password) update(primary, { password: null }, "비밀번호를 해제했습니다")
                     else resetPw()
                   }}
                   testId="link-password-toggle"
                   label="비밀번호"
                 />
               </Row>
-              {pwEditing && (
+              {pwMode && (
                 <form
                   className="flex gap-1.5 px-3 pb-2.5"
                   onSubmit={(e) => {
                     e.preventDefault()
                     if (pw.length < 4 || busy) return
-                    reissue(primary, pendingExpiry !== undefined ? pendingExpiry : primary.expires_at, pw)
+                    if (pwMode === "regen") reissue(primary, pw)
+                    else update(primary, { password: pw }, "비밀번호를 설정했습니다")
                   }}
                 >
                   <input
@@ -293,7 +315,7 @@ export function ShareLinkPanel({ node, onClose }: { node: NodeResponse; onClose:
                         resetPw()
                       }
                     }}
-                    placeholder={primary.has_password ? "비밀번호 다시 입력" : "4자 이상"}
+                    placeholder={pwMode === "regen" ? "새 링크 비밀번호" : "4자 이상"}
                     minLength={4}
                     data-testid="link-password-input"
                     className="h-7 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs outline-none focus:border-ring focus:ring-3 focus:ring-ring/20"
@@ -304,7 +326,7 @@ export function ShareLinkPanel({ node, onClose }: { node: NodeResponse; onClose:
                     data-testid="link-password-save"
                     className="h-7 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
                   >
-                    설정
+                    {pwMode === "regen" ? "재발급" : "설정"}
                   </button>
                 </form>
               )}
@@ -369,6 +391,16 @@ export function ShareLinkPanel({ node, onClose }: { node: NodeResponse; onClose:
               재발급
             </button>
           </div>
+        </div>
+      ) : blocked ? (
+        <div
+          className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 md:pb-10"
+          data-testid="share-link-vault-blocked"
+        >
+          <span className="grid size-12 place-items-center rounded-full bg-background text-emerald-600 ring-1 ring-border dark:text-emerald-400">
+            <Lock size={20} />
+          </span>
+          <span className="text-sm text-muted-foreground">보안 폴더: 외부 링크 없음</span>
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 md:pb-10">

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import zipfile
+from urllib.parse import quote
 
 from fastapi import HTTPException
 from sqlalchemy import text
@@ -21,6 +22,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.storage import get_object_bytes
 from app.models.node import Node
+
+
+def zip_content_disposition(folder_name: str) -> str:
+    """폴더 ZIP 의 Content-Disposition. 헤더는 latin-1 만 허용하므로 ASCII 대체 이름 +
+    RFC 5987 `filename*` (UTF-8 원래 이름, 한글 폴더명)."""
+    ascii_name = "".join(c if c.isascii() and c.isalnum() else "_" for c in folder_name)[:40]
+    if not ascii_name.strip("_"):
+        ascii_name = "folder"
+    utf8_name = quote(f"{folder_name}.zip", safe="")
+    return f'attachment; filename="{ascii_name}.zip"; filename*=UTF-8\'\'{utf8_name}'
+
 
 _DESCENDANTS_SQL = text(
     """

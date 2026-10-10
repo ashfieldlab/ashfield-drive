@@ -3,7 +3,7 @@
 /** 목록과 갤러리가 같이 쓰는 조각: 선택 상자, 이름 바꾸기 입력, 배지, 행 컨텍스트 */
 
 import { useState } from "react"
-import { Check, Lock, Users } from "lucide-react"
+import { Check, Link2, Lock, Users } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { NodeResponse } from "@/lib/types/api"
@@ -118,7 +118,7 @@ export function RenameInput({
   )
 }
 
-/** 이름 옆 표시: 보안 폴더, 부서 폴더, 업로드 상태, 새 항목, 폴더로 가는 업로드 */
+/** 이름 옆 표시: 보안 폴더, 부서 폴더, 공유 중, 링크 공유, 업로드 상태, 새 항목, 폴더로 가는 업로드 */
 export function Badges({ node, ctx, className }: { node: NodeResponse; ctx: ItemCtx; className?: string }) {
   const pendingBadge =
     node.status === "pending" ? (
@@ -138,7 +138,16 @@ export function Badges({ node, ctx, className }: { node: NodeResponse; ctx: Item
       {ctx.isVaultFolder(node) && (
         <Lock aria-label="보안 폴더" className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       )}
-      {ctx.isTeamFolder(node) && <Users aria-label="부서 폴더" className="size-3.5 shrink-0" />}
+      {ctx.isTeamFolder(node) ? (
+        <Users aria-label="부서 폴더" className="size-3.5 shrink-0" />
+      ) : (
+        (node.share_count ?? 0) > 0 && (
+          <Users aria-label="공유 중" className="size-3.5 shrink-0" data-testid={`files-row-${node.id}-shared`} />
+        )
+      )}
+      {node.has_link && (
+        <Link2 aria-label="링크 공유" className="size-3.5 shrink-0" data-testid={`files-row-${node.id}-link`} />
+      )}
       {pendingBadge}
       {ctx.isNew(node) && (
         <span

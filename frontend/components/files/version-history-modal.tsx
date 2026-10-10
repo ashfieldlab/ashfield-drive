@@ -83,9 +83,10 @@ export function VersionHistoryModal({
         id: CURRENT,
         no: list.length + 1,
         size: node.size_bytes ?? 0,
-        savedAt: node.updated_at,
-        savedBy: null,
-        savedByName: null,
+        // 현재 내용을 저장한 사람과 시각. 버전 도입 전 노드는 없어서 수정 시각으로.
+        savedAt: node.content_updated_at ?? node.updated_at,
+        savedBy: node.content_updated_by ?? null,
+        savedByName: node.content_updated_by_name ?? null,
         current: true,
         delta: null,
       },
@@ -102,7 +103,7 @@ export function VersionHistoryModal({
     ]
     for (let i = 0; i < out.length; i++) out[i].delta = out[i + 1] ? out[i].size - out[i + 1].size : null
     return out
-  }, [data, node.size_bytes, node.updated_at])
+  }, [data, node.size_bytes, node.updated_at, node.content_updated_at, node.content_updated_by, node.content_updated_by_name])
 
   const groups = useMemo(() => {
     const res: { key: string; label: string; items: Entry[] }[] = []
@@ -117,9 +118,10 @@ export function VersionHistoryModal({
 
   const people = useMemo(() => {
     const m = new Map<string, string>()
+    if (node.content_updated_by) m.set(node.content_updated_by, node.content_updated_by_name ?? node.content_updated_by)
     for (const v of data ?? []) m.set(v.saved_by, v.saved_by_name ?? v.saved_by)
     return [...m.entries()]
-  }, [data])
+  }, [data, node.content_updated_by, node.content_updated_by_name])
 
   const v = entries.find((x) => x.id === sel) ?? entries[0]
   const sourcePath = v.current ? `/api/v1/nodes/${node.id}/download-url` : `${url}/${v.id}/download-url`
@@ -254,7 +256,7 @@ export function VersionHistoryModal({
                       {g.items.map((x, i) => {
                         const on = x.id === v.id
                         const last = i === g.items.length - 1
-                        const who = x.current ? "현재 버전" : (x.savedByName ?? x.savedBy ?? "")
+                        const who = x.savedByName ?? x.savedBy ?? (x.current ? "현재 버전" : "")
                         return (
                           <li key={x.id} className="relative flex gap-3 pb-1">
                             {!last && <span className="absolute top-9 bottom-0 left-[17px] w-px bg-border" />}
@@ -332,7 +334,7 @@ export function VersionHistoryModal({
                 )}
               </div>
               <p className="truncate text-xs text-muted-foreground">
-                {v.current ? "" : `${v.savedByName ?? v.savedBy}, `}
+                {v.savedByName || v.savedBy ? `${v.savedByName ?? v.savedBy}, ` : ""}
                 {formatShortDateTime(v.savedAt)}
               </p>
             </div>

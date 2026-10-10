@@ -17,6 +17,7 @@ from app.auth.dependencies import get_current_user, require_active_workspace
 from app.core.db import get_db
 from app.models.node import Node
 from app.schemas.node import NodeResponse
+from app.services.node_view import to_responses
 from app.services.nodes import effective_permission
 
 # 종류(category) 필터: 프론트 files-list 와 동일 분류.
@@ -113,5 +114,5 @@ async def search(
             break
 
     return SearchResponse(
-        nodes=[NodeResponse.model_validate(n, from_attributes=True) for n in nodes],
+        nodes=await to_responses(db, nodes),
     )

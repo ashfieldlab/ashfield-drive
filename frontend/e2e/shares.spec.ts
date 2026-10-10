@@ -1,5 +1,5 @@
 import { E2E_USERS, setActiveWorkspace, setupSharedWorkspace, signOut } from "./auth"
-import { test, expect } from "./fixtures"
+import { createFolder, test, expect } from "./fixtures"
 
 test.describe("file sharing", () => {
   test("Alice 가 Bob 에게 공유 → Bob 의 '공유받음' 에서 확인", async ({
@@ -17,14 +17,7 @@ test.describe("file sharing", () => {
     await page.goto("/files")
     const name = `공유-${Date.now()}`
 
-    // 폴더 생성: "새로 만들기" 메뉴 안에 있으면 메뉴부터 연다
-    const newMenu = page.getByTestId("files-new-button")
-    const newFolder = page.getByTestId("files-new-folder-button")
-    await expect(newMenu.or(newFolder).first()).toBeVisible()
-    if (await newMenu.isVisible()) await newMenu.click()
-    await page.getByTestId("files-new-folder-button").click()
-    await page.getByTestId("files-new-folder-input").fill(name)
-    await page.getByTestId("files-new-folder-confirm").click()
+    await createFolder(page, name)
 
     const row = page.locator(`tr[data-testid^="files-row-"]`, { hasText: name })
     await expect(row).toBeVisible()
