@@ -17,11 +17,11 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
-        "localhost:3000",
-        "127.0.0.1:3000",
-        "192.168.*.*:3000",
-        "10.*.*.*:3000",
-        "172.16.*.*:3000",
+        "localhost:3200",
+        "127.0.0.1:3200",
+        "192.168.*.*:3200",
+        "10.*.*.*:3200",
+        "172.16.*.*:3200",
         ...(process.env.BETTER_AUTH_URL
           ? [new URL(process.env.BETTER_AUTH_URL).host]
           : []),
@@ -40,14 +40,14 @@ const nextConfig: NextConfig = {
   //
   // MinIO 는 Chrome PNA(Private Network Access) 가 요구하는
   // `Access-Control-Allow-Private-Network: true` 헤더를 보낼 옵션이 없어서
-  // localhost:3000 → localhost:19000 PUT 이 브라우저에서 막힌다.
+  // localhost:3200 → localhost:19200 PUT 이 브라우저에서 막힌다.
   //
   // presigned URL 의 host 를 same-origin(`/_minio/...`) 으로 잡고
   // 여기서 진짜 MinIO 로 proxy 하면 CORS/PNA 모두 우회된다.
   //
   // 운영(별도 S3 도메인)에서는 이 rewrite 불필요 — boto3 endpoint 만 분기.
   async rewrites() {
-    const minio = process.env.MINIO_PROXY_TARGET ?? "http://localhost:19000"
+    const minio = process.env.MINIO_PROXY_TARGET ?? "http://localhost:19200"
     return [
       {
         source: "/_minio/:path*",

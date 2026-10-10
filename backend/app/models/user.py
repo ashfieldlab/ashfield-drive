@@ -1,6 +1,6 @@
-"""User — 로컬 사용자 행. 첫 인증 요청에서 JWT(sub·email·name·image)로 upsert.
+"""User: 로컬 사용자 행. 인증 요청마다 액세스 토큰(sub·email·name·picture)으로 upsert.
 
-id = Better Auth 사용자 ID (JWT sub). 표시·외래키·join 용 + System Admin 플래그. ADR-0004.
+id = 계정 서버 사용자 ID (JWT sub). 표시·외래키·join 용 + System Admin 플래그. ADR-0004, ADR-0024.
 """
 
 from sqlalchemy import Boolean, String, Text, false
@@ -21,3 +21,5 @@ class User(Base, TimestampMixin):
     is_system_admin: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=false()
     )
+    # 마지막으로 반영한 토큰 `workspaces` 클레임의 해시 (ADR-0024). 같으면 소속 동기화를 건너뛴다.
+    workspaces_claim_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)

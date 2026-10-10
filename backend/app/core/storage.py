@@ -1,6 +1,6 @@
 """S3-compatible storage 어댑터 (ADR-0005).
 
-dev: MinIO (S3_ENDPOINT_URL=http://localhost:19000)
+dev: MinIO (S3_ENDPOINT_URL=http://localhost:19200)
 prod: S3-compatible storage / AWS S3 등
 
 aioboto3 사용. 업로드/다운로드 presigned URL 발급 + head_object로 업로드 검증.
@@ -63,7 +63,7 @@ async def ensure_bucket() -> None:
 def _rewrite_public(url: str) -> str:
     """presigned URL 의 host 부분을 클라 노출용 endpoint 로 치환. 서명은 그대로 유지.
 
-    dev: localhost:19000 → localhost:{FRONTEND_PORT}/_minio (Next rewrites 가 다시 :19000 으로
+    dev: localhost:19200 → localhost:{FRONTEND_PORT}/_minio (Next rewrites 가 다시 :19200 으로
     forward → 받는 host header 가 서명 host 와 일치).
     우선순위: S3_PUBLIC_ENDPOINT_URL(명시) > localhost:{FRONTEND_PORT}/_minio(derive).
     """

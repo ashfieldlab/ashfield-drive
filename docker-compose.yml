@@ -16,7 +16,7 @@ services:
     image: redis:7-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}-redis
     ports:
-      - "${REDIS_HOST_PORT:-6479}:6379"
+      - "${REDIS_HOST_PORT:-16479}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -31,7 +31,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ashfield_dev}
       POSTGRES_DB: ${POSTGRES_DB:-ashfield_drive}
     ports:
-      - "${POSTGRES_HOST_PORT:-5532}:5432"
+      - "${POSTGRES_HOST_PORT:-15532}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -55,8 +55,10 @@ services:
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
   # S3-compatible storage (ADR-0005) — 개발 전용. 운영은 S3-compatible storage.
+  # minio/minio 이미지는 더 이상 받을 수 없다 (Docker Hub 배포 중단). 같은 MinIO 서버를 빌드한
+  # Chainguard 이미지(무료 티어는 latest 태그만)를 쓴다: env·데이터 형식·S3 API 동일. 버킷은 앱이 만든다.
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}-minio
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minio}
@@ -64,13 +66,14 @@ services:
       # 브라우저가 presigned URL 로 직접 PUT/GET — CORS 허용 (dev 한정 * )
       MINIO_API_CORS_ALLOW_ORIGIN: "*"
     ports:
-      - "${MINIO_HOST_PORT:-19000}:9000"
-      - "${MINIO_CONSOLE_HOST_PORT:-19001}:9001"
+      - "${MINIO_HOST_PORT:-19200}:9000"
+      - "${MINIO_CONSOLE_HOST_PORT:-19201}:9001"
     command: server /data --console-address ":9001"
     volumes:
       - miniodata:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      # 이미지에 curl 이 없다: 같이 들어 있는 mc 로 확인.
+      test: ["CMD-SHELL", "MC_HOST_local=http://$${MINIO_ROOT_USER}:$${MINIO_ROOT_PASSWORD}@127.0.0.1:9000 mc ready local"]
       interval: 10s
       timeout: 3s
       retries: 5

@@ -4,10 +4,13 @@ pytest 공통 fixtures.
 전략:
   - 테스트 전용 DB(ashfield_drive_test) — 동일 컨테이너의 별도 DB
   - 각 테스트는 자기 트랜잭션 안에서 실행 → 끝나면 롤백 (테스트 간 격리)
-  - 인증은 mocking 없이 진짜 JWT (테스트 프로세스가 만든 RSA 키로 RS256 서명) → validator
-    코드 경로 동일. JWKS 는 네트워크 대신 그 키의 공개 JWK 를 돌려주도록 `_fetch_jwks` 만 바꾼다.
-  - 소속·System Admin 은 로컬 DB 가 원천이므로, 테스트 토큰의 `_test_seed` claim(테스트 전용)을
-    테스트 transport 가 요청 직전에 DB 에 반영한다. 운영 코드는 이 claim 을 모른다.
+  - 인증은 mocking 없이 진짜 JWT: Ashfield 계정 서버 액세스 토큰과 같은 모양(RS256, typ at+jwt,
+    iss, aud 배열, picture, workspaces)으로 테스트 프로세스가 만든 RSA 키로 서명 → validator·소속
+    동기화 코드 경로 동일. JWKS 는 네트워크 대신 그 키의 공개 JWK 를 돌려주도록 `_fetch_jwks` 만 바꾼다.
+  - `workspaces=[...]` 는 실제 클레임 → 운영 코드(provisioning.sync_workspaces)가 회사·멤버십을 맞춘다.
+  - `groups=[...]`·`roles=[...]` 는 테스트 전용 `_test_seed` claim: 계정 서버 도입 전의 로컬(레거시)
+    회사 멤버십·System Admin 을 테스트 transport 가 요청 직전에 DB 에 심는다. 운영 코드는 이 claim 을
+    모른다. 도메인 테스트 대부분이 이 경로로 활성 회사를 준비한다.
 """
 
 from __future__ import annotations
@@ -16,10 +19,9 @@ import os
 
 # 인증 설정은 app.core.config(settings 로드) import 전에 고정한다 — 개발 .env 값과 무관하게
 # 테스트 issuer/audience 로 검증. 이 테스트 프로세스의 env 에만 영향.
-os.environ["AUTH_JWKS_URL"] = "http://auth.test/api/auth/jwks"
-os.environ["AUTH_ISSUER"] = "http://auth.test"
-os.environ["AUTH_AUDIENCE"] = "http://auth.test"
-os.environ["ALLOWED_EMAILS"] = ""
+os.environ["AUTH_JWKS_URL"] = "http://account.test/api/auth/jwks"
+os.environ["AUTH_ISSUER"] = "http://account.test"
+os.environ["AUTH_AUDIENCE"] = "http://app.test"
 os.environ["SYSTEM_ADMIN_EMAILS"] = ""
 
 import base64
@@ -54,6 +56,8 @@ from app.models.user_company_membership import UserCompanyMembership
 
 TEST_ISSUER = os.environ["AUTH_ISSUER"]
 TEST_AUDIENCE = os.environ["AUTH_AUDIENCE"]
+# openid scope 토큰엔 userinfo URL 도 aud 에 들어간다 (계약 §5): 무시돼야 한다.
+TEST_USERINFO_AUD = f"{TEST_ISSUER}/api/auth/oauth2/userinfo"
 TEST_KID = "test-key-1"
 
 
@@ -293,8 +297,13 @@ async def client(db_session: AsyncSession, monkeypatch) -> AsyncIterator[AsyncCl
 
 
 # ---------------------------------------------------------------------------
-# JWT 발급 헬퍼 — 테스트 키로 서명 (Better Auth JWT 와 같은 모양)
+# JWT 발급 헬퍼: 테스트 키로 서명 (계정 서버 액세스 토큰과 같은 모양)
 # ---------------------------------------------------------------------------
+
+
+def ws(id: str, role: str = "member", name: str | None = None) -> dict:
+    """`workspaces` 클레임 항목. role 은 계정 서버 값(owner|admin|member)."""
+    return {"id": id, "name": name or id, "slug": id, "role": role}
 
 
 def mint_jwt(
@@ -305,30 +314,39 @@ def mint_jwt(
     image: str | None = None,
     groups: list[str] | None = None,
     roles: list[str] | None = None,
+    workspaces: list[dict] | None = None,
     seed: bool = True,
-    exp_delta: int = 3600,
+    exp_delta: int = 900,
     iss: str = TEST_ISSUER,
-    aud: str = TEST_AUDIENCE,
+    aud: str | list[str] | None = None,
     private_pem: str = TEST_PRIVATE_PEM,
     kid: str = TEST_KID,
 ) -> str:
-    """seed=True 면 `_test_seed` 로 groups·roles 를 DB 에 심는다 (테스트 transport).
-    seed=False 는 실제 첫 로그인처럼 아무 소속 없이 들어오는 토큰."""
+    """seed=True 면 `_test_seed` 로 groups·roles 를 DB 에 심는다 (테스트 transport, 레거시 회사).
+    seed=False 는 실제 첫 로그인처럼 아무 소속 없이 들어오는 토큰.
+    workspaces 를 주면 실제 `workspaces` 클레임으로 싣는다 (None 이면 클레임 없음)."""
     now = int(time.time())
     claims: dict = {
         "sub": sub,
         "email": email or f"{sub}@test.local",
+        "email_verified": True,
         "name": name if name is not None else f"{sub} (test)",
+        "picture": image,
         "iss": iss,
-        "aud": aud,
+        "aud": aud if aud is not None else [TEST_AUDIENCE, TEST_USERINFO_AUD],
+        "azp": "ashfield-test",
+        "client_id": "ashfield-test",
+        "scope": "openid profile email offline_access",
         "iat": now,
         "exp": now + exp_delta,
     }
-    if image:
-        claims["image"] = image
+    if workspaces is not None:
+        claims["workspaces"] = workspaces
     if seed:
         claims["_test_seed"] = {"groups": groups or [], "roles": roles or []}
-    return jwt.encode(claims, private_pem, algorithm="RS256", headers={"kid": kid})
+    return jwt.encode(
+        claims, private_pem, algorithm="RS256", headers={"kid": kid, "typ": "at+jwt"}
+    )
 
 
 @pytest.fixture

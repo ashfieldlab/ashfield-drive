@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p ${PORT:-3200}",
     "build": "next build --turbopack",
-    "start": "next start",
+    "start": "next start -p ${PORT:-3200}",
     "lint": "eslint .",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"

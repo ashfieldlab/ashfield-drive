@@ -1,5 +1,11 @@
 # Tenancy 는 로컬 DB 멤버십으로 결정한다 (구: JWT groups + lazy upsert 캐시)
 
+## 개정 (2026-10, ADR-0024)
+
+원천이 다시 외부로: **Ashfield 계정 서버**. 신원은 계정 서버 액세스 토큰(`sub`·`email`·`name`·`picture`), 소속은 토큰 `workspaces` 클레임이고
+`users`·`companies`·`user_company_memberships` 는 그 캐시다 (클레임 해시가 바뀔 때만 동기화, `companies.account_workspace_id` 로 연결).
+개인 워크스페이스 자동 생성·이메일 멤버 추가는 앱에서 없앴다. 아래 ADR-0023 개정 내용 중 소속 부분은 더 이상 유효하지 않다.
+
 ## 개정 (2026-10, ADR-0023)
 
 예전 결정은 "사용자·회사·소속의 원천은 외부 IdP/디렉터리, 백엔드는 JWT `groups` 로 권한을 판단하고 `users`/`companies` 는 Redis throttle lazy upsert 캐시" 였다. 외부 IdP·디렉터리 없이 Better Auth 소셜 로그인만 쓰게 되면서 원천을 로컬 DB 로 옮겼다 (임시 설계 — 조직·초대 모델을 다시 설계할 때 바뀔 수 있다).

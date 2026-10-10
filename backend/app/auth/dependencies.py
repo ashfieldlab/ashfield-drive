@@ -1,7 +1,7 @@
 """
-FastAPI dependencies — 인증/인가 (ADR-0023).
+FastAPI dependencies: 인증/인가 (ADR-0024).
 
-  get_current_user        — Bearer JWT(Better Auth, JWKS 검증) + 로컬 사용자·소속 준비 → UserContext
+  get_current_user       : Bearer JWT(계정 서버 액세스 토큰, JWKS 검증) + 로컬 사용자·소속 동기화 → UserContext
   require_active_company  — X-Active-Company-Id 헤더 검증 (로컬 멤버십에 포함되는지)
   require_admin           — System Admin 검증
   require_company_admin   — 활성 회사의 admin (System Admin 은 super-set, ADR-0010)
@@ -13,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.context import UserContext
 from app.auth.provisioning import identity_from_claims, provision_user
 from app.auth.validator import validate_jwt
-from app.core.config import settings
 from app.core.db import get_db
 from app.core.logging import logger
 from app.models.user_company_membership import UserCompanyMembership
@@ -23,10 +22,11 @@ async def get_current_user(
     authorization: str | None = Header(None),
     db: AsyncSession = Depends(get_db),
 ) -> UserContext:
-    """자격 증명은 `Authorization: Bearer <JWT>` 하나뿐이다.
+    """자격 증명은 `Authorization: Bearer <JWT>` 하나뿐이다: Ashfield 계정 서버의 액세스 토큰.
 
-    웹은 BFF 가 Better Auth 세션으로 짧은 JWT 를 받아 붙이고, 서버 간 호출·데스크톱
-    클라이언트도 같은 JWT 를 쓴다. 우회 경로(dev 키·세션 헤더) 없음.
+    웹은 BFF 가 Better Auth 계정 테이블에 저장된 토큰(만료 전 refresh)을 붙이고, 데스크톱
+    클라이언트도 계정 서버에서 받은 같은 모양의 토큰을 쓴다. 우회 경로(dev 키·세션 헤더) 없음.
+    가입 허용 여부(허용 이메일 등)는 계정 서버가 판단한다.
     """
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(
@@ -36,15 +36,6 @@ async def get_current_user(
         )
     claims = await validate_jwt(authorization.split(" ", 1)[1].strip())
     identity = identity_from_claims(claims)
-
-    allowed = settings.allowed_email_set
-    if allowed and identity.email.lower() not in allowed:
-        logger.warning(
-            "email_not_allowed",
-            extra={"category": "authz", "sub": identity.sub},
-        )
-        raise HTTPException(status_code=403, detail="Email not allowed")
-
     provisioned = await provision_user(db, identity)
     return UserContext(
         sub=identity.sub,

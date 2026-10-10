@@ -13,14 +13,14 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 
 # dev 서버
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8200
 
 # 또는 uv 사용
 uv venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
 ```
 
-검증: `curl http://localhost:8000/health` → `{"status":"ok"}`
+검증: `curl http://localhost:8200/health` → `{"status":"ok"}`
 
 ## Phase별 추가 예정
 

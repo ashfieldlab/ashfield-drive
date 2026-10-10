@@ -30,13 +30,20 @@ const cookieNs = (process.env.NEXT_PUBLIC_COOKIE_NS || "ashfield-drive").replace
 export const COOKIE_PREFIX = isDev ? `${cookieNs}_` : ""
 
 // -----------------------------------------------------------------------------
-// 인증 (Better Auth) — 서버 전용 값. 클라이언트 번들에선 전부 undefined 이므로 서버 코드
-// (lib/auth.ts, route handler, server component)에서만 읽는다. ADR-0023.
+// 인증 (Better Auth = Ashfield 계정 서버의 OIDC 클라이언트): 서버 전용 값. 클라이언트 번들에선
+// 전부 undefined 이므로 서버 코드(lib/auth/*, route handler, server component)에서만 읽는다. ADR-0024.
 // -----------------------------------------------------------------------------
+
+/** 이 앱의 OAuth client_id (계정 서버 `make seed` 가 등록). */
+const DEFAULT_CLIENT_ID = "ashfield-drive"
+
 export const authEnv = {
-  /** 이 앱의 공개 주소. OAuth 콜백(`${baseURL}/api/auth/callback/{google,github}`)·JWT iss/aud. */
+  /**
+   * 이 앱의 공개 주소. OAuth 콜백(`${baseURL}/api/auth/callback/ashfield`)이자 계정 서버에 요청하는
+   * resource(= 액세스 토큰 `aud`, 백엔드 AUTH_AUDIENCE).
+   */
   get baseURL(): string {
-    return (process.env.BETTER_AUTH_URL || "http://localhost:3000").replace(/\/$/, "")
+    return (process.env.BETTER_AUTH_URL || "http://localhost:3200").replace(/\/$/, "")
   },
   /**
    * BETTER_AUTH_SECRET. `next build` 단계(이미지 빌드엔 비밀값이 없음)에서만 자리표시 값을 써서
@@ -56,32 +63,24 @@ export const authEnv = {
   get databaseURL(): string {
     return process.env.DATABASE_URL || ""
   },
-  get googleClientId(): string {
-    return process.env.GOOGLE_CLIENT_ID || ""
+  /** Ashfield 계정 서버 주소 = OIDC issuer (끝 슬래시 없음). 디스커버리·회원 관리 링크의 기준. */
+  get accountURL(): string {
+    return (process.env.ACCOUNT_URL || "http://localhost:3300").replace(/\/$/, "")
   },
-  get googleClientSecret(): string {
-    return process.env.GOOGLE_CLIENT_SECRET || ""
+  /** 계정 서버에 등록된 이 앱의 client_id. */
+  get clientId(): string {
+    return process.env.ASHFIELD_CLIENT_ID || DEFAULT_CLIENT_ID
   },
-  get githubClientId(): string {
-    return process.env.GITHUB_CLIENT_ID || ""
-  },
-  get githubClientSecret(): string {
-    return process.env.GITHUB_CLIENT_SECRET || ""
-  },
-  /** 쉼표 구분 허용 이메일. 비면 누구나 가입 가능. */
-  get allowedEmails(): string {
-    return process.env.ALLOWED_EMAILS || ""
-  },
-  /** 로컬·E2E 전용 이메일+비밀번호 로그인. NODE_ENV=production 이면 무시. */
-  get devPasswordLoginRequested(): boolean {
-    return process.env.AUTH_DEV_PASSWORD_LOGIN === "true"
+  /** client_secret (계정 서버 `make seed` 출력 / `.secrets/clients.local.json`). */
+  get clientSecret(): string {
+    return process.env.ASHFIELD_CLIENT_SECRET || ""
   },
   get isProduction(): boolean {
     return process.env.NODE_ENV === "production"
   },
   /** 백엔드 주소 (BFF 가 호출). */
   get backendURL(): string {
-    return (process.env.BACKEND_INTERNAL_URL || "http://localhost:8000").replace(/\/$/, "")
+    return (process.env.BACKEND_INTERNAL_URL || "http://localhost:8200").replace(/\/$/, "")
   },
 }
 

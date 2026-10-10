@@ -1,5 +1,8 @@
 """
-JWT 검증 — Better Auth JWKS 공개키 + RS256, iss/aud 필수 (ADR-0023).
+JWT 검증: Ashfield 계정 서버 JWKS 공개키 + RS256, iss/aud 필수 (ADR-0024).
+
+계약(ashfield-account ADR-0001 §5): iss == ACCOUNT_URL, aud(배열)에 이 앱의 resource 포함,
+exp(시계 오차 60초 허용), sub 필수. python-jose 의 audience= 는 배열 aud 에서 포함 여부로 검사한다.
 
 검증 생략 모드는 없다. AUTH_ISSUER·AUTH_AUDIENCE 가 비어 있으면 503 (설정 오류를
 "아무 토큰이나 통과" 로 바꾸지 않기 위함).
@@ -12,8 +15,10 @@ from app.auth.jwks import get_jwks
 from app.core.config import settings
 from app.core.logging import logger
 
-# Better Auth jwt 플러그인은 keyPairConfig 로 RS256 을 쓰도록 설정한다 (frontend/lib/auth.ts).
+# 계정 서버 액세스 토큰은 RS256 만 (계약). 다른 alg 는 거부.
 _ALGORITHMS = ["RS256"]
+# 시계 오차 허용 (초): 계약 권장값.
+_LEEWAY_SECONDS = 60
 
 
 def _unverified(token: str) -> dict:
@@ -87,5 +92,6 @@ def _decode(token: str, keys: list[dict]) -> dict:
             "verify_iss": True,
             "require_exp": True,
             "require_sub": True,
+            "leeway": _LEEWAY_SECONDS,
         },
     )

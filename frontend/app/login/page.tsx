@@ -2,8 +2,8 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { APP } from "@/lib/apps"
+import { isAccountProviderReady } from "@/lib/auth/server"
 import { getServerSession } from "@/lib/auth/session"
-import { devPasswordLoginEnabled, enabledSocialProviders } from "@/lib/auth/server"
 
 import LoginForm from "./login-form"
 
@@ -14,8 +14,8 @@ interface LoginPageProps {
 }
 
 /**
- * 로그인 — Better Auth 소셜 로그인 (Google·GitHub, 설정된 것만 버튼 노출).
- * AUTH_DEV_PASSWORD_LOGIN=true(비운영)면 이메일+비밀번호 dev 로그인도 노출. ADR-0023.
+ * 로그인: Ashfield 계정 서버(OIDC)로 보내는 버튼 하나 (ADR-0024).
+ * 계정 서버에 이미 로그인돼 있으면 화면 없이 돌아온다(SSO). 오류(`?error=`)도 여기서 보여 준다.
  */
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { callbackUrl, error } = await searchParams
@@ -29,12 +29,5 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getServerSession(await headers())
   if (session) redirect(dest)
 
-  return (
-    <LoginForm
-      callbackUrl={dest}
-      error={error}
-      providers={enabledSocialProviders}
-      devPasswordLogin={devPasswordLoginEnabled}
-    />
-  )
+  return <LoginForm callbackUrl={dest} error={error} accountReady={await isAccountProviderReady()} />
 }

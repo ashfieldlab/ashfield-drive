@@ -16,3 +16,8 @@
 **라이브러리**: aioboto3 (boto3 wrap async). MinIO/AWS 등 S3 호환 스토리지 모두 endpoint_url 파라미터로 동일 코드 동작.
 
 **미완료 cleanup**: 백엔드가 file row 생성 후 status='pending' → 클라이언트 PUT 완료 콜백 시 'ready'. 1시간 이상 pending인 row + S3 객체 cron으로 삭제.
+
+## 개정 (2026-10): dev MinIO 이미지
+
+`minio/minio` 이미지를 더 이상 받을 수 없어 compose(dev·prod)의 이미지를 `cgr.dev/chainguard/minio:latest` 로 바꿨다. 같은 MinIO 서버 빌드라 환경 변수, 데이터 형식, S3 API(presigned URL, 멀티파트, 버킷 생성)가 그대로다. 무료 티어는 `latest` 태그만 있으므로 고정이 필요하면 digest 로 지정한다. SeaweedFS·Garage 도 검토했지만 별도 설정(인증 파일, 클러스터 레이아웃, 버킷 생성 CLI)이 필요해 가장 단순한 쪽을 골랐다.
+

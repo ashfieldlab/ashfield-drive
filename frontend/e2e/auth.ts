@@ -1,16 +1,22 @@
 /**
- * E2E 로그인 헬퍼 — Better Auth 이메일+비밀번호 dev 로그인 (ADR-0023).
+ * E2E 로그인 헬퍼: 실제 Ashfield 계정 서버를 거친다 (ADR-0024).
  *
- * 전제: 프론트가 AUTH_DEV_PASSWORD_LOGIN=true (비운영)로 떠 있어야 한다. 처음 쓰는 이메일은
- * 가입(자동 로그인)한다 — 첫 /api/v1/me 에서 백엔드가 개인 워크스페이스를 만든다.
- * DB 는 실행 사이에 유지되므로 두 번째 실행부터는 그냥 로그인된다.
+ * 전제 (README "E2E"):
+ *   - 계정 서버가 ACCOUNT_URL(기본 http://localhost:3300)에 AUTH_DEV_PASSWORD_LOGIN=true 로 떠 있고
+ *     `make migrate seed` 완료: 이 앱의 client_secret 이 frontend/.env 의 ASHFIELD_CLIENT_SECRET.
+ *   - 이 앱의 backend·infra.
+ *
+ * 로그인: 앱 /login → "Ashfield 계정으로 로그인" → 계정 서버 DEV 이메일+비밀번호 폼(처음 쓰는 이메일은
+ * 가입 → 개인 워크스페이스 자동 생성) → 앱으로 복귀. 계정 서버에 이미 로그인돼 있으면 폼 없이 복귀(SSO).
+ * 계정 서버·앱이 모두 localhost 라 쿠키를 공유한다: clearCookies 는 둘 다 로그아웃시킨다.
  */
 
 import { expect, type Page } from "@playwright/test"
 
 import { COOKIES } from "../lib/cookies"
+import { ACCOUNT_URL, APP_URL } from "./env"
 
-export const BASE_URL = `http://localhost:${process.env.PORT ?? 3000}`
+export const BASE_URL = APP_URL
 
 export interface E2EUser {
   email: string
@@ -20,7 +26,7 @@ export interface E2EUser {
 
 const PASSWORD = "e2e-password-1234"
 
-/** 고정 E2E 사용자. 회사는 각자 개인 워크스페이스 + 테스트가 필요할 때 addMember 로 공유. */
+/** 고정 E2E 사용자 (계정 서버에 처음 로그인할 때 가입된다). */
 export const E2E_USERS = {
   admin: { email: "e2e-admin@e2e.example.com", name: "관리자", password: PASSWORD },
   member_a: { email: "e2e-member-a@e2e.example.com", name: "멤버 A", password: PASSWORD },
@@ -33,56 +39,129 @@ interface MeResponse {
   sub: string
   email: string
   groups: string[]
-  companies: { id: string; name: string }[]
+  companies: { id: string; name: string; account_workspace_id: string | null }[]
   company_roles: Record<string, string>
 }
 
-/** 이메일+비밀번호로 로그인 (없으면 가입). 브라우저 컨텍스트에 세션 쿠키가 남는다. */
-export async function signIn(page: Page, user: E2EUser): Promise<void> {
-  const headers = { origin: BASE_URL }
-  const res = await page.request.post("/api/auth/sign-in/email", {
-    data: { email: user.email, password: user.password },
-    headers,
-  })
-  if (res.status() === 401) {
-    const up = await page.request.post("/api/auth/sign-up/email", {
-      data: { email: user.email, password: user.password, name: user.name },
-      headers,
-    })
-    expect(up.ok(), `sign-up ${user.email}: ${await up.text()}`).toBeTruthy()
-    return
-  }
-  expect(res.ok(), `sign-in ${user.email}: ${await res.text()}`).toBeTruthy()
+const onApp = (url: URL) => url.origin === APP_URL && !url.pathname.startsWith("/login")
+const onAccountSignIn = (url: URL) => url.origin === ACCOUNT_URL && url.pathname === "/sign-in"
+
+/** 계정 서버 DEV 비밀번호 폼 (처음 쓰는 이메일이면 가입). 현재 페이지가 계정 서버 /sign-in 이어야 한다. */
+export async function fillAccountSignIn(page: Page, user: E2EUser): Promise<void> {
+  await page.getByTestId("sign-in-dev-email-input").fill(user.email)
+  await page.getByTestId("sign-in-dev-password-input").fill(user.password)
+  await page.getByTestId("sign-in-dev-name-input").fill(user.name)
+  await page.getByTestId("sign-in-dev-submit-button").click()
 }
 
-/** 로그아웃 + 쿠키 비우기 (사용자 전환용). */
+/**
+ * 앱에 로그인. 계정 서버 세션이 없으면 비밀번호 폼을 채우고, 있으면 SSO 로 바로 돌아온다.
+ * 반환값: 계정 서버 비밀번호 폼을 거쳤는지 (false = SSO).
+ */
+export async function signIn(page: Page, user: E2EUser): Promise<boolean> {
+  await page.goto("/login")
+  if (onApp(new URL(page.url()))) return false // 이미 앱 세션 있음
+  await expect(page.getByTestId("login-ashfield-button"), "계정 서버 연결 (ACCOUNT_URL)").toBeVisible()
+  await page.getByTestId("login-ashfield-button").click()
+  // dev 서버 첫 컴파일이 느릴 수 있어 넉넉히.
+  await page.waitForURL((u) => onApp(u) || onAccountSignIn(u), { timeout: 30_000 })
+  let usedPassword = false
+  if (onAccountSignIn(new URL(page.url()))) {
+    await fillAccountSignIn(page, user)
+    usedPassword = true
+  }
+  await page.waitForURL(onApp, { timeout: 30_000 })
+  return usedPassword
+}
+
+/** 앱 세션만 끝낸다 (계정 서버 세션 유지 → 다음 signIn 은 SSO). 새 토큰(워크스페이스 반영)을 받을 때. */
+export async function signOutAppOnly(page: Page): Promise<void> {
+  await page.request.post("/api/auth/sign-out", {
+    headers: { origin: BASE_URL },
+    data: { disableRedirect: true },
+  })
+}
+
+/** 앱·계정 서버 모두 로그아웃 (사용자 전환용). */
 export async function signOut(page: Page): Promise<void> {
-  await page.request.post("/api/auth/sign-out", { headers: { origin: BASE_URL }, data: {} })
+  await signOutAppOnly(page)
   await page.context().clearCookies()
 }
 
-/** 현재 로그인 사용자의 /api/v1/me (첫 호출이면 개인 워크스페이스 생성). */
+/** 현재 로그인 사용자의 /api/v1/me. */
 export async function me(page: Page): Promise<MeResponse> {
   const res = await page.request.get("/api/v1/me")
   expect(res.ok(), `GET /api/v1/me: ${res.status()}`).toBeTruthy()
   return (await res.json()) as MeResponse
 }
 
-/** 현재 사용자의 개인 워크스페이스 ID (role=admin 인 personal-* 회사). */
-export async function personalCompanyId(page: Page): Promise<string> {
+/** 현재 사용자의 개인 워크스페이스 ID (계정 서버가 가입 때 만든 "{이름}의 워크스페이스"). */
+export async function personalCompanyId(page: Page, user: E2EUser): Promise<string> {
   const body = await me(page)
-  const id = body.groups.find((g) => g === `personal-${body.sub}`)
-  expect(id, "personal workspace").toBeTruthy()
-  return id!
+  const c = body.companies.find((x) => x.name === `${user.name}의 워크스페이스`)
+  expect(c, "personal workspace").toBeTruthy()
+  return c!.id
 }
 
-/** 현재 사용자(회사 admin)가 company 에 email 사용자를 멤버로 추가. 이미 멤버면 통과. */
-export async function addMember(page: Page, companyId: string, email: string): Promise<void> {
-  const res = await page.request.post(
-    `/api/v1/companies/${encodeURIComponent(companyId)}/members`,
-    { data: { email }, headers: { origin: BASE_URL } },
-  )
-  expect([201, 409], `add member ${email}: ${await res.text()}`).toContain(res.status())
+/**
+ * 계정 서버에서 새 워크스페이스 + 초대 링크를 만든다 (현재 브라우저의 계정 서버 세션 = 소유자).
+ * 반환: 워크스페이스 ID(= 앱 회사 ID)와 초대 URL. 앱에 반영하려면 새 토큰이 필요하다 (재로그인).
+ */
+export async function createWorkspaceWithInvite(
+  page: Page,
+  name: string,
+): Promise<{ id: string; inviteUrl: string }> {
+  await page.goto(`${ACCOUNT_URL}/workspaces`)
+  await page.getByTestId("workspaces-create-button").click()
+  await page.getByTestId("workspaces-create-name-input").fill(name)
+  await page.getByTestId("workspaces-create-submit-button").click()
+  await page.waitForURL(/\/workspaces\/[^/]+$/)
+  const id = decodeURIComponent(new URL(page.url()).pathname.split("/").pop()!)
+  await page.getByTestId("invite-create-button").click()
+  const urlInput = page.locator('[data-testid^="invite-link-"][data-testid$="-url-input"]').first()
+  await expect(urlInput).toBeVisible()
+  return { id, inviteUrl: await urlInput.inputValue() }
+}
+
+/** 초대 링크 수락: 계정 서버 세션이 없으면 user 로 로그인(가입)부터. */
+export async function acceptInvite(page: Page, inviteUrl: string, user: E2EUser): Promise<void> {
+  await page.goto(inviteUrl)
+  if (onAccountSignIn(new URL(page.url()))) await fillAccountSignIn(page, user)
+  await page.waitForURL(/\/invite\//)
+  const accept = page.getByTestId("invite-accept-button")
+  const already = page.getByTestId("invite-already-member")
+  await expect(accept.or(already)).toBeVisible()
+  if (await accept.isVisible()) {
+    await accept.click()
+    await page.waitForURL(/\/workspaces\/[^/]+$/)
+  }
+}
+
+/**
+ * 공유 워크스페이스 준비: owner 가 계정 서버에 워크스페이스 + 초대 링크를 만들고, member 가 수락한 뒤
+ * 둘 다 앱에 다시 로그인한다 (새 토큰의 workspaces 로 앱 멤버십이 생긴다). 끝나면 owner 로 로그인된 상태.
+ */
+export async function setupSharedWorkspace(
+  page: Page,
+  owner: E2EUser,
+  member: E2EUser,
+  name: string,
+): Promise<{ companyId: string; memberSub: string }> {
+  await signOut(page)
+  await signIn(page, owner)
+  const { id, inviteUrl } = await createWorkspaceWithInvite(page, name)
+  await signOut(page)
+
+  await acceptInvite(page, inviteUrl, member)
+  await signIn(page, member) // 계정 서버 세션이 있어 SSO
+  const memberMe = await me(page)
+  expect(memberMe.groups).toContain(id)
+  expect(memberMe.company_roles[id]).toBe("member")
+  await signOut(page)
+
+  await signIn(page, owner)
+  expect((await me(page)).company_roles[id]).toBe("admin") // owner → admin
+  return { companyId: id, memberSub: memberMe.sub }
 }
 
 /** 활성 회사 cookie 를 고정 (AppContext 가 다음 로드 때 이 회사를 고른다). */

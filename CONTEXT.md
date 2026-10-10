@@ -1,6 +1,6 @@
 # ashfield-drive
 
-멀티테넌트 파일 SaaS. 파일 저장·공유 (Better Auth 로그인 + FastAPI JWKS 검증 + Multi-tenant, ADR-0023). 일정은 별도 레포 ashfield-calendar (2026-10-08 분리).
+멀티테넌트 파일 SaaS. 파일 저장·공유 (Ashfield 계정 서버 SSO + FastAPI JWKS 검증 + Multi-tenant, ADR-0024). 일정은 별도 레포 ashfield-calendar (2026-10-08 분리).
 
 회원가입·회사 등록·빌링·impersonate는 외부 시스템 책임 (ADR-0009). 본 서비스는 JWT 받아 처리만.
 
@@ -82,7 +82,7 @@ _Avoid_: "멤버십 동기화", "자동 감지"
 ## Relationships
 
 - **Workspace = 회사** (skeleton의 Company와 동일)
-- 한 **User**는 1~N개의 **Workspace**(회사)에 속함 (`user_company_memberships`). 첫 로그인 시 개인 워크스페이스(`personal-{sub}`, 본인 admin)가 생기고, 회사 admin 이 이메일로 다른 사용자를 추가한다.
+- 한 **User**는 1~N개의 **Workspace**(회사)에 속함 (`user_company_memberships`). 소속의 원천은 Ashfield 계정 서버: 가입 때 개인 워크스페이스가 생기고, 초대·역할은 계정 서버에서 관리한다. 앱은 토큰 `workspaces` 클레임으로 로컬 멤버십을 동기화한다 (owner·admin → admin, member → member, ADR-0024).
 - 한 **Workspace** 안에 **Node**들이 트리 구조. 트리 루트는 사용자별 personal + 회사 shared (2종)
 - **Node**는 정확히 한 부모를 가짐 (`parent_id`, NULL이면 루트)
 - 자식 **Node**의 `scope`는 부모와 일치 (강제)
@@ -95,6 +95,6 @@ _Avoid_: "멤버십 동기화", "자동 감지"
 
 - "**Workspace**"가 (1) 회사 단위 SaaS 워크스페이스 (2) 사용자가 보는 UI 영역 둘 다 의미 가능. 본 문서는 (1)을 기본으로 함. UI 측은 "현재 회사", "활성 회사"로 호칭.
 - "**공유**"가 (1) Shared scope (회사 전체) (2) FileShare (개인 grant) (3) ExternalLink (외부 link) 셋 다 의미. 각 항목은 정확한 용어로 호칭 권장.
-- "**소속**"과 "**퇴사**"를 구분한다. 소속(그 회사에 들어올 수 있는가)은 로컬 DB `user_company_memberships` 가 정한다 — 첫 로그인 시 개인 워크스페이스, 그 밖은 회사 admin 이 이메일로 추가·제거 (ADR-0004). 퇴사(인계 같은 뒷처리를 시작할 사건)는 HR Event 로만 판단한다. 토큰 claim 은 둘 다에 쓰지 않는다.
+- "**소속**"과 "**퇴사**"를 구분한다. 소속(그 회사에 들어올 수 있는가)은 Ashfield 계정 서버가 정하고, 앱은 토큰 `workspaces` 클레임을 `user_company_memberships` 에 캐시한다 (ADR-0004, ADR-0024). 퇴사(인계 같은 뒷처리를 시작할 사건)는 HR Event 로만 판단한다. 퇴사 판단엔 토큰 claim 을 쓰지 않는다.
 - "**Admin**" 이 (1) System Admin (`users.is_system_admin` 또는 `SYSTEM_ADMIN_EMAILS`) (2) `user_company_memberships.role='admin'` = Company Admin 두 축. UI 에서 "관리자"라고 단독 호칭 시엔 (1) 디폴트, "회사 관리자"는 (2).
 - "**알림**" 이 (1) NotificationBell in-app (`Notification` 테이블) (2) 이메일 발송 (`send_for_event`) (3) Webhook 발송 세 채널 다 의미. emit 시 자동 fan-out 되도록 dispatcher 가 묶음, 직접 호출 X.

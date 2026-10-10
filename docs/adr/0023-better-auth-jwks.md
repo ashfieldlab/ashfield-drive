@@ -1,6 +1,7 @@
 # 인증은 Better Auth, 백엔드는 Better Auth JWT 를 JWKS 로 검증한다
 
-상태: 채택 (2026-10). 외부 인증 게이트웨이 세션 차용(구 ADR-0021)·Keycloak 그룹·외부 디렉터리 연동·`SKIP_AUTH` dev 우회를 대체한다.
+상태: **일부 대체됨: [ADR-0024](0024-account-server-sso.md)** (2026-10). 로그인 수단·`ALLOWED_EMAILS`·앱 JWT 플러그인·개인 워크스페이스 자동 생성·이메일 멤버 추가는 Ashfield 계정 서버로 옮겼다. "Better Auth 로 앱 세션, 백엔드는 Bearer JWT 를 JWKS 로 검증" 은 유지.
+(원래: 외부 인증 게이트웨이 세션 차용(구 ADR-0021)·Keycloak 그룹·외부 디렉터리 연동·`SKIP_AUTH` dev 우회를 대체.)
 
 ## 배경
 

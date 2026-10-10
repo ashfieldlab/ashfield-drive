@@ -172,7 +172,7 @@ export default function SettingsPage() {
               href={`${companyBase}/members`}
               icon={<Users size={16} />}
               title="멤버"
-              desc="회사 멤버 권한(멤버·관리자) 관리"
+              desc="워크스페이스 멤버 보기 · 저장 한도 · 관리는 Ashfield 계정에서"
               testid="settings-link-members"
             />
             <SettingsRow

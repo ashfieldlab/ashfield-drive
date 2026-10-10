@@ -3,13 +3,14 @@
  *
  *   - 같은 오리진이라 CORS 없음.
  *   - 자격 증명은 서버 사이드에서만 만든다: 브라우저 JS 에 노출 X.
- *     Better Auth 세션 쿠키 → 짧은 JWT → `Authorization: Bearer` (ADR-0023).
+ *     Better Auth 세션 쿠키 → 계정 서버 액세스 토큰(만료 임박 시 refresh) → `Authorization: Bearer`
+ *     (ADR-0024). 갱신 실패면 세션을 지우고 401 → 클라이언트가 /login 으로.
  *   - X-Active-Company-Id 헤더는 클라이언트가 보낸 그대로 전달, 없으면 쿠키에서 보강.
  */
 
 import { NextRequest, NextResponse } from "next/server"
 
-import { resolveBackendAuth } from "@/lib/auth/session"
+import { endSessionCookies, resolveBackendAuth } from "@/lib/auth/session"
 import { COOKIES } from "@/lib/cookies"
 import { authEnv } from "@/lib/env"
 
@@ -20,8 +21,8 @@ async function proxy(
   req: NextRequest,
   ctx: { params: Promise<{ path: string[] }> },
 ): Promise<Response> {
-  // 외부 Bearer(서버 간 호출·데스크톱 클라이언트의 Better Auth JWT)가 오면 그대로, 없으면
-  // 세션 쿠키로 JWT 를 받는다. 어느 쪽이든 백엔드가 JWKS 로 검증하므로 위조는 무의미하다.
+  // 외부 Bearer(데스크톱 클라이언트 등이 계정 서버에서 직접 받은 액세스 토큰)가 오면 그대로, 없으면
+  // 세션의 계정 서버 토큰을 쓴다. 어느 쪽이든 백엔드가 JWKS 로 검증하므로 위조는 무의미하다.
   const externalAuth = req.headers.get("authorization")
   let authHeaders: Record<string, string>
   if (externalAuth && /^Bearer\s+/i.test(externalAuth)) {
@@ -29,10 +30,15 @@ async function proxy(
   } else {
     const resolved = await resolveBackendAuth(req.headers)
     if (!resolved.ok) {
-      return NextResponse.json(
-        { detail: resolved.status === 401 ? "Not authenticated" : "Auth unavailable" },
+      const res = NextResponse.json(
+        { detail: resolved.reauth ? "Re-authentication required" : "Not authenticated" },
         { status: resolved.status, headers: { "Cache-Control": "no-store" } },
       )
+      // 토큰 갱신 실패 → 세션을 지워 /login 이 다시 계정 서버로 보내게 한다.
+      if (resolved.reauth) {
+        for (const c of await endSessionCookies(req.headers)) res.headers.append("Set-Cookie", c)
+      }
+      return res
     }
     authHeaders = resolved.headers
   }

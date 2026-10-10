@@ -41,8 +41,9 @@ services:
       timeout: 3s
       retries: 5
 
+  # minio/minio 이미지는 배포 중단: 같은 MinIO 서버의 Chainguard 빌드 (latest 만 무료, 고정하려면 digest).
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     <<: *restart_policy
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
@@ -56,7 +57,8 @@ services:
       - "127.0.0.1:${MINIO_HOST_PORT:-9000}:9000"
       - "127.0.0.1:${MINIO_CONSOLE_HOST_PORT:-9001}:9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      # 이미지에 curl 이 없다: 같이 들어 있는 mc 로 확인.
+      test: ["CMD-SHELL", "MC_HOST_local=http://$${MINIO_ROOT_USER}:$${MINIO_ROOT_PASSWORD}@127.0.0.1:9000 mc ready local"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -89,11 +91,10 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Ashfield}
       SMTP_ENCRYPTION_KEY: ${SMTP_ENCRYPTION_KEY:-}
-      # 인증 — Better Auth JWT 검증 (ADR-0023). JWKS 는 컨테이너 내부 주소, iss/aud 는 공개 주소.
-      AUTH_JWKS_URL: http://frontend:3000/api/auth/jwks
-      AUTH_ISSUER: ${BETTER_AUTH_URL}
+      # 인증: Ashfield 계정 서버 액세스 토큰 검증 (ADR-0024). iss = ACCOUNT_URL, aud 에 이 앱 공개 주소.
+      AUTH_JWKS_URL: ${ACCOUNT_URL:?ACCOUNT_URL 필요}/api/auth/jwks
+      AUTH_ISSUER: ${ACCOUNT_URL}
       AUTH_AUDIENCE: ${BETTER_AUTH_URL}
-      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
       SYSTEM_ADMIN_EMAILS: ${SYSTEM_ADMIN_EMAILS:-}
       TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
       LOG_CATEGORIES: ${LOG_CATEGORIES:-}
@@ -169,15 +170,13 @@ services:
         NEXT_PUBLIC_COOKIE_DOMAIN: ${NEXT_PUBLIC_COOKIE_DOMAIN:-}
     <<: *restart_policy
     environment:
-      # 인증 (Better Auth, ADR-0023). 런타임 서버 변수라 빌드 arg 아님.
+      # 인증 (Better Auth = Ashfield 계정 서버 OIDC 클라이언트, ADR-0024). 런타임 서버 변수라 빌드 arg 아님.
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET 필요}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL 필요}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
+      ACCOUNT_URL: ${ACCOUNT_URL:?ACCOUNT_URL 필요}
+      ASHFIELD_CLIENT_ID: ${ASHFIELD_CLIENT_ID:-ashfield-drive}
+      ASHFIELD_CLIENT_SECRET: ${ASHFIELD_CLIENT_SECRET:?ASHFIELD_CLIENT_SECRET 필요}
       BACKEND_INTERNAL_URL: http://backend:8000
     ports:
       - "127.0.0.1:${FRONTEND_HOST_PORT:-3000}:3000"

@@ -1,8 +1,8 @@
 /**
  * E2E 공통 fixtures.
  *
- *   - loginAs("admin" | "member_a" | "member_b"): Better Auth dev 비밀번호 로그인 후 앱 첫 화면
- *     (e2e/auth.ts — 프론트가 AUTH_DEV_PASSWORD_LOGIN=true 로 떠 있어야 함)
+ *   - loginAs("admin" | "member_a" | "member_b"): 계정 서버(DEV 비밀번호 폼 또는 SSO)를 거쳐
+ *     로그인한 뒤 앱 첫 화면 (e2e/auth.ts: 계정 서버가 AUTH_DEV_PASSWORD_LOGIN=true 로 떠 있어야 함)
  */
 
 import { test as base, expect, type Page } from "@playwright/test"

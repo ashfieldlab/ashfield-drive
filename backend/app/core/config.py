@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     frontend_port: int | None = None
 
     # S3-compatible storage (ADR-0005)
-    s3_endpoint_url: str = "http://localhost:19000"
+    s3_endpoint_url: str = "http://localhost:19200"
     # presigned URL 응답 시 host 부분 치환 — dev 의 same-origin proxy(Next rewrites) 우회용.
     # 비어있으면 frontend_port 기반으로 자동 derive (`localhost:{FRONTEND_PORT}/_minio`).
     # 운영(컨테이너·k8s)에선 명시(예: `https://files.example.com`).
@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     smtp_from: str = "noreply@ashfield.local"
     smtp_from_name: str = "Ashfield"
     # 이메일 링크 base URL (운영 예: https://drive.example.com).
-    files_base_url: str = "http://localhost:3000"
+    files_base_url: str = "http://localhost:3200"
     # SMTP 비밀번호 등 민감 컬럼 암호화 키 — Fernet 32 bytes base64.
     # 분실해도 SMTP 재설정만 하면 복구. 운영은 secret manager 에서 주입.
     smtp_encryption_key: str = ""
@@ -87,23 +87,17 @@ class Settings(BaseSettings):
     # JobRun 원장 보관 — N일 지난 cron 실행 기록은 일 1회 자동 삭제.
     job_run_retention_days: int = 14
 
-    # 인증 — Better Auth(프론트 Next.js)가 발급한 JWT 를 JWKS 로 검증한다 (ADR-0023).
-    # 예: http://localhost:3000/api/auth/jwks. 비어 있으면 모든 인증 요청이 503.
+    # 인증: Ashfield 계정 서버(OIDC 제공자)가 발급한 액세스 토큰(JWT)을 JWKS 로 검증한다
+    # (ADR-0024, 계약: ashfield-account docs/adr/0001). 셋 다 필수: 비어 있으면 인증 요청이 503.
+    #   AUTH_JWKS_URL = ${ACCOUNT_URL}/api/auth/jwks
+    #   AUTH_ISSUER   = ${ACCOUNT_URL}            (토큰 iss 와 정확히 일치)
+    #   AUTH_AUDIENCE = 이 앱의 공개 주소(resource): 토큰 aud(배열)에 포함돼야 한다.
     auth_jwks_url: str = ""
-    # JWT iss / aud — Better Auth 의 BETTER_AUTH_URL 과 같은 값 (예: http://localhost:3000).
-    # 둘 다 필수: 비어 있으면 인증 요청이 503 (검증 생략 모드 없음).
     auth_issuer: str = ""
     auth_audience: str = ""
 
-    # 허용 이메일 (쉼표 구분, 대소문자 무시). 비어 있으면 누구나 가입·사용 가능.
-    # 프론트(Better Auth hook)가 가입·로그인을 막고, 백엔드도 같은 목록으로 한 번 더 막는다.
-    allowed_emails: str = ""
     # System Admin 이메일 (쉼표 구분). users.is_system_admin 과 OR.
     system_admin_emails: str = ""
-
-    @property
-    def allowed_email_set(self) -> frozenset[str]:
-        return _email_set(self.allowed_emails)
 
     @property
     def system_admin_email_set(self) -> frozenset[str]:

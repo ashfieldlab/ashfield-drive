@@ -8,8 +8,8 @@
 -include .env
 
 # dev 서버 포트 — .env에 없으면 기본값 사용.
-BACKEND_PORT ?= 8000
-FRONTEND_PORT ?= 3000
+BACKEND_PORT ?= 8200
+FRONTEND_PORT ?= 3200
 
 .PHONY: help \
         infra stop \
@@ -31,7 +31,7 @@ help:  ## 사용 가능한 명령 목록
 
 infra:  ## redis + postgres + minio + mailpit 컨테이너 띄움
 	docker compose up -d
-	@echo "✓ Redis :$${REDIS_HOST_PORT:-16479} · PostgreSQL :$${POSTGRES_HOST_PORT:-15532} · MinIO API :$${MINIO_HOST_PORT:-19000} / Console :$${MINIO_CONSOLE_HOST_PORT:-19001} · Mailpit SMTP :$${MAILPIT_SMTP_HOST_PORT:-11025} / Web :$${MAILPIT_WEB_HOST_PORT:-18025}"
+	@echo "✓ Redis :$${REDIS_HOST_PORT:-16479} · PostgreSQL :$${POSTGRES_HOST_PORT:-15532} · MinIO API :$${MINIO_HOST_PORT:-19200} / Console :$${MINIO_CONSOLE_HOST_PORT:-19201} · Mailpit SMTP :$${MAILPIT_SMTP_HOST_PORT:-11025} / Web :$${MAILPIT_WEB_HOST_PORT:-18025}"
 
 stop:  ## 인프라 컨테이너 중지
 	docker compose down
@@ -41,10 +41,10 @@ stop:  ## 인프라 컨테이너 중지
 # 앱 실행 (호스트에서, hot-reload)
 # -----------------------------------------------------------------------------
 
-backend:  ## FastAPI dev 서버 (BACKEND_PORT, 기본 8000)
+backend:  ## FastAPI dev 서버 (BACKEND_PORT, 기본 8200)
 	cd backend && . .venv/bin/activate && uvicorn app.main:app --reload --port $(BACKEND_PORT)
 
-frontend:  ## Next.js dev 서버 (FRONTEND_PORT, 기본 3000)
+frontend:  ## Next.js dev 서버 (FRONTEND_PORT, 기본 3200)
 	cd frontend && PORT=$(FRONTEND_PORT) npm run dev
 
 worker:  ## arq worker (백그라운드 잡 + cron 디스패치)
@@ -58,7 +58,7 @@ worker:  ## arq worker (백그라운드 잡 + cron 디스패치)
 migrate:  ## alembic upgrade head
 	cd backend && . .venv/bin/activate && alembic upgrade head
 
-auth-migrate:  ## Better Auth 테이블 생성·갱신 (Postgres 스키마 auth, Better Auth CLI — ADR-0023)
+auth-migrate:  ## Better Auth 테이블 생성·갱신 (Postgres 스키마 auth: 세션·계정 서버 토큰, ADR-0024)
 	cd frontend && npx auth migrate --config lib/auth/server.ts --yes
 
 migration:  ## 새 alembic revision 생성 (msg="..." 인자 필수)
@@ -83,7 +83,7 @@ lint:  ## 프론트 eslint + 백엔드 ruff
 	cd frontend && npm run lint
 	cd backend && . .venv/bin/activate && ruff check .
 
-e2e:  ## Playwright E2E (전제: infra + migrate + auth-migrate + backend 기동, frontend .env 에 AUTH_DEV_PASSWORD_LOGIN=true)
+e2e:  ## Playwright E2E (전제: 계정 서버 :3300 기동(AUTH_DEV_PASSWORD_LOGIN=true) + infra·migrate·auth-migrate·backend, frontend .env 의 ASHFIELD_CLIENT_SECRET)
 	cd frontend && PORT=$(FRONTEND_PORT) npx playwright test
 
 e2e-ui:  ## Playwright UI 모드

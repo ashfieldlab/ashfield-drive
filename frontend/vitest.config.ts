@@ -15,7 +15,7 @@ export default defineConfig({
   test: {
     projects: [
       {
-        // 순수 로직 단위 테스트 (node). 예: lib/auth/allowlist.test.ts
+        // 순수 로직 단위 테스트 (node). 예: lib/auth/token-refresh.test.ts
         test: {
           name: 'unit',
           environment: 'node',
