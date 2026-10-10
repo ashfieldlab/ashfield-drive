@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Clock, Download, Eye, Loader2, Lock } from "lucide-react"
+import { Check, Clock, Mail, Download, Eye, Loader2, Lock } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -233,14 +233,19 @@ function ExpiredPane() {
       <div className="w-full max-w-xs">
         <Clock className="size-5 text-amber-600 dark:text-amber-300" />
         <h1 className="mt-4 text-2xl font-semibold tracking-tight">만료된 링크</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{EXPIRED_AT} 만료</p>
-        <div className="mt-8 flex items-center gap-3 rounded-xl border p-4">
+        <p className="mt-2 text-sm text-muted-foreground">링크가 만료되었습니다. 공유 담당자에게 문의하세요.</p>
+        <a
+          href={`mailto:${SHARER.email}`}
+          data-testid="pg-public-link-c-expired-contact"
+          className="group mt-8 flex items-center gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/50"
+        >
           <Avatar className="size-8 text-xs" />
-          <div className="min-w-0 text-sm">
+          <div className="min-w-0 flex-1 text-sm">
             <p className="font-medium">{SHARER.name}</p>
             <p className="truncate text-xs text-muted-foreground">{SHARER.email}</p>
           </div>
-        </div>
+          <Mail className="size-4 text-muted-foreground group-hover:text-foreground" />
+        </a>
       </div>
     </div>
   )
