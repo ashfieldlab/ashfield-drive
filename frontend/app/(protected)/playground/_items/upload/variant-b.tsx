@@ -11,7 +11,7 @@ import { KindIcon, Ring, filesDone, formatEta, pctOf, speedOf, summarize, useDra
 const ROOT = NODES.filter((n) => !n.parentId)
 const HOVER_FOLDER = "f-design"
 
-const GRID = "grid grid-cols-[minmax(0,1fr)_112px_200px_120px_40px] items-center gap-3"
+export const GRID = "grid grid-cols-[minmax(0,1fr)_112px_200px_120px_40px] items-center gap-3"
 
 /** 폴더 업로드 펼침용 가짜 하위 파일 */
 const CHILDREN = ["tokens.json", "colors.png", "type-scale.png", "buttons.fig", "icons/", "README.md"]
@@ -154,7 +154,7 @@ export function VariantB() {
   )
 }
 
-function UploadRow({
+export function UploadRow({
   u,
   expanded,
   onToggle,

@@ -118,6 +118,19 @@ export function useUploads() {
   return {
     items,
     addFiles: () => add(DROP_BATCH),
+    /** 작은 파일 n개를 한 번에 (많이 올릴 때 모양 확인용) */
+    addMany: (n: number, dest = "내 파일") =>
+      add(
+        Array.from({ length: n }, (_, i) => ({
+          name: `IMG_${String(2041 + i).padStart(4, "0")}.jpg`,
+          kind: "image" as const,
+          size: (2 + (i % 5)) * MB,
+          loaded: 0,
+          state: "queued" as const,
+          speed: 0,
+          dest,
+        })),
+      ),
     addFolder: () => add([FOLDER_BATCH]),
     cancel: (id: string) => setItems((l) => l.map((u) => (u.id === id && u.state !== "done" ? { ...u, state: "canceled", speed: 0 } : u))),
     retry: (id: string) =>
