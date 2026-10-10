@@ -36,61 +36,86 @@ const COLS = "grid-cols-[1.25rem_minmax(0,1fr)_4.5rem_5rem_5.5rem_2rem]"
 export function VariantA() {
   const drive = useDrive()
   const [activeId, setActiveId] = useState<string | null>("n-plan")
-  const active = drive.nodes.find((n) => n.id === activeId && n.parentId === drive.folderId) ?? null
-  const all = drive.items.length > 0 && drive.selected.length === drive.items.length
+  const active = activeNode(drive, activeId)
 
   return (
-    <div className="flex items-start gap-5">
-      <div className="min-w-0 flex-1">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <Breadcrumb drive={drive} big className="-ml-1.5" />
-          <NewMenu drive={drive} />
+    <div>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <Breadcrumb drive={drive} big className="-ml-1.5" />
+        <NewMenu drive={drive} />
+      </div>
+      <FilesToolbar drive={drive} />
+      <div className="flex items-start gap-5">
+        <div className="min-w-0 flex-1">
+          <ListTable drive={drive} activeId={active?.id ?? null} onActivate={setActiveId} />
         </div>
+        <DetailPanel drive={drive} active={active} onClose={() => setActiveId(null)} />
+      </div>
+    </div>
+  )
+}
 
-        <div className="sticky -top-6 z-10 -mx-1 mb-3 flex h-11 items-center justify-between gap-3 bg-background/90 px-1 backdrop-blur">
-          {drive.selected.length > 0 ? (
-            <BulkBar drive={drive} />
-          ) : (
-            <>
-              <FilterTabs drive={drive} look="segment" />
-              <span className="text-xs text-muted-foreground tabular-nums">{drive.items.length}개 항목</span>
-            </>
-          )}
-        </div>
+export function activeNode(drive: Drive, id: string | null): MockNode | null {
+  return drive.nodes.find((n) => n.id === id && n.parentId === drive.folderId) ?? null
+}
 
-        <div className="overflow-hidden rounded-xl border bg-card">
-          <div className={cn("grid items-center gap-3 border-b bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground", COLS)}>
-            <Checkbox
-              testid={`${T}-select-all`}
-              checked={all}
-              indeterminate={drive.selected.length > 0}
-              onChange={drive.toggleAll}
-            />
-            <SortHead drive={drive} k="name" label="이름" />
-            <span>공유</span>
-            <SortHead drive={drive} k="size" label="크기" right />
-            <SortHead drive={drive} k="updatedAt" label="수정" right />
-            <span />
+/** 필터 또는 선택 시 일괄 작업 바. 목록과 패널 위 전체 너비 */
+export function FilesToolbar({ drive, children }: { drive: Drive; children?: React.ReactNode }) {
+  return (
+    <div className="sticky -top-6 z-10 -mx-1 mb-3 flex h-11 items-center justify-between gap-3 bg-background/90 px-1 backdrop-blur">
+      {drive.selected.length > 0 ? (
+        <BulkBar drive={drive} />
+      ) : (
+        <>
+          <FilterTabs drive={drive} look="segment" />
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground tabular-nums">{drive.items.length}개 항목</span>
+            {children}
           </div>
+        </>
+      )}
+    </div>
+  )
+}
 
-          {drive.items.length === 0 && <EmptyFolder node={drive.folderNode} />}
-
-          {drive.items.map((n) => (
-            <Row
-              key={n.id}
-              node={n}
-              drive={drive}
-              active={active?.id === n.id}
-              onClick={() => (n.kind === "folder" ? drive.open(n.id) : setActiveId(n.id))}
-            />
-          ))}
-        </div>
+export function ListTable({ drive, activeId, onActivate }: { drive: Drive; activeId: string | null; onActivate: (id: string) => void }) {
+  const all = drive.items.length > 0 && drive.selected.length === drive.items.length
+  return (
+    <div className="overflow-hidden rounded-xl border bg-card">
+      <div className={cn("grid items-center gap-3 border-b bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground", COLS)}>
+        <Checkbox
+          testid={`${T}-select-all`}
+          checked={all}
+          indeterminate={drive.selected.length > 0}
+          onChange={drive.toggleAll}
+        />
+        <SortHead drive={drive} k="name" label="이름" />
+        <span>공유</span>
+        <SortHead drive={drive} k="size" label="크기" right />
+        <SortHead drive={drive} k="updatedAt" label="수정" right />
+        <span />
       </div>
 
-      <aside className="sticky top-0 w-80 shrink-0 overflow-hidden rounded-xl border bg-card">
-        {active ? <FileDetails node={active} drive={drive} onClose={() => setActiveId(null)} /> : <FolderSummary drive={drive} />}
-      </aside>
+      {drive.items.length === 0 && <EmptyFolder node={drive.folderNode} />}
+
+      {drive.items.map((n) => (
+        <Row
+          key={n.id}
+          node={n}
+          drive={drive}
+          active={activeId === n.id}
+          onClick={() => (n.kind === "folder" ? drive.open(n.id) : onActivate(n.id))}
+        />
+      ))}
     </div>
+  )
+}
+
+export function DetailPanel({ drive, active, onClose }: { drive: Drive; active: MockNode | null; onClose: () => void }) {
+  return (
+    <aside className="sticky top-8 w-80 shrink-0 overflow-hidden rounded-xl border bg-card">
+      {active ? <FileDetails node={active} drive={drive} onClose={onClose} /> : <FolderSummary drive={drive} />}
+    </aside>
   )
 }
 

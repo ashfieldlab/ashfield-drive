@@ -32,8 +32,6 @@ import {
 export function VariantB() {
   const drive = useDrive()
   const [view, setView] = useState<"grid" | "list">("grid")
-  const folders = drive.items.filter((n) => n.kind === "folder")
-  const files = drive.items.filter((n) => n.kind !== "folder")
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -76,6 +74,27 @@ export function VariantB() {
         )}
       </div>
 
+      <Gallery drive={drive} view={view} />
+    </div>
+  )
+}
+
+/** 폴더 타일 + 파일 카드. onSelect 를 주면 파일 카드를 누를 때 열지 않고 선택만 한다 */
+export function Gallery({
+  drive,
+  view = "grid",
+  activeId,
+  onSelect,
+}: {
+  drive: Drive
+  view?: "grid" | "list"
+  activeId?: string | null
+  onSelect?: (id: string) => void
+}) {
+  const folders = drive.items.filter((n) => n.kind === "folder")
+  const files = drive.items.filter((n) => n.kind !== "folder")
+  return (
+    <>
       {drive.items.length === 0 && <EmptyFolder node={drive.folderNode} className="rounded-xl border border-dashed" />}
 
       {view === "grid" ? (
@@ -95,7 +114,7 @@ export function VariantB() {
               <h3 className="mb-2.5 text-xs font-medium text-muted-foreground">파일</h3>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(184px,1fr))] gap-3">
                 {files.map((n) => (
-                  <FileCard key={n.id} node={n} drive={drive} />
+                  <FileCard key={n.id} node={n} drive={drive} active={activeId === n.id} onSelect={onSelect} />
                 ))}
               </div>
             </>
@@ -108,7 +127,7 @@ export function VariantB() {
           ))}
         </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -198,17 +217,18 @@ function Placeholder({ node }: { node: MockNode }) {
   return <KindIcon node={node} className={cn("size-12", meta.fg)} strokeWidth={1.25} />
 }
 
-function FileCard({ node, drive }: { node: MockNode; drive: Drive }) {
+function FileCard({ node, drive, active, onSelect }: { node: MockNode; drive: Drive; active?: boolean; onSelect?: (id: string) => void }) {
   const checked = drive.selected.includes(node.id)
   const meta = KIND[node.kind]
   const owner = memberOf(node.owner)
   return (
     <div
       data-testid={`${T}-row-${node.id}`}
-      onClick={() => (drive.selected.length > 0 ? drive.toggle(node.id) : drive.act("open", node))}
+      onClick={() => (drive.selected.length > 0 ? drive.toggle(node.id) : onSelect ? onSelect(node.id) : drive.act("open", node))}
+      onDoubleClick={() => onSelect && drive.act("open", node)}
       className={cn(
         "group relative cursor-pointer overflow-hidden rounded-xl border bg-card transition-shadow",
-        checked ? "border-primary/60 ring-2 ring-primary/40" : "hover:shadow-md",
+        checked ? "border-primary/60 ring-2 ring-primary/40" : active ? "border-primary/50 ring-1 ring-primary/30" : "hover:shadow-md",
       )}
     >
       <div
