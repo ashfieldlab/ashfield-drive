@@ -19,10 +19,10 @@ JWT 검증 + groups에서 회사 추출 + 데이터·일정 격리 + audit log. 
 
 ## 의도된 결과
 
-- ashfield-drive는 self-contained — 외부 API 호출은 Phase 1엔 0 (Keycloak JWKS 한 번 fetch 외).
-- 새 서비스 추가 시 같은 패턴 적용 — JWT만 신뢰. 게이트웨이·중간 레이어 없음.
+- ashfield-drive는 self-contained: 외부 API 호출은 Phase 1엔 0 (Keycloak JWKS 한 번 fetch 외).
+- 새 서비스 추가 시 같은 패턴 적용: JWT만 신뢰. 게이트웨이·중간 레이어 없음.
 - 외부 시스템(빌링·계정관리)의 책임 경계가 명확해 운영 시 사고 격리.
 
-## 비교 — Nextcloud
+## 비교: Nextcloud
 
-Nextcloud는 모든 책임 자체 보유 (가입·회사·빌링·sharing UI). 무겁고 옵션 많음. 우리는 의도적으로 좁힘 — 워크스페이스 핵심 기능(파일·일정·공유)에 집중.
+Nextcloud는 모든 책임 자체 보유 (가입·회사·빌링·sharing UI). 무겁고 옵션 많음. 우리는 의도적으로 좁힘: 워크스페이스 핵심 기능(파일·일정·공유)에 집중.

@@ -23,7 +23,7 @@ const CATEGORY_OPTIONS: [string, string][] = [
   ["other", "기타"],
 ]
 
-// 상세 검색 모달 — 종류·수정일 필터. 제출식.
+// 상세 검색 모달: 종류·수정일 필터. 제출식.
 export function SearchModal({
   initialQuery,
   onClose,
@@ -41,7 +41,7 @@ export function SearchModal({
   const [searched, setSearched] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // 포커스는 마운트 시 1회만 — 부모 리렌더로 재실행되면 열린 select 에서
+  // 포커스는 마운트 시 1회만: 부모 리렌더로 재실행되면 열린 select 에서
   // 포커스를 뺏어 닫히므로 deps 를 비운다.
   useEffect(() => {
     inputRef.current?.focus()
@@ -79,7 +79,7 @@ export function SearchModal({
   return (
     <div
       className="fixed inset-0 z-[60] flex items-start justify-center bg-black/30 p-4 pt-[8vh]"
-      // 누르기가 배경에서 "시작"됐을 때만 닫기 — 네이티브 select 팝업이 닫히며
+      // 누르기가 배경에서 "시작"됐을 때만 닫기: 네이티브 select 팝업이 닫히며
       // 흘리는 click 이나 안쪽 드래그가 배경에서 끝나도 모달이 닫히지 않게.
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()

@@ -1,4 +1,4 @@
-"""FileShare — node 를 특정 사용자 또는 그룹(디렉터리 부서)에게 명시적으로 공유.
+"""FileShare: node 를 특정 사용자 또는 그룹(디렉터리 부서)에게 명시적으로 공유.
 
 scope 기반 접근(personal 본인/shared 회사)을 1차로 보고, 그 외 사용자가 접근하려면 이 테이블에 row 가 필요.
 폴더에 share 가 걸리면 그 자손 전부에 상속 (재귀 ancestor 조회).
@@ -62,7 +62,7 @@ class FileShare(Base):
             "(grantee_sub IS NOT NULL) <> (grantee_group_id IS NOT NULL)",
             name="ck_file_shares_one_grantee",
         ),
-        # NULL 은 unique 상 서로 달라 — 컬럼별 부분 unique 로 중복 차단.
+        # NULL 은 unique 상 서로 달라: 컬럼별 부분 unique 로 중복 차단.
         Index(
             "uq_file_shares_node_grantee",
             "node_id",

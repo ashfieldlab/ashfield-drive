@@ -1,5 +1,5 @@
 /**
- * 백엔드 API 응답 타입 — Pydantic 스키마와 1:1 매핑.
+ * 백엔드 API 응답 타입: Pydantic 스키마와 1:1 매핑.
  *
  * Phase 1a에 NodeResponse 추가.
  */
@@ -169,7 +169,7 @@ export interface TeamFolderItem {
   created_at: string
 }
 
-// 파일 버전 (ADR-0022) — 최신순. saved_* = 그 내용을 저장했던 사람·시각.
+// 파일 버전 (ADR-0022): 최신순. saved_* = 그 내용을 저장했던 사람·시각.
 export interface FileVersionResponse {
   id: string
   size_bytes: number

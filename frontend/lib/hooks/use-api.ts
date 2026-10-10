@@ -44,7 +44,7 @@ export function useApiGet<T>(
 
 /**
  * 특정 prefix로 시작하는 SWR 캐시 일괄 무효화.
- * 예: invalidateApi("/api/v1/nodes") — nodes 관련 모든 키 재페치.
+ * 예: invalidateApi("/api/v1/nodes"): nodes 관련 모든 키 재페치.
  */
 export function invalidateApi(prefix: string): void {
   // 단어 경계 매칭: prefix 자체이거나 그 뒤에 / 또는 ? 가 와야 매치.

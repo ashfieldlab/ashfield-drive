@@ -1,4 +1,4 @@
-"""GET /api/v1/me — 현재 사용자 정보 반환.
+"""GET /api/v1/me: 현재 사용자 정보 반환.
 
 JWT 검증 → 로컬 사용자·소속 동기화(토큰 `workspaces` 클레임, ADR-0024) 흐름을
 한 번에 시연하는 가장 단순한 라우트.
@@ -33,7 +33,7 @@ class MyStorageResponse(BaseModel):
     # 개인 한도. None = 개인 무제한(회사 한도만 적용).
     storage_bytes_limit: int | None
     storage_pct: float | None  # None = 무제한
-    # 회사 전체 한도 (참고용 — 개인 무제한이어도 회사 한도엔 걸릴 수 있음).
+    # 회사 전체 한도 (참고용: 개인 무제한이어도 회사 한도엔 걸릴 수 있음).
     company_bytes_limit: int | None
 
 

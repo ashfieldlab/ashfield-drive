@@ -17,7 +17,7 @@ interface QuotaResponse {
 
 interface Props {
   companyId: string
-  /** "admin" — System Admin 편집 모드. "view" — 읽기 전용. */
+  /** "admin": System Admin 편집 모드. "view": 읽기 전용. */
   mode: "admin" | "view"
 }
 
@@ -30,7 +30,7 @@ export function QuotaCard({ companyId, mode }: Props) {
       : `/api/v1/companies/${encodeURIComponent(companyId)}/quota`
   const { data, error, isLoading } = useApiGet<QuotaResponse>(url)
 
-  // 입력값 — bytes 단위로 보여주면 너무 길어서 MB 단위. 0 == limit 강제 0(차단).
+  // 입력값: bytes 단위로 보여주면 너무 길어서 MB 단위. 0 == limit 강제 0(차단).
   const [limitMb, setLimitMb] = useState<string>("")  // "" = 무제한
   const [busy, setBusy] = useState(false)
 

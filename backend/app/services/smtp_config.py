@@ -1,4 +1,4 @@
-"""SMTP 설정 resolver — 회사 override → 전역 DB → env (C-4 가 회사 단계 추가).
+"""SMTP 설정 resolver: 회사 override → 전역 DB → env (C-4 가 회사 단계 추가).
 
 호출자: services/email.py 의 send_for_event.
 """
@@ -27,11 +27,11 @@ class SmtpRuntime:
     host: str
     port: int
     user: str
-    password: str  # 평문 — DB row 라면 decrypt 후 채움
+    password: str  # 평문: DB row 라면 decrypt 후 채움
     tls_mode: str
     from_addr: str
     from_name: str
-    source: str  # "company" | "system" | "env" — 로그용
+    source: str  # "company" | "system" | "env": 로그용
 
 
 def _decrypt_safe(enc: str) -> str:
@@ -40,7 +40,7 @@ def _decrypt_safe(enc: str) -> str:
     try:
         return decrypt(enc)
     except ValueError:
-        return ""  # 키 변경 등 — 비로그인 SMTP 로 시도
+        return ""  # 키 변경 등: 비로그인 SMTP 로 시도
 
 
 async def resolve(
@@ -79,7 +79,7 @@ async def resolve(
             source="system",
         )
 
-    # 2) env fallback — smtp_enabled 가 true 일 때만 의미 있음
+    # 2) env fallback: smtp_enabled 가 true 일 때만 의미 있음
     if not settings.smtp_enabled:
         return None
     return SmtpRuntime(

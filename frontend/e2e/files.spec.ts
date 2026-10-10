@@ -38,7 +38,7 @@ test.describe("/files", () => {
     ).toBeVisible()
   })
 
-  test("회사 격리 — member_a 가 만든 폴더를 member_b 는 못 본다", async ({
+  test("회사 격리: member_a 가 만든 폴더를 member_b 는 못 본다", async ({
     page,
     loginAs,
   }) => {

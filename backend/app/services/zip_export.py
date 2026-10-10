@@ -1,4 +1,4 @@
-"""폴더 → zip 변환 — 자손 파일 traverse + 상대 경로 보존.
+"""폴더 → zip 변환: 자손 파일 traverse + 상대 경로 보존.
 
 설계 (Phase 4 v1):
   - 메모리 BytesIO 사용. cap = settings.zip_max_total_bytes / zip_max_files.
@@ -50,7 +50,7 @@ async def build_folder_zip(db: AsyncSession, *, root: Node) -> bytes:
 
     rows = (await db.execute(_DESCENDANTS_SQL, {"root_id": root.id})).all()
 
-    # 루트 자신은 zip 내 prefix — 자손 rel_path 는 'root/sub/...'
+    # 루트 자신은 zip 내 prefix: 자손 rel_path 는 'root/sub/...'
     files: list[tuple[str, str, int]] = []  # (rel_path, storage_key, size)
     folders: list[str] = []
     total = 0
@@ -77,7 +77,7 @@ async def build_folder_zip(db: AsyncSession, *, root: Node) -> bytes:
             raise HTTPException(413, "Too many files to zip")
 
     if not files and not folders:
-        # 빈 폴더 — 그래도 zip 1개는 반환
+        # 빈 폴더: 그래도 zip 1개는 반환
         pass
 
     buffer = io.BytesIO()

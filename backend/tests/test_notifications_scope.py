@@ -1,4 +1,4 @@
-"""mark-all-read 앱 스코프 — 현재 앱 알림만 읽음 처리.
+"""mark-all-read 앱 스코프: 현재 앱 알림만 읽음 처리.
 
 버그: 앱별로 걸러 보여주는데 "모두 읽음"이 전 앱을 처리해 안 본 알림까지 소실.
 """
@@ -46,7 +46,7 @@ async def test_mark_all_read_scoped_to_entity_types(
     node_id, event_id = await _seed(db_session)
     headers = auth_headers(ALICE, groups=[CO], active_company=CO)
 
-    # 파일 앱 스코프 — node 만 읽음 처리
+    # 파일 앱 스코프: node 만 읽음 처리
     r = await client.post(
         "/api/v1/notifications/mark-all-read?entity_types=node", headers=headers
     )

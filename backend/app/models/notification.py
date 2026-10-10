@@ -1,4 +1,4 @@
-"""Notification — in-app 알림.
+"""Notification: in-app 알림.
 
 이벤트 유형 (Phase 3a):
   - node_shared / node_unshared
@@ -36,7 +36,7 @@ class Notification(Base):
     read_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    # email outbox 겸용 — NULL=아직 이메일 미처리(발송/스킵 전). 즉시발송 성공/스킵 시
+    # email outbox 겸용: NULL=아직 이메일 미처리(발송/스킵 전). 즉시발송 성공/스킵 시
     # 스탬프, relay cron 이 NULL 인 것만 수거(재시작 유실 방지, #2).
     emailed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

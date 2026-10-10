@@ -1,11 +1,11 @@
-"""recorded() — cron 잡을 JobRun 원장으로 감싸는 러너.
+"""recorded(): cron 잡을 JobRun 원장으로 감싸는 러너.
 
 worker.py 등록부에서 `cron(recorded("이름", fn), ...)` 로 사용. 한 곳에서:
   1. 시작 시 status=running row INSERT (별도 트랜잭션, 즉시 commit)
   2. 잡 실행
   3. 종료 시 같은 row 를 ok/failed 로 UPDATE (duration·건수·에러 기록)
 
-예외는 잡아서 failed 로 기록만 하고 삼킴 — 한 잡의 실패가 워커나 다른 잡을 안 죽임.
+예외는 잡아서 failed 로 기록만 하고 삼킴: 한 잡의 실패가 워커나 다른 잡을 안 죽임.
 잡 함수는 그대로 (`async def fn(ctx) -> int | None`); 반환값(건수)은 item_count 로.
 """
 
@@ -28,7 +28,7 @@ def recorded(name: str, fn: JobFn) -> JobFn:
         run_id = str(uuid4())
         t0 = time.monotonic()
 
-        # 1) 시작 기록 — 도중에 워커가 죽어도 running 으로 남게 먼저 commit
+        # 1) 시작 기록: 도중에 워커가 죽어도 running 으로 남게 먼저 commit
         async with AsyncSessionLocal() as db:
             db.add(JobRun(id=run_id, name=name, status="running"))
             await db.commit()
@@ -36,7 +36,7 @@ def recorded(name: str, fn: JobFn) -> JobFn:
         # 2) 실행 + 3) 종료 기록
         try:
             count = await fn(ctx)
-        except Exception as exc:  # noqa: BLE001 — 실패를 원장에 남기고 삼킨다
+        except Exception as exc:  # noqa: BLE001: 실패를 원장에 남기고 삼킨다
             await _finish(run_id, "failed", t0, None, repr(exc))
             logger.error(
                 "job_failed",

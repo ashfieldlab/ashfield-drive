@@ -20,7 +20,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  // 활성 회사(쿠키) 준비 후에만 호출 — 첫 로그인 레이스로 X-Active-Company-Id 누락 →
+  // 활성 회사(쿠키) 준비 후에만 호출: 첫 로그인 레이스로 X-Active-Company-Id 누락 →
   // 422 ("입력 정보를 다시 확인해주세요") 토스트 뜨는 것 방지.
   const { data, mutate } = useApiGet<NotificationListResponse>(
     activeCompanyId ? "/api/v1/notifications?limit=20" : null,

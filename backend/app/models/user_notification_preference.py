@@ -1,4 +1,4 @@
-"""UserNotificationPreference — 사용자별 이메일 알림 on/off.
+"""UserNotificationPreference: 사용자별 이메일 알림 on/off.
 
 email_enabled=마스터(off 면 전체 off). email_categories=카테고리별 이메일 on/off
 (키 없으면 on=기본 opt-out). 카테고리: file_share. in-app 은 pref 무관 항상.

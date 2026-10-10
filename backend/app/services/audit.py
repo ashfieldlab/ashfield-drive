@@ -1,4 +1,4 @@
-"""Audit log helper — 변경 일으키는 라우터가 호출.
+"""Audit log helper: 변경 일으키는 라우터가 호출.
 
 write_audit() 는 row 만 add, commit 은 호출자가 함께 (트랜잭션 일체화).
 """
@@ -57,7 +57,7 @@ async def write_audit(
         )
     )
 
-    # Desktop sync 의 SSE nudge — node 변경이면 회사 채널에 신호.
+    # Desktop sync 의 SSE nudge: node 변경이면 회사 채널에 신호.
     # fire-and-forget: redis 다운/실패가 요청을 깨뜨리지 않음. 신호일 뿐이라
     # commit 전 publish 여도 클라이언트가 delta(/changes)로 정합성 확보.
     if entity_type == "node" and company_id:

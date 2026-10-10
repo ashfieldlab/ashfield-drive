@@ -85,7 +85,7 @@ export function FilePreview({ node, onClose }: Props) {
       )
       window.open(res.url, "_blank", "noopener")
     } catch {
-      // download 실패는 상위가 토스트로 처리하지 않음 — 미리보기 모달은 viewer.
+      // download 실패는 상위가 토스트로 처리하지 않음: 미리보기 모달은 viewer.
     }
   }
 

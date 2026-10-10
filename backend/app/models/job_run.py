@@ -1,4 +1,4 @@
-"""JobRun — 백그라운드(cron) 잡 실행 원장.
+"""JobRun: 백그라운드(cron) 잡 실행 원장.
 
 worker 의 recorded() 러너가 잡마다: 시작 시 status=running 로 INSERT,
 종료 시 ok/failed 로 UPDATE (started/finished 두 번 쓰기). 시작했는데 안 끝난
@@ -19,7 +19,7 @@ class JobRun(Base):
     __tablename__ = "job_runs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    # 잡 이름 (recorded() 에 넘긴 값) — trash_purge / heartbeat 등
+    # 잡 이름 (recorded() 에 넘긴 값): trash_purge / heartbeat 등
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     # running(시작) → ok | failed(종료)
     status: Mapped[str] = mapped_column(String(16), nullable=False)
@@ -36,5 +36,5 @@ class JobRun(Base):
     # 실패 시 예외 repr
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # "잡별 최신 실행" 조회용 — (name, started_at)
+    # "잡별 최신 실행" 조회용: (name, started_at)
     __table_args__ = (Index("ix_job_runs_name_started_at", "name", "started_at"),)

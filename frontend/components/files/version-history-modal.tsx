@@ -14,7 +14,7 @@ import { formatBytes, formatDateTime } from "@/lib/utils/format"
 
 /**
  * 파일 버전 기록 (ADR-0022). 열람·다운로드·복원 = 쓰기 권한(행 버튼 노출 조건),
- * 삭제 = 관리 권한 — 내 개인 파일이거나 시스템 관리자일 때만 버튼을 보인다.
+ * 삭제 = 관리 권한: 내 개인 파일이거나 시스템 관리자일 때만 버튼을 보인다.
  */
 export function VersionHistoryModal({
   node,
@@ -44,7 +44,7 @@ export function VersionHistoryModal({
         method: "POST",
       })
       if (vaultRootId && res.wrapped_dek) {
-        // 보안 폴더 — 암호문을 받아 브라우저에서 복호화 (S3 presigned 직접 호출이라 fetch).
+        // 보안 폴더: 암호문을 받아 브라우저에서 복호화 (S3 presigned 직접 호출이라 fetch).
         await ensureUnlocked?.()
         const resp = await fetch(res.url)
         if (!resp.ok) throw new Error(`다운로드 ${resp.status}`)
@@ -75,7 +75,7 @@ export function VersionHistoryModal({
       await api(`${url}/${v.id}/restore`, { method: "POST" })
       toast.success("복원했습니다")
       invalidateApi("/api/v1/me/storage")
-      // 파일 목록을 새로 받으면 목록이 다시 그려지며 이 모달도 닫힌다 — 이동 모달처럼 먼저 닫는다.
+      // 파일 목록을 새로 받으면 목록이 다시 그려지며 이 모달도 닫힌다: 이동 모달처럼 먼저 닫는다.
       onClose()
       invalidateApi("/api/v1/nodes")
     } catch (e) {

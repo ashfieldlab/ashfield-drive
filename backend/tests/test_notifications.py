@@ -1,4 +1,4 @@
-"""Notifications — in-app emit + 읽음 처리."""
+"""Notifications: in-app emit + 읽음 처리."""
 
 
 from httpx import AsyncClient

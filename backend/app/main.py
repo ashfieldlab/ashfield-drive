@@ -1,4 +1,4 @@
-"""Ashfield Drive Backend — FastAPI entry point.
+"""Ashfield Drive Backend: FastAPI entry point.
 
 SPEC §3 참조. 인증 흐름 + /me + /nodes + /audit.
 """
@@ -24,7 +24,7 @@ async def lifespan(_: FastAPI):
     try:
         await ensure_bucket()
     except (ClientError, BotoCoreError, OSError) as exc:
-        # S3 미가용이어도 부팅은 진행 (인증/메타 API는 동작) — 업로드만 실패
+        # S3 미가용이어도 부팅은 진행 (인증/메타 API는 동작): 업로드만 실패
         logger.warning(
             "s3_bucket_unreachable_at_boot",
             extra={"category": "storage", "error": str(exc)},
@@ -35,7 +35,7 @@ async def lifespan(_: FastAPI):
 
 
 _API_DESCRIPTION = """
-ashfield-drive 백엔드 — 회사 파일 저장·공유 SaaS.
+ashfield-drive 백엔드: 회사 파일 저장·공유 SaaS.
 
 ## 공통 요청 헤더
 
@@ -62,7 +62,7 @@ ashfield-drive 백엔드 — 회사 파일 저장·공유 SaaS.
 | 400 | 요청 자체가 잘못됨 (예: 폴더를 자손 아래로 이동) |
 | 401 | 인증 실패 (토큰 없음·만료·서명·iss·aud 불일치) |
 | 403 | 인증은 됐지만 권한 없음 |
-| 404 | 리소스 없음 — 다른 회사 리소스도 404 로 마스킹 |
+| 404 | 리소스 없음: 다른 회사 리소스도 404 로 마스킹 |
 | 409 | 상태 충돌 (예: 업로드 미완료 파일 다운로드 시도) |
 | 413 | 페이로드 한도 초과 |
 | 422 | 검증 실패 (Pydantic) |
@@ -96,7 +96,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# 미들웨어 (등록 역순으로 실행 — request_id가 가장 먼저)
+# 미들웨어 (등록 역순으로 실행: request_id가 가장 먼저)
 app.add_middleware(RequestIdMiddleware)
 
 # 글로벌 예외 처리
@@ -111,6 +111,6 @@ app.include_router(external_router)
 async def health() -> dict[str, str]:
     """LB/cron 용. 인증 불필요. 항상 `{"status": "ok"}` 반환.
 
-    DB 연결 실패해도 200 — DB 의존 핸들러에서 별도 503 응답.
+    DB 연결 실패해도 200: DB 의존 핸들러에서 별도 503 응답.
     """
     return {"status": "ok"}

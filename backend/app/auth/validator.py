@@ -22,7 +22,7 @@ _LEEWAY_SECONDS = 60
 
 
 def _unverified(token: str) -> dict:
-    """진단용 — 서명 검증 없이 claims 일부만. 실패 원인(iss/aud/exp) 파악."""
+    """진단용: 서명 검증 없이 claims 일부만. 실패 원인(iss/aud/exp) 파악."""
     try:
         c = jwt.get_unverified_claims(token)
         return {
@@ -53,7 +53,7 @@ async def validate_jwt(token: str) -> dict:
             detail="JWKS not available",
         )
 
-    # 키 회전 — 토큰 kid 가 캐시된 JWKS 에 없으면 재조회 (jwks.py 가 간격 제한).
+    # 키 회전: 토큰 kid 가 캐시된 JWKS 에 없으면 재조회 (jwks.py 가 간격 제한).
     kid = _unverified_kid(token)
     if kid and kid not in {k.get("kid") for k in keys}:
         keys = await get_jwks(force_refresh=True)
@@ -77,7 +77,7 @@ def _unverified_kid(token: str) -> str | None:
 
 
 def _decode(token: str, keys: list[dict]) -> dict:
-    """python-jose decode — multi-key JWKS 지원, kid 로 매칭. exp·iss·aud·sub 필수."""
+    """python-jose decode: multi-key JWKS 지원, kid 로 매칭. exp·iss·aud·sub 필수."""
     return jwt.decode(
         token,
         {"keys": keys},

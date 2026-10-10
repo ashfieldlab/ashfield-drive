@@ -1,5 +1,5 @@
 """
-Request ID 미들웨어 — X-Request-ID 헤더 자동 주입·전파.
+Request ID 미들웨어: X-Request-ID 헤더 자동 주입·전파.
 
 요청에 X-Request-ID가 있으면 그대로 사용, 없으면 새 UUID 발급.
 응답 헤더에도 동일 값을 박아 클라이언트가 추적 가능.

@@ -1,4 +1,4 @@
-"""/api/v1/admin/jobs — System Admin 잡 관측 엔드포인트.
+"""/api/v1/admin/jobs: System Admin 잡 관측 엔드포인트.
 
 admin 전용 + 등록된 잡(registry.JOBS) 전부를 최신/최근 실행과 함께 반환.
 원장에 기록 없는 잡은 last=null.

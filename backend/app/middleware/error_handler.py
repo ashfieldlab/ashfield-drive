@@ -1,5 +1,5 @@
 """
-글로벌 예외 처리 — 표준 응답 포맷.
+글로벌 예외 처리: 표준 응답 포맷.
 
 처리 대상:
   - HTTPException: FastAPI 표준 응답 그대로
@@ -32,7 +32,7 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(BusinessError)
     async def business_exc_handler(_: Request, exc: BusinessError) -> JSONResponse:
-        """도메인 비즈 에러 — code 기반 응답 (app/core/errors.py)."""
+        """도메인 비즈 에러: code 기반 응답 (app/core/errors.py)."""
         logger.info(
             "business_error",
             extra={

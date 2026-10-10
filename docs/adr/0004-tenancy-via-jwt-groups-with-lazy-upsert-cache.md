@@ -8,7 +8,7 @@
 
 ## 개정 (2026-10, ADR-0023)
 
-예전 결정은 "사용자·회사·소속의 원천은 외부 IdP/디렉터리, 백엔드는 JWT `groups` 로 권한을 판단하고 `users`/`companies` 는 Redis throttle lazy upsert 캐시" 였다. 외부 IdP·디렉터리 없이 Better Auth 소셜 로그인만 쓰게 되면서 원천을 로컬 DB 로 옮겼다 (임시 설계 — 조직·초대 모델을 다시 설계할 때 바뀔 수 있다).
+예전 결정은 "사용자·회사·소속의 원천은 외부 IdP/디렉터리, 백엔드는 JWT `groups` 로 권한을 판단하고 `users`/`companies` 는 Redis throttle lazy upsert 캐시" 였다. 외부 IdP·디렉터리 없이 Better Auth 소셜 로그인만 쓰게 되면서 원천을 로컬 DB 로 옮겼다 (임시 설계: 조직·초대 모델을 다시 설계할 때 바뀔 수 있다).
 
 ## 현재 결정
 

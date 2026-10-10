@@ -78,7 +78,7 @@ async def test_wrong_audience_401(client):
 
 @pytest.mark.asyncio
 async def test_unknown_signing_key_401(client, test_jwks):
-    """JWKS 에 없는 키로 서명 — kid 미스 → JWKS 한 번 재조회 후에도 실패 → 401."""
+    """JWKS 에 없는 키로 서명: kid 미스 → JWKS 한 번 재조회 후에도 실패 → 401."""
     token = mint_jwt("forger", seed=False, private_pem=OTHER_PRIVATE_PEM, kid="other-key")
     res = await client.get("/api/v1/me", headers=bearer(token))
     assert res.status_code == 401

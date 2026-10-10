@@ -1,4 +1,4 @@
-"""recorded() 러너 — JobRun 원장 기록 검증.
+"""recorded() 러너: JobRun 원장 기록 검증.
 
 잡을 러너로 감싸면 성공/실패가 원장에 남고, 실패는 삼켜져 워커를 안 죽인다.
 러너가 내부에서 여는 AsyncSessionLocal 을 테스트 트랜잭션으로 monkeypatch

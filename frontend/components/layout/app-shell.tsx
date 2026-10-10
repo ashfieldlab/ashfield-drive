@@ -35,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const sp = useSearchParams()
   const router = useRouter()
 
-  // files 페이지의 sub-link 활성화 — query string 기반.
+  // files 페이지의 sub-link 활성화: query string 기반.
   const filesActive = useMemo(() => {
     const isFiles = pathname.startsWith("/files")
     if (!isFiles) return null
@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </Link>
   )
 
-  // 우측 클러스터 — 앱 전환 + 검색 + 알림 + 사용자 메뉴(로그아웃). headerTrailing 은
+  // 우측 클러스터: 앱 전환 + 검색 + 알림 + 사용자 메뉴(로그아웃). headerTrailing 은
   // 헤더 우측 전체를 대체하므로, 우리 실데이터 위젯을 여기서 직접 조립한다.
   const headerTrailing = authUser ? (
     <div className="flex items-center gap-2">
@@ -127,10 +127,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       headerTrailing={headerTrailing}
       navItems={sidebarItems}
       renderNavLink={sidebarRenderLink}
-      // 뷰포트 높이로 고정 — 페이지가 자체 h-full overflow-y-auto 로 내부 스크롤.
+      // 뷰포트 높이로 고정: 페이지가 자체 h-full overflow-y-auto 로 내부 스크롤.
       // (프레임 기본은 min-h-screen 이라 안 잡으면 페이지 대신 창 전체가 스크롤됨)
       className="h-screen"
-      // main/container 를 flex 로 확정 높이 전달 — 페이지의 h-full(height:100%)이
+      // main/container 를 flex 로 확정 높이 전달: 페이지의 h-full(height:100%)이
       // percentage 로 접히지 않고 뷰포트 높이를 꽉 채우도록.
       mainClassName="flex flex-col min-h-0"
       containerClassName="flex-1 min-h-0"

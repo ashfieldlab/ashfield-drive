@@ -72,7 +72,7 @@ export default tseslint.config(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/no-explicit-any": "off",
-      // 신규 React 19 룰들 — 일부 정상 패턴에 false positive 빈번. 필요 시 개별 활성화.
+      // 신규 React 19 룰들: 일부 정상 패턴에 false positive 빈번. 필요 시 개별 활성화.
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/purity": "off",
       "react-hooks/refs": "off",
@@ -91,7 +91,7 @@ export default tseslint.config(
       "react-hooks/rules-of-hooks": "off",
     },
   },
-  // shadcn/ui 프리미티브(components/ui) — 범용 부품이라 testid 는 호출부에서 넘긴다
+  // shadcn/ui 프리미티브(components/ui): 범용 부품이라 testid 는 호출부에서 넘긴다
   {
     files: ["components/ui/**/*.{ts,tsx}"],
     rules: {

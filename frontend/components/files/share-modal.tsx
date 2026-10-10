@@ -23,7 +23,7 @@ import type {
 
 interface Props {
   node: NodeResponse
-  // 표시용 이름 — vault 파일은 복호화본. 없으면 node.name(원본/암호문).
+  // 표시용 이름: vault 파일은 복호화본. 없으면 node.name(원본/암호문).
   displayName?: string
   onClose: () => void
 }
@@ -112,7 +112,7 @@ function TabButton({
 }
 
 // ---------------------------------------------------------------------------
-// Users tab — FileShare CRUD
+// Users tab: FileShare CRUD
 // ---------------------------------------------------------------------------
 
 function UsersTab({ node }: { node: NodeResponse }) {
@@ -121,7 +121,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
     `/api/v1/nodes/${node.id}/shares`,
   )
   const confirm = useConfirm()
-  // 이 노드가 속한 vault — 공유 시 vault_key 도 함께 전달해야 함.
+  // 이 노드가 속한 vault: 공유 시 vault_key 도 함께 전달해야 함.
   const { vaultRootId } = useVaultContext(node.id)
   const [granteeSub, setGranteeSub] = useState("")
   const [permission, setPermission] = useState<SharePermission>("read")
@@ -134,7 +134,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
     setBusy(true)
     try {
       // 보안 폴더면 ACL 공유에 더해 vault 멤버십(상대 공개키로 vault_key wrap)도 등록.
-      // 키 전달이 실패하면 ACL 도 만들지 않음 — "접근 권한 있는데 복호화 불가" 모순 방지.
+      // 키 전달이 실패하면 ACL 도 만들지 않음: "접근 권한 있는데 복호화 불가" 모순 방지.
       if (vaultRootId) {
         if (!e2e.isUnlocked()) {
           // 잠금해제 모달을 띄우고, 풀리면 공유를 자동 재시도 (밖에서도 공유 가능).
@@ -180,7 +180,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
     if (!ok) return
     try {
       await api(`/api/v1/nodes/${node.id}/shares/${s.id}`, { method: "DELETE" })
-      // 보안 폴더면 vault 멤버십(키)도 회수 — best-effort.
+      // 보안 폴더면 vault 멤버십(키)도 회수: best-effort.
       if (vaultRootId) {
         try {
           await e2e.unshareVault(vaultRootId, s.grantee_sub)
@@ -286,7 +286,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
 }
 
 // ---------------------------------------------------------------------------
-// Links tab — ExternalLink CRUD
+// Links tab: ExternalLink CRUD
 // ---------------------------------------------------------------------------
 
 function LinksTab({ node }: { node: NodeResponse }) {

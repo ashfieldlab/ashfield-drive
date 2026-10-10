@@ -8,9 +8,9 @@
 import type { NotificationResponse } from "@/lib/types/api"
 
 interface RenderedNotification {
-  /** 한 줄 제목 — 무엇이 일어났는지. */
+  /** 한 줄 제목: 무엇이 일어났는지. */
   title: string
-  /** 한 줄 부연 — 대상의 이름·시간·세부. 없으면 빈 문자열. */
+  /** 한 줄 부연: 대상의 이름·시간·세부. 없으면 빈 문자열. */
   subtitle: string
   /** 클릭 시 이동할 URL. */
   href: string

@@ -1,10 +1,10 @@
-# Ashfield Drive — Implementation Spec
+# Ashfield Drive: Implementation Spec
 
-이 문서는 Ashfield Drive 의 구현 spec — 초기 스켈레톤에서 상속된 기반(§1~§8) + 도메인 모델(§9~).
+이 문서는 Ashfield Drive 의 구현 spec: 초기 스켈레톤에서 상속된 기반(§1~§8) + 도메인 모델(§9~).
 
 > 참고: §1~§8 은 초기 스켈레톤 시점의 기록이라 현재 코드와 다른 부분이 있다 (UI 는 shadcn/ui 기반 로컬 컴포넌트).
 >
-> **인증 개정 (2026-10)**: 인증·테넌시 관련 절(§2.1~2.2 NextAuth/Keycloak, §3.3~3.9 JWKS·revocation·lazy upsert, §4.4~4.5 `SKIP_AUTH`·dev-keys)은 **Better Auth + JWKS** 로 대체되었다 — [ADR-0023](docs/adr/0023-better-auth-jwks.md), 개정된 ADR-0003·ADR-0004. `SKIP_AUTH`·dev-keys·게이트웨이 세션(구 ADR-0021)·Keycloak·외부 디렉터리는 더 이상 없다. 아래 해당 절은 역사적 기록이다.
+> **인증 개정 (2026-10)**: 인증·테넌시 관련 절(§2.1~2.2 NextAuth/Keycloak, §3.3~3.9 JWKS·revocation·lazy upsert, §4.4~4.5 `SKIP_AUTH`·dev-keys)은 **Better Auth + JWKS** 로 대체되었다: [ADR-0023](docs/adr/0023-better-auth-jwks.md), 개정된 ADR-0003·ADR-0004. `SKIP_AUTH`·dev-keys·게이트웨이 세션(구 ADR-0021)·Keycloak·외부 디렉터리는 더 이상 없다. 아래 해당 절은 역사적 기록이다.
 도메인 용어는 [CONTEXT.md](CONTEXT.md), 핵심 아키텍처 결정은 [docs/adr/](docs/adr/) 참조.
 
 ---
@@ -16,7 +16,7 @@
 **외부 시스템 의존** (ADR-0009, 2026-10 개정): S3-compatible storage(스토리지), Google·GitHub OAuth(로그인, Better Auth). 회원·회사 관리는 앱 DB.
 **원칙**: JWT만 신뢰. 회원가입·회사관리·빌링 자체 구현 없음.
 
-> §1~§8은 스켈레톤에서 상속된 기반 spec (참조용 — Item 예제는 무시).
+> §1~§8은 스켈레톤에서 상속된 기반 spec (참조용: Item 예제는 무시).
 > §9부터가 Ashfield Drive 본 도메인 모델.
 
 ---
@@ -289,9 +289,9 @@ interface AppContextType {
 
 부트스트랩 중에는 SWR 일시정지 (`isPaused`).
 
-**Toast 구현**: sonner — `components/ui/sonner.tsx` 의 `<Toaster />` (root layout 1회 마운트) + `components/ui-custom/use-toast.ts` 의 `useToast()` 훅 (4 variants: success/error/info/warning).
+**Toast 구현**: sonner: `components/ui/sonner.tsx` 의 `<Toaster />` (root layout 1회 마운트) + `components/ui-custom/use-toast.ts` 의 `useToast()` 훅 (4 variants: success/error/info/warning).
 
-**확인창·앱 셸**: `components/ui-custom/use-confirm.tsx` (shadcn AlertDialog), `components/ui-custom/app-frame.tsx` (헤더·사이드바 프레임), `user-menu.tsx`, `app-icon.tsx` — 모두 shadcn/ui 기반 로컬 구현.
+**확인창·앱 셸**: `components/ui-custom/use-confirm.tsx` (shadcn AlertDialog), `components/ui-custom/app-frame.tsx` (헤더·사이드바 프레임), `user-menu.tsx`, `app-icon.tsx`: 모두 shadcn/ui 기반 로컬 구현.
 
 ### 2.7 로거 (`lib/utils/logger.ts`)
 
@@ -323,11 +323,11 @@ export const logger = {
 
 ### 2.8 컴포넌트 구조
 
-- `components/ui/` — shadcn/ui base. 직접 수정 가능
-- `components/ui-custom/` — toast, error-page, loading-bar 등 앱 전용 wrapper
-- `components/shared/` — 도메인 중립 (Card, EmptyState 등)
-- `components/{feature}/` — 도메인 컴포넌트 (예: `components/items/`)
-- `components/providers/` — Context provider만
+- `components/ui/`: shadcn/ui base. 직접 수정 가능
+- `components/ui-custom/`: toast, error-page, loading-bar 등 앱 전용 wrapper
+- `components/shared/`: 도메인 중립 (Card, EmptyState 등)
+- `components/{feature}/`: 도메인 컴포넌트 (예: `components/items/`)
+- `components/providers/`: Context provider만
 
 ### 2.9 테스트 선택자 컨벤션
 
@@ -345,10 +345,10 @@ ESLint custom rule: Button/Input/Link/Select 컴포넌트에 testid 없으면 wa
 
 ### 2.10 Playwright (`frontend/e2e/`)
 
-- `playwright.config.ts` — webServer 자동 실행 (또는 외부 서버 기대)
-- `fixtures.ts` — `loginAs(testUser)` 헬퍼 (dev JWT 쿠키 주입)
-- `items.spec.ts` — 로그인 → 생성 → 리스트 확인 → 삭제 happy path
-- `admin.spec.ts` — admin 사용자만 admin 페이지 접근 가능
+- `playwright.config.ts`: webServer 자동 실행 (또는 외부 서버 기대)
+- `fixtures.ts`: `loginAs(testUser)` 헬퍼 (dev JWT 쿠키 주입)
+- `items.spec.ts`: 로그인 → 생성 → 리스트 확인 → 삭제 happy path
+- `admin.spec.ts`: admin 사용자만 admin 페이지 접근 가능
 
 ### 2.11 Storybook (`frontend/.storybook/`)
 
@@ -384,9 +384,9 @@ UI 프리미티브는 shadcn/ui (`components.json` style `radix-nova`, `componen
 - asyncpg
 - alembic
 - pydantic-settings
-- python-jose[cryptography] — JWT
+- python-jose[cryptography]: JWT
 - redis>=5
-- httpx — JWKS fetch
+- httpx: JWKS fetch
 
 테스트:
 - pytest
@@ -437,7 +437,7 @@ async def get_jwks() -> list[dict]:
 
 async def _fetch_keycloak_jwks_cached() -> list[dict]:
     # JWKS endpoint 호출, kid 변경 감지 시에만 캐시 무효화
-    # (게이트웨이의 #5 안티패턴은 가져오지 않음 — JWTError 시 무조건 캐시 무효화 X)
+    # (게이트웨이의 #5 안티패턴은 가져오지 않음: JWTError 시 무조건 캐시 무효화 X)
     ...
 ```
 
@@ -464,7 +464,7 @@ async def validate_jwt(token: str) -> dict:
 ```python
 async def is_revoked(sid: str) -> bool:
     return await redis.sismember("revoked_sids", sid) > 0
-    # 또는 SET key per sid with TTL — 더 단순
+    # 또는 SET key per sid with TTL: 더 단순
     # → 결정: SET key per sid (SETEX), exists 체크. 자동 만료.
 
 async def revoke_sid(sid: str, ttl: int) -> None:
@@ -645,7 +645,7 @@ async def add_request_id(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
     return response
 
-# error_handler.py — exception_handlers
+# error_handler.py: exception_handlers
 # - HTTPException → 표준 응답
 # - ValidationError → 필드별 detail
 # - 나머지 Exception → 500 + request_id 첨부
@@ -668,8 +668,8 @@ def make_jwt():
                          headers={"kid": "dev-key-2026"})
     return _make
 
-# test_items.py — 멀티테넌트 격리, 권한 (owner/admin)
-# test_admin.py — admin role required
+# test_items.py: 멀티테넌트 격리, 권한 (owner/admin)
+# test_admin.py: admin role required
 ```
 
 ---
@@ -755,9 +755,9 @@ smoke:
 
 ### 4.3 Dockerfiles
 
-**`frontend/Dockerfile`** — multi-stage, `output: "standalone"`, SSH mount for github npm packages, 비root.
+**`frontend/Dockerfile`**: multi-stage, `output: "standalone"`, SSH mount for github npm packages, 비root.
 
-**`backend/Dockerfile`** — multi-stage, python:3.12-slim, uvicorn, 비root.
+**`backend/Dockerfile`**: multi-stage, python:3.12-slim, uvicorn, 비root.
 
 ### 4.4 `.env.example`
 
@@ -772,7 +772,7 @@ NEXT_PUBLIC_API_TIMEOUT_MS=10000
 NEXT_PUBLIC_SKIP_AUTH=true
 AUTH_SECRET=run-openssl-rand-base64-32
 
-# Keycloak (운영용 — SKIP_AUTH=true면 무시 가능)
+# Keycloak (운영용: SKIP_AUTH=true면 무시 가능)
 AUTH_KEYCLOAK_ID=
 AUTH_KEYCLOAK_SECRET=
 AUTH_KEYCLOAK_ISSUER=
@@ -790,8 +790,8 @@ LOG_CATEGORIES=
 
 ### 4.5 Dev Keys (`dev-keys/`)
 
-- `private.pem` — RS256 개인키 (Frontend에서 dev JWT 서명)
-- `public.pem` — 대응 공개키 (Backend에서 검증)
+- `private.pem`: RS256 개인키 (Frontend에서 dev JWT 서명)
+- `public.pem`: 대응 공개키 (Backend에서 검증)
 - 둘 다 commit. **개발 전용임을 README에 명시**.
 - 생성 명령: `openssl genrsa -out private.pem 2048 && openssl rsa -in private.pem -pubout -out public.pem`
 
@@ -824,7 +824,7 @@ chore(deps): Pretendard 업데이트
 
 ### 5.3 ESLint custom rule
 
-`eslint-plugin-data-testid` (커스텀 또는 기존 플러그인 활용) — Button/Input/Link/Select에 data-testid 없으면 warning.
+`eslint-plugin-data-testid` (커스텀 또는 기존 플러그인 활용): Button/Input/Link/Select에 data-testid 없으면 warning.
 
 ### 5.4 testid naming
 
@@ -838,7 +838,7 @@ chore(deps): Pretendard 업데이트
 
 ---
 
-## 6. Hello World — 클론 → 동작 확인
+## 6. Hello World: 클론 → 동작 확인
 
 ```bash
 # 1. 클론
@@ -846,7 +846,7 @@ git clone <repo> my-new-project && cd my-new-project
 
 # 2. 환경 셋업
 cp .env.example .env
-# .env에서 AUTH_SECRET만 생성 — `openssl rand -base64 32`로 채움
+# .env에서 AUTH_SECRET만 생성: `openssl rand -base64 32`로 채움
 npm install --prefix frontend
 pip install -e backend  # 또는 uv pip install
 
@@ -880,14 +880,14 @@ make frontend   # localhost:3000
 
 ---
 
-## 7. Migration Plan — 현재 → 목표
+## 7. Migration Plan: 현재 → 목표
 
 별도 grill 세션에서 결정. 아래는 작업 단위만 미리 식별 (실제 순서·범위는 다음 세션에서 grill):
 
 | # | 작업 | 영향 |
 |---|------|------|
 | M1 | 게이트웨이 모드 코드 제거 | `lib/session.ts`, `proxy.ts`, `auth.ts`의 gateway 분기 삭제 |
-| M2 | 루트 파일들을 `frontend/`로 이동 | 모든 import 경로 영향 없음 (상대 경로 그대로) — Dockerfile, package.json만 경로 갱신 |
+| M2 | 루트 파일들을 `frontend/`로 이동 | 모든 import 경로 영향 없음 (상대 경로 그대로): Dockerfile, package.json만 경로 갱신 |
 | M3 | `backend/` 신규 생성 | FastAPI 골격 + Alembic + 위 모든 spec 코드 |
 | M4 | `docker-compose.yml` 추가 | redis + postgres |
 | M5 | `Makefile` 추가 | 위 표 |
@@ -908,7 +908,7 @@ make frontend   # localhost:3000
 | 1 | 프로젝트 정체성 | 0 |
 | 2 | ~~NextAuth + JWT 다이렉트 only~~ → Better Auth (Google·GitHub) + BFF JWT | ADR-0023 |
 | 3 | 모노레포 frontend/+backend/ | 1, ADR-0002 |
-| 4 | 백엔드 JWT 검증 (JWKS) — Redis revocation 폐기 | ADR-0003, ADR-0023 |
+| 4 | 백엔드 JWT 검증 (JWKS): Redis revocation 폐기 | ADR-0003, ADR-0023 |
 | 5 | ~~sid 기반 back-channel logout~~ (폐기, JWT 5분) | ADR-0003 |
 | 6 | 로그 카테고리 6/4개 | 2.7, 3.11 |
 | 7 | Hybrid 워크플로우 | 4.1, 4.2 |
@@ -966,7 +966,7 @@ external_links (Phase 1.5) ADR-0008
   ├── permission: read|write
   ├── access_count, last_accessed_at, created_by_sub, revoked_at?
 
-calendars (Phase 1) — ashfield-calendar 로 이전
+calendars (Phase 1): ashfield-calendar 로 이전
   ├── id, company_id, owner_id?
   ├── scope: personal|shared
   ├── source: native|external_ics (Phase 2)
@@ -1026,7 +1026,7 @@ async def require_node_access(
     return node
 ```
 
-캘린더는 별도 `require_event_access(event_id)` — `event.calendar.scope` 기반 동일 로직.
+캘린더는 별도 `require_event_access(event_id)`: `event.calendar.scope` 기반 동일 로직.
 
 ### 9.3 스토리지 (ADR-0005)
 
@@ -1070,7 +1070,7 @@ S3_REGION=us-east-1
    백엔드:
      a. require_node_access read
      b. presigned GET URL 발급 (30s 만료)
-     c. audit_log? — Phase 1엔 read 안 함, Phase 2 옵션
+     c. audit_log?: Phase 1엔 read 안 함, Phase 2 옵션
      d. 응답: { url, expires_at }
 
 2. 클라이언트 → S3 직접 GET
@@ -1096,7 +1096,7 @@ POST   /api/v1/nodes/{id}/download-url             (file 다운로드 URL)
 POST   /api/v1/nodes                               (folder 생성)
 GET    /api/v1/nodes/tree?parent_id=&scope=        (자식 목록)
 GET    /api/v1/nodes/{id}                          (메타 조회)
-PATCH  /api/v1/nodes/{id}                          (rename / move — parent_id, name 수정)
+PATCH  /api/v1/nodes/{id}                          (rename / move: parent_id, name 수정)
 DELETE /api/v1/nodes/{id}                          (soft delete)
 POST   /api/v1/nodes/{id}/restore                  (휴지통 복원)
 
@@ -1109,7 +1109,7 @@ PATCH  /api/v1/calendars/{id}/preferences          (hidden·color_override)
 GET    /api/v1/events?from=&to=&calendar_ids=      (범위 내 occurrence 풀어서)
 POST   /api/v1/events
 GET    /api/v1/events/{id}
-PATCH  /api/v1/events/{id}                         (this occurrence vs entire series — 옵션)
+PATCH  /api/v1/events/{id}                         (this occurrence vs entire series: 옵션)
 DELETE /api/v1/events/{id}?occurrence=             (this occurrence면 exception 추가)
 
 GET    /api/v1/audit?from=&to=&entity_type=        (회사 admin만)
@@ -1121,7 +1121,7 @@ POST   /api/v1/nodes/{id}/shares                   (FileShare 생성)
 DELETE /api/v1/nodes/{id}/shares/{share_id}
 POST   /api/v1/nodes/{id}/external-links          (ExternalLink 생성)
 DELETE /api/v1/nodes/{id}/external-links/{link_id}
-GET    /s/{token}                                  (외부 접근 entry — 인증 없음)
+GET    /s/{token}                                  (외부 접근 entry: 인증 없음)
 POST   /s/{token}/verify-password                  (비밀번호 검증)
 
 POST   /api/v1/events/{id}/invitations             (멤버 초대)
@@ -1167,23 +1167,23 @@ ESLint custom rule (skeleton ADR) 그대로 적용.
 ### 9.7 로그 카테고리 적용
 
 skeleton의 6 카테고리 그대로 사용:
-- `auth` — JWT 검증, revocation
-- `authz` — node 접근 거부, 회사 미멤버
-- `api` — 요청·응답 일반
-- `db` — 무거운 쿼리·트랜잭션
-- `cache` — Redis (revocation, throttle)
-- `biz` — 파일·이벤트 CRUD, share·external-link 생성
+- `auth`: JWT 검증, revocation
+- `authz`: node 접근 거부, 회사 미멤버
+- `api`: 요청·응답 일반
+- `db`: 무거운 쿼리·트랜잭션
+- `cache`: Redis (revocation, throttle)
+- `biz`: 파일·이벤트 CRUD, share·external-link 생성
 
 ### 9.8 의존성 추가 (skeleton 위에)
 
 **Backend**:
-- `aioboto3` — S3-compatible storage
-- `python-dateutil` — RRULE 파싱·expand
+- `aioboto3`: S3-compatible storage
+- `python-dateutil`: RRULE 파싱·expand
 - `icalendar` (선택, Phase 2 ICS export)
 
 **Frontend**:
-- `rrule` (rrule.js) — 클라이언트측 RRULE 표시
-- 캘린더 라이브러리 — Phase 1엔 자체 구현 (Tailwind 월 그리드)
+- `rrule` (rrule.js): 클라이언트측 RRULE 표시
+- 캘린더 라이브러리: Phase 1엔 자체 구현 (Tailwind 월 그리드)
 
 ### 9.9 환경 변수 (skeleton에 추가)
 
@@ -1198,7 +1198,7 @@ PRESIGN_UPLOAD_TTL_SECONDS=60
 PRESIGN_DOWNLOAD_TTL_SECONDS=30
 
 # Frontend
-# (없음 — 클라이언트는 S3 endpoint 모름, 매 요청 백엔드에 presigned URL 요청)
+# (없음: 클라이언트는 S3 endpoint 모름, 매 요청 백엔드에 presigned URL 요청)
 ```
 
 docker-compose에 MinIO 컨테이너 추가:

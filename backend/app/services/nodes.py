@@ -1,12 +1,12 @@
-"""Node 도메인 서비스 — 권한 체크, 이름 충돌, 자식 조회.
+"""Node 도메인 서비스: 권한 체크, 이름 충돌, 자식 조회.
 
 권한 모델 (ADR-0008):
   - 다른 회사 노드 → 404 (존재 마스킹)
   - scope=personal: owner_id == user.sub → manage
   - scope=shared: active company 멤버면 write
-  - 그 외: FileShare 조회 — 본인이 grantee 인 share + 조상(ancestors) share 중 최댓값
+  - 그 외: FileShare 조회: 본인이 grantee 인 share + 조상(ancestors) share 중 최댓값
   → 폴더에 read share 가 걸리면 자손 전부에 상속.
-  - vault 내부 노드(ADR-0016): scope 기본권한 무시, vault 전용 ACL —
+  - vault 내부 노드(ADR-0016): scope 기본권한 무시, vault 전용 ACL.
     생성자 = manage, 그 외는 FileShare(공유 시 부여한 role)만. 비공유자는 0.
 """
 
@@ -65,7 +65,7 @@ _ANCESTOR_SHARE_SQL = text(
     """
 )
 
-# 조상 chain 의 그룹(부서) share — 그룹 공유 권한 (docs/group-sharing.html).
+# 조상 chain 의 그룹(부서) share: 그룹 공유 권한 (docs/group-sharing.html).
 _ANCESTOR_GROUP_SHARE_SQL = text(
     """
     WITH RECURSIVE chain AS (
@@ -98,7 +98,7 @@ _VAULT_ANCESTOR_SQL = text(
 )
 
 # 조상(자신 포함) 중 팀 폴더가 있으면 그 부서 id·생성자 반환 (docs/group-sharing.html 4단계).
-# 팀폴더 서브트리는 "회사 전원 write" 대신 부서 ACL (그 부서+하위만) 적용 — vault 의 부서판.
+# 팀폴더 서브트리는 "회사 전원 write" 대신 부서 ACL (그 부서+하위만) 적용: vault 의 부서판.
 _TEAM_FOLDER_ANCESTOR_SQL = text(
     """
     WITH RECURSIVE chain AS (
@@ -130,7 +130,7 @@ async def is_team_folder_content(db: AsyncSession, node_id: str) -> bool:
 _COMPANY_VAULTS_SQL = text(
     "SELECT node_id, created_by FROM vaults WHERE company_id = :company_id"
 )
-# 본인이 grantee 인 (만료 안 된) FileShare 의 node_id 들 — vault 루트 멤버십 판별.
+# 본인이 grantee 인 (만료 안 된) FileShare 의 node_id 들: vault 루트 멤버십 판별.
 _USER_SHARES_SQL = text(
     "SELECT node_id FROM file_shares "
     "WHERE grantee_sub = :grantee AND (expires_at IS NULL OR expires_at > NOW())"
@@ -142,7 +142,7 @@ _COMPANY_TEAM_FOLDERS_SQL = text(
 
 
 async def _share_rank(db: AsyncSession, *, node_id: str, grantee: str) -> int:
-    """FileShare 기반 권한 rank — 본인이 grantee 인 (조상 포함) share 중 최댓값."""
+    """FileShare 기반 권한 rank: 본인이 grantee 인 (조상 포함) share 중 최댓값."""
     rows = (
         await db.execute(_ANCESTOR_SHARE_SQL, {"node_id": node_id, "grantee": grantee})
     ).all()
@@ -157,7 +157,7 @@ async def _group_share_rank(
 ) -> int:
     """그룹(부서) share 기반 권한 rank (docs/group-sharing.html).
 
-    노드(+조상)에 그룹 share 가 없으면 즉시 0 — 외부 디렉터리 호출 없이 단락(short-circuit).
+    노드(+조상)에 그룹 share 가 없으면 즉시 0: 외부 디렉터리 호출 없이 단락(short-circuit).
     있으면 유저 접근집합(부서+조상, 캐시)에 그 share 대상 부서가 들면 그 role.
     자격 증명 없는 경로(백그라운드 등)는 그룹 해석 skip.
     """
@@ -196,7 +196,7 @@ async def effective_permission(
             if user.sub == created_by:
                 return _PERM_RANK["manage"]
             return await _share_rank(db, node_id=node.id, grantee=user.sub)
-        # 팀 폴더 — "회사 전원 write" 대신 부서 ACL (그 부서+하위만). vault 의 부서판.
+        # 팀 폴더: "회사 전원 write" 대신 부서 ACL (그 부서+하위만). vault 의 부서판.
         team = (
             await db.execute(_TEAM_FOLDER_ANCESTOR_SQL, {"node_id": node.id})
         ).first()
@@ -285,7 +285,7 @@ async def list_ancestors(
     return [
         {"id": r.id, "name": r.name, "kind": r.kind}
         for r in rows
-        if r.scope != "personal" or True  # 부모도 같은 owner 라 안전 — 명시적 owner 확인은 추후 필요시
+        if r.scope != "personal" or True  # 부모도 같은 owner 라 안전: 명시적 owner 확인은 추후 필요시
     ]
 
 
@@ -390,7 +390,7 @@ async def list_children(
         conditions.append(Node.owner_id == user.sub)
 
     if scope == "shared" and parent_id is None:
-        # 팀 폴더 루트는 "회사 공유" 목록에서 제외 — 좌측 Team folders 섹션에만 노출.
+        # 팀 폴더 루트는 "회사 공유" 목록에서 제외: 좌측 Team folders 섹션에만 노출.
         from app.models.team_folder import TeamFolder
 
         conditions.append(
@@ -417,12 +417,12 @@ async def list_subtree(
     user: UserContext,
     scope: NodeScope,
 ) -> list[Node]:
-    """scope 전체 서브트리(모든 깊이) 평탄 반환 — desktop sync 가 한 번에 받아
+    """scope 전체 서브트리(모든 깊이) 평탄 반환: desktop sync 가 한 번에 받아
     placeholder 를 깐다. 클라이언트가 parent_id 로 트리 재구성.
 
     personal = 본인 소유 전부 / shared = 회사 전체. (FileShare 외부 노드는 별도)
 
-    접근 불가한 보안 폴더(vault)·팀 폴더의 내용은 sync 에서도 제외 — 웹
+    접근 불가한 보안 폴더(vault)·팀 폴더의 내용은 sync 에서도 제외: 웹
     (list_children/effective_permission)과 동일한 비공개 보장. 비-멤버 회사원에게
     내용이 새지 않게 한다.
       - vault: 루트는 부모 목록에 보이므로 유지, 하위만 숨김 (ADR-0016).
@@ -549,7 +549,7 @@ async def collect_descendants(
 ) -> list[Node]:
     """root_id 폴더의 모든 활성 자손 (깊이 무관). parent_id BFS.
 
-    폴더 삭제 시 cascade soft-delete 에 사용 — 안 하면 자식이 부모 없는 고아로
+    폴더 삭제 시 cascade soft-delete 에 사용: 안 하면 자식이 부모 없는 고아로
     남아 desktop recursive sync 에 떠다님.
     """
     rows = list(
@@ -580,7 +580,7 @@ def restore(node: Node) -> None:
     touch_etag(node)
 
 
-# top 노드들의 자손 file S3 객체(버전 포함) 정리 — hard-delete 3경로(empty_trash 라우트,
+# top 노드들의 자손 file S3 객체(버전 포함) 정리: hard-delete 3경로(empty_trash 라우트,
 # vault 즉시삭제, 휴지통 cron) 공용. RECURSIVE CTE 로 자기+자손을 펼쳐 storage_key
 # 있는 file 만 모은다. deleted_at 무관(하드삭제라 soft-deleted 자손도 포함).
 _SUBTREE_FILES_SQL = text(
@@ -605,7 +605,7 @@ _SUBTREE_FILES_SQL = text(
 async def purge_subtree_storage(db: AsyncSession, node_ids: list[str]) -> int:
     """주어진 top 노드들의 자손 file S3 객체를 삭제하고 삭제 수를 반환.
 
-    DB row 삭제는 하지 않음 — 호출자가 top 노드를 db.delete() 하면 FK CASCADE 로
+    DB row 삭제는 하지 않음: 호출자가 top 노드를 db.delete() 하면 FK CASCADE 로
     자손 row 가 정리된다. 개별 S3 삭제 실패는 warning 후 계속(DB 정합 우선).
     """
     if not node_ids:
@@ -614,7 +614,7 @@ async def purge_subtree_storage(db: AsyncSession, node_ids: list[str]) -> int:
     for row in rows:
         try:
             await delete_object(row.storage_key)
-        except Exception as exc:  # noqa: BLE001 — 객체 삭제 실패는 로그만, 진행
+        except Exception as exc:  # noqa: BLE001: 객체 삭제 실패는 로그만, 진행
             logger.warning(
                 "subtree_storage_delete_failed",
                 extra={"category": "files", "node_id": row.id, "error": str(exc)},
@@ -625,8 +625,8 @@ async def purge_subtree_storage(db: AsyncSession, node_ids: list[str]) -> int:
 def touch_etag(node: Node) -> None:
     """Sync (desktop client) 의 If-Match / delta polling 위해 변경 시 새 etag.
 
-    file content 변경은 별도 흐름 (S3 ETag 가 nodes.etag 로 들어옴 — complete endpoint).
+    file content 변경은 별도 흐름 (S3 ETag 가 nodes.etag 로 들어옴: complete endpoint).
     이름/이동/삭제/복원/공유 같은 metadata-only 변경은 이 helper 로 새 etag.
-    UUID v4 — opaque token. 클라이언트는 의미 모르고 그냥 비교만.
+    UUID v4: opaque token. 클라이언트는 의미 모르고 그냥 비교만.
     """
     node.etag = str(uuid.uuid4())

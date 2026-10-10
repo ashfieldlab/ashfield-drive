@@ -1,4 +1,4 @@
-"""팀 폴더 (Team folders) — 부서 전용 공용 폴더 (docs/group-sharing.html 4단계).
+"""팀 폴더 (Team folders): 부서 전용 공용 폴더 (docs/group-sharing.html 4단계).
 
 현재 비활성: 부서 소스(외부 디렉터리)가 없어 새로 만들 수 없고 목록은 비어 있다
 (app/services/departments.py, ADR-0023). 이미 있는 팀 폴더는 회사 admin 이 삭제할 수 있다.

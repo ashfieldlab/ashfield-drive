@@ -1,4 +1,4 @@
-"""/api/v1/search — 파일 검색 + 권한 격리."""
+"""/api/v1/search: 파일 검색 + 권한 격리."""
 
 
 from httpx import AsyncClient
@@ -72,7 +72,7 @@ async def test_search_includes_file_shared_to_me(
         )
     ).json()
 
-    # 공유 전 — Alice 는 못 찾음
+    # 공유 전: Alice 는 못 찾음
     r = await client.get("/api/v1/search?q=공유파일-델타", headers=a)
     assert all("공유파일-델타" not in x["name"] for x in r.json()["nodes"])
 
@@ -84,7 +84,7 @@ async def test_search_includes_file_shared_to_me(
     )
     assert s.status_code in (200, 201)
 
-    # 공유 후 — Alice 검색에 뜸
+    # 공유 후: Alice 검색에 뜸
     r = await client.get("/api/v1/search?q=공유파일-델타", headers=a)
     assert any("공유파일-델타" in x["name"] for x in r.json()["nodes"])
 

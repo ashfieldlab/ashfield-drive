@@ -1,4 +1,4 @@
-"""/api/v1/companies/{id}/smtp — 회사 SMTP override + 권한 분기 + resolve 우선순위."""
+"""/api/v1/companies/{id}/smtp: 회사 SMTP override + 권한 분기 + resolve 우선순위."""
 
 import pytest
 

@@ -1,4 +1,4 @@
-"""dispatch_relay — 즉시발송이 놓친 미처리 알림·웹훅 수거 cron (#2).
+"""dispatch_relay: 즉시발송이 놓친 미처리 알림·웹훅 수거 cron (#2).
 
 즉시경로(PendingDispatch.fire)가 성공 시 각 durable row 를 done 표시하고, 이 relay 는
 아직 미처리인 것만(2분+ 경과) 주워 발송한다 → 워커/API 재시작에도 유실 방지.
@@ -7,7 +7,7 @@
   - 이메일: Notification.emailed_at IS NULL (발송/스킵 전)
 
 2분 grace 로 즉시발송 in-flight 와 이중발송을 피한다. terminal(sent/skipped/failed 확정)은
-row 가 done 표시되므로 다음 사이클에 안 잡힘 — 무한 반복 없음. transient 실패(SMTP 미설정
+row 가 done 표시되므로 다음 사이클에 안 잡힘: 무한 반복 없음. transient 실패(SMTP 미설정
 등)만 NULL 로 남아 다음 사이클 재시도(설정되면 자연 복구).
 """
 

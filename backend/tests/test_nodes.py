@@ -1,4 +1,4 @@
-"""nodes API 핵심 경로 — 폴더 트리, 업로드 흐름, 다른 회사 격리, 휴지통."""
+"""nodes API 핵심 경로: 폴더 트리, 업로드 흐름, 다른 회사 격리, 휴지통."""
 
 from httpx import AsyncClient
 
@@ -52,7 +52,7 @@ async def test_upload_flow_pending_to_ready(
     node_id = r.json()["node_id"]
     assert r.json()["upload_url"].startswith("http://mock-s3/put/")
 
-    # 업로드 전엔 status=pending — 단건 조회로 확인
+    # 업로드 전엔 status=pending: 단건 조회로 확인
     r = await client.get(f"/api/v1/nodes/{node_id}", headers=h)
     assert r.json()["status"] == "pending"
 
@@ -74,7 +74,7 @@ async def test_download_url_only_when_ready(
     )
     node_id = r.json()["node_id"]
 
-    # pending 단계 — 409
+    # pending 단계: 409
     r = await client.post(f"/api/v1/nodes/{node_id}/download-url", headers=h)
     assert r.status_code == 409
 
@@ -95,7 +95,7 @@ async def test_other_company_isolation(
     )
     node_id = r.json()["id"]
 
-    # Bob 은 BETA 활성 — 다른 회사 노드는 404 마스킹
+    # Bob 은 BETA 활성: 다른 회사 노드는 404 마스킹
     r = await client.get(f"/api/v1/nodes/{node_id}", headers=b)
     assert r.status_code == 404
     r = await client.delete(f"/api/v1/nodes/{node_id}", headers=b)
@@ -185,7 +185,7 @@ async def test_overwrite_replaces_content(
     h = auth_headers(ALICE, groups=[ACME], active_company=ACME)
     node_id = await _make_ready_file(client, h)
 
-    # 교체 시작 — 새 내용 presigned URL
+    # 교체 시작: 새 내용 presigned URL
     r = await client.post(
         f"/api/v1/nodes/{node_id}/overwrite-url",
         json={"size": 999, "mime": "text/plain"},
@@ -194,7 +194,7 @@ async def test_overwrite_replaces_content(
     assert r.status_code == 200, r.text
     assert r.json()["upload_url"].startswith("http://mock-s3/put/")
 
-    # 교체 완료 — ready 유지, 같은 node_id
+    # 교체 완료: ready 유지, 같은 node_id
     r = await client.post(
         f"/api/v1/nodes/{node_id}/overwrite-complete", json={}, headers=h
     )
@@ -261,12 +261,12 @@ async def test_recursive_tree_returns_full_subtree(
         "/api/v1/nodes", json={"name": "deep", "parent_id": inner}, headers=h
     )
 
-    # 한 단계 (기존) — 루트만
+    # 한 단계 (기존): 루트만
     r = await client.get("/api/v1/nodes/tree?scope=personal", headers=h)
     names = {n["name"] for n in r.json()["nodes"]}
     assert "outer" in names and "inner" not in names
 
-    # 재귀 — 전부
+    # 재귀: 전부
     r = await client.get("/api/v1/nodes/tree?scope=personal&recursive=true", headers=h)
     names = {n["name"] for n in r.json()["nodes"]}
     assert {"outer", "inner", "deep"} <= names

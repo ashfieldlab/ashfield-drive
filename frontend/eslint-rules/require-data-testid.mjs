@@ -1,5 +1,5 @@
 /**
- * ESLint custom rule — interactive 요소에 data-testid 강제.
+ * ESLint custom rule: interactive 요소에 data-testid 강제.
  *
  * SPEC §2.9 + frontend/CLAUDE.md "테스트 선택자".
  *
@@ -54,7 +54,7 @@ export default {
     schema: [],
     messages: {
       missing:
-        "Interactive 요소 <{{tag}}>에 data-testid가 없습니다. e2e 테스트가 깨질 수 있음 — {feature}-{element}[-{action|id}] 형식으로 추가하세요.",
+        "Interactive 요소 <{{tag}}>에 data-testid가 없습니다. e2e 테스트가 깨질 수 있음: {feature}-{element}[-{action|id}] 형식으로 추가하세요.",
     },
   },
   create(context) {

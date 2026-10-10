@@ -32,7 +32,7 @@ export interface AppContextType {
   authUser: AuthUser | null
   bootstrapped: boolean
 
-  // 멀티테넌트 (로컬 DB 소속 — /api/v1/me groups)
+  // 멀티테넌트 (로컬 DB 소속: /api/v1/me groups)
   companies: string[]
   /** 회사 ID → 표시 이름 (개인 워크스페이스 등). 없으면 ID 를 그대로 표시. */
   companyNames: Record<string, string>
@@ -46,7 +46,7 @@ export interface AppContextType {
 }
 
 /**
- * `/api/v1/me` — 신원·회사·권한의 단일 출처.
+ * `/api/v1/me`: 신원·회사·권한의 단일 출처.
  * BFF 가 Better Auth 세션으로 JWT 를 받아 백엔드에 넘기고, 백엔드가 검증한 신원 + 로컬 DB 소속을 반환.
  * 브라우저 JS 엔 토큰이 없으므로 여기서 신원을 얻는다.
  */
@@ -65,7 +65,7 @@ interface MeResponse {
 const AppContext = createContext<AppContextType | null>(null)
 
 // -----------------------------------------------------------------------------
-// 쿠키 헬퍼 — 활성 회사 영속화
+// 쿠키 헬퍼: 활성 회사 영속화
 // -----------------------------------------------------------------------------
 
 function readActiveCompanyCookie(): string | null {
@@ -95,7 +95,7 @@ function writeActiveCompanyCookie(id: string): void {
 }
 
 // -----------------------------------------------------------------------------
-// Cross-tab 동기화 — BroadcastChannel
+// Cross-tab 동기화: BroadcastChannel
 //
 // 같은 origin 의 다른 탭에서 active company 가 바뀌면 이 탭도 따라가야 한다.
 // 그러지 않으면 셀렉트 표시(이 탭)와 fetcher 가 읽는 cookie(다른 탭이 갱신) 가
@@ -140,7 +140,7 @@ export function AppProvider({ children }: AppProviderProps) {
     return { id: me.sub, email: me.email, name: me.name, roles: me.roles }
   }, [me])
 
-  // 부트스트랩 — /me 로딩 끝나고 active company 결정
+  // 부트스트랩: /me 로딩 끝나고 active company 결정
   useEffect(() => {
     if (!me) return // 로딩 중
 
@@ -188,13 +188,13 @@ export function AppProvider({ children }: AppProviderProps) {
     // 같은 origin 의 다른 탭들에 회사 변경 통지 → 그쪽도 따라 바뀜
     channelRef.current?.postMessage({ id })
     // 회사 바뀌면 모든 SWR 캐시 무효화 → 새 X-Active-Company-Id로 자동 refetch.
-    // queueMicrotask 로 한 tick 미뤄 cookie set 이 안정된 뒤 refetch — race 최소화.
+    // queueMicrotask 로 한 tick 미뤄 cookie set 이 안정된 뒤 refetch: race 최소화.
     queueMicrotask(() => {
       void mutate(() => true, undefined, { revalidate: true })
     })
   }, [companies])
 
-  // 다른 탭에서 온 회사 변경 메시지 수신 — state·cookie 동기화 후 전체 refetch.
+  // 다른 탭에서 온 회사 변경 메시지 수신: state·cookie 동기화 후 전체 refetch.
   useEffect(() => {
     const channel = createCompanyChannel()
     channelRef.current = channel
@@ -222,7 +222,7 @@ export function AppProvider({ children }: AppProviderProps) {
     }
   }, [companies, activeCompanyId])
 
-  // Cross-service 동기화 — 부모 도메인 공유 cookie + 탭 포커스 재읽기.
+  // Cross-service 동기화: 부모 도메인 공유 cookie + 탭 포커스 재읽기.
   // 다른 서비스(예: drive ↔ calendar, 같은 부모 도메인)에서 회사를 바꾸면 공유 cookie 가
   // 갱신되고, 이 탭이 다시 포커스될 때 cookie 를 재읽어 state·데이터를 맞춘다.
   // BroadcastChannel 은 same-origin 만 닿으므로 cross-service 는 이 경로가 담당.

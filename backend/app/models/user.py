@@ -17,7 +17,7 @@ class User(Base, TimestampMixin):
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # 프로필 이미지 URL (소셜 로그인 제공자). 표시용.
     image: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # System Admin — 로컬 DB 가 원천 (SYSTEM_ADMIN_EMAILS 와 OR). 직접 UPDATE 로 임명.
+    # System Admin: 로컬 DB 가 원천 (SYSTEM_ADMIN_EMAILS 와 OR). 직접 UPDATE 로 임명.
     is_system_admin: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=false()
     )

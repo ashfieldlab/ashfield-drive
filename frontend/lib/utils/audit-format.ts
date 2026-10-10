@@ -64,7 +64,7 @@ export function actionLabel(action: string): string {
  */
 export function metaSummary(item: AuditItemLike): string {
   const m = item.meta
-  // 보안 폴더 항목 — 암호문 이름·크기를 절대 노출하지 않음 (백엔드가 vault 마커만 내려줌).
+  // 보안 폴더 항목: 암호문 이름·크기를 절대 노출하지 않음 (백엔드가 vault 마커만 내려줌).
   if (m.vault === true) return ""
   const subject =
     typeof m.name === "string"
@@ -90,7 +90,7 @@ export function metaSummary(item: AuditItemLike): string {
 export function describe(item: AuditItemLike): string {
   const actor = actorDisplay(item)
   const m = item.meta
-  // 보안 폴더 항목 — 구체 이름 없이 일반 라벨로.
+  // 보안 폴더 항목: 구체 이름 없이 일반 라벨로.
   if (m.vault === true) {
     return `${actor} · 🔒 보안 폴더 항목을(를) ${actionLabel(item.action)}`
   }

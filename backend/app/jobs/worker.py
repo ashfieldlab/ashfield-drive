@@ -8,7 +8,7 @@
 운영에선 별도 프로세스(컨테이너) 로 띄움. FastAPI 프로세스 죽어도 큐는 살아있고
 반대도 마찬가지. Redis 다운 시 worker 는 backoff 재시도(arq 기본).
 
-cron_jobs 는 app.jobs.registry.JOBS 단일 소스에서 생성 — 잡 추가는 거기 한 줄.
+cron_jobs 는 app.jobs.registry.JOBS 단일 소스에서 생성: 잡 추가는 거기 한 줄.
 모든 잡은 recorded() 를 거쳐 JobRun 원장에 실행 기록을 남긴다.
 """
 

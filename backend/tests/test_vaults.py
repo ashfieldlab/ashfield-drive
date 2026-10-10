@@ -25,7 +25,7 @@ async def test_create_vault_and_get_key(
     )
     assert r.status_code == 200, r.text
 
-    # 생성자는 자동 멤버 — 자기 wrapped key 조회 가능
+    # 생성자는 자동 멤버: 자기 wrapped key 조회 가능
     r = await client.get(f"/api/v1/e2e/vaults/{folder}/key", headers=h)
     assert r.status_code == 200
     assert r.json()["wrapped_vault_key"] == "V1JBUFBFRA=="
@@ -63,7 +63,7 @@ async def test_non_member_cannot_get_key(
         json={"node_id": folder, "wrapped_vault_key": "WA=="},
         headers=a,
     )
-    # Bob 은 비멤버 — 마스킹 404
+    # Bob 은 비멤버: 마스킹 404
     r = await client.get(f"/api/v1/e2e/vaults/{folder}/key", headers=b)
     assert r.status_code == 404
 

@@ -51,7 +51,7 @@ export default function CompanySmtpPage({
 
   useEffect(() => {
     if (!data) return
-    // override 비활성(전역·env 사용 중) 시엔 폼 공란으로 — 사용자가 의식적으로 입력.
+    // override 비활성(전역·env 사용 중) 시엔 폼 공란으로: 사용자가 의식적으로 입력.
     if (!data.override_enabled) {
       setHost("")
       setPort(587)

@@ -2,7 +2,7 @@
 pytest 공통 fixtures.
 
 전략:
-  - 테스트 전용 DB(ashfield_drive_test) — 동일 컨테이너의 별도 DB
+  - 테스트 전용 DB(ashfield_drive_test): 동일 컨테이너의 별도 DB
   - 각 테스트는 자기 트랜잭션 안에서 실행 → 끝나면 롤백 (테스트 간 격리)
   - 인증은 mocking 없이 진짜 JWT: Ashfield 계정 서버 액세스 토큰과 같은 모양(RS256, typ at+jwt,
     iss, aud 배열, picture, workspaces)으로 테스트 프로세스가 만든 RSA 키로 서명 → validator·소속
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import os
 
-# 인증 설정은 app.core.config(settings 로드) import 전에 고정한다 — 개발 .env 값과 무관하게
+# 인증 설정은 app.core.config(settings 로드) import 전에 고정한다: 개발 .env 값과 무관하게
 # 테스트 issuer/audience 로 검증. 이 테스트 프로세스의 env 에만 영향.
 os.environ["AUTH_JWKS_URL"] = "http://account.test/api/auth/jwks"
 os.environ["AUTH_ISSUER"] = "http://account.test"
@@ -51,7 +51,7 @@ from app.models.user import User
 from app.models.user_company_membership import UserCompanyMembership
 
 # ---------------------------------------------------------------------------
-# 테스트 서명 키 — 프로세스마다 새로 만든다 (저장소에 개인키를 두지 않음)
+# 테스트 서명 키: 프로세스마다 새로 만든다 (저장소에 개인키를 두지 않음)
 # ---------------------------------------------------------------------------
 
 TEST_ISSUER = os.environ["AUTH_ISSUER"]
@@ -86,11 +86,11 @@ def _make_rsa_key(kid: str) -> tuple[str, dict]:
 
 
 TEST_PRIVATE_PEM, TEST_PUBLIC_JWK = _make_rsa_key(TEST_KID)
-# 서명은 맞지만 JWKS 에 없는 키 — 위조 토큰 테스트용
+# 서명은 맞지만 JWKS 에 없는 키: 위조 토큰 테스트용
 OTHER_PRIVATE_PEM, _ = _make_rsa_key("other-key")
 
 # ---------------------------------------------------------------------------
-# DB 셋업 — 테스트 전용 별도 DB
+# DB 셋업: 테스트 전용 별도 DB
 # ---------------------------------------------------------------------------
 
 TEST_DB_URL = settings.database_url.replace(
@@ -106,7 +106,7 @@ TestSessionLocal = async_sessionmaker(
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)
 async def _setup_test_db():
-    """세션 전체 한 번 — 테스트 DB 스키마 생성·삭제."""
+    """세션 전체 한 번: 테스트 DB 스키마 생성·삭제."""
     # DB 자체는 사전에 docker-compose의 postgres가 띄워져 있어야 함.
     # CREATE DATABASE는 별도 sync 커넥션으로.
     import asyncpg
@@ -140,7 +140,7 @@ async def _clear_redis_per_test():
     """매 테스트 시작 시 Redis rate limit 키 비움.
 
     싱글톤은 session loop 안에서 살아있으므로 리셋 안 함.
-    사용 후 키만 청소 — 테스트 간 격리.
+    사용 후 키만 청소: 테스트 간 격리.
     """
     from app.core.redis import get_redis
 
@@ -224,7 +224,7 @@ class _SeedingTransport(ASGITransport):
 
 @pytest_asyncio.fixture
 async def db_session() -> AsyncIterator[AsyncSession]:
-    """테스트마다 새 트랜잭션 — 끝나면 롤백.
+    """테스트마다 새 트랜잭션: 끝나면 롤백.
 
     join_transaction_mode="create_savepoint": 코드가 commit() 해도(배경 dispatch 의
     send_notification_email / webhook deliver_one) savepoint release 라 바깥 트랜잭션이
@@ -245,7 +245,7 @@ async def db_session() -> AsyncIterator[AsyncSession]:
 
 
 # ---------------------------------------------------------------------------
-# HTTP client — get_db override해서 트랜잭션 공유
+# HTTP client: get_db override해서 트랜잭션 공유
 # ---------------------------------------------------------------------------
 
 
@@ -257,7 +257,7 @@ async def client(db_session: AsyncSession, monkeypatch) -> AsyncIterator[AsyncCl
     app.dependency_overrides[get_db] = override_get_db
 
     # Webhook dispatcher 의 백그라운드 세션이 테스트 트랜잭션을 못 보는 문제 회피:
-    # _deliver_one 이 호출하는 AsyncSessionLocal() 을 — context manager 진입 시 db_session 을
+    # _deliver_one 이 호출하는 AsyncSessionLocal() 을: context manager 진입 시 db_session 을
     # 반환하고 종료 시 아무것도 안 하는 stub 으로 대체. 실제 commit 은 outer rollback 으로 무효화.
     import contextlib
 
@@ -275,7 +275,7 @@ async def client(db_session: AsyncSession, monkeypatch) -> AsyncIterator[AsyncCl
     # 배경 email 발송(send_notification_email)도 테스트 트랜잭션을 보게 (#2).
     monkeypatch.setattr(notif_mod, "AsyncSessionLocal", fake_factory)
 
-    # 배경 dispatch 를 테스트에선 동기(await)로 — create_task 가 공유 db_session 을
+    # 배경 dispatch 를 테스트에선 동기(await)로: create_task 가 공유 db_session 을
     # 동시 사용/commit 해 IllegalStateChange·ResourceClosed 로 flaky 하던 것 제거.
     # (운영은 그대로 create_task; 각자 세션이라 문제 없음.)
     async def _sync_dispatch(delivery_ids: list[str]) -> None:
@@ -357,7 +357,7 @@ def make_jwt():
 
 @pytest.fixture
 def mock_storage(monkeypatch):
-    """S3 호출을 인메모리로 흉내 — presign 은 가짜 URL, head 는 항상 성공."""
+    """S3 호출을 인메모리로 흉내: presign 은 가짜 URL, head 는 항상 성공."""
     state: dict[str, dict] = {}
 
     async def fake_ensure_bucket() -> None:
@@ -392,7 +392,7 @@ def mock_storage(monkeypatch):
         return f"http://mock-s3/part/{storage_key}/{part_number}"
 
     async def fake_complete_multipart(storage_key: str, *, upload_id, parts) -> dict:  # noqa: ARG001
-        # 완료 시 일반 object 로 변환 — head 가 조회 가능하도록 등록
+        # 완료 시 일반 object 로 변환: head 가 조회 가능하도록 등록
         size = sum(p.get("Size", 100) for p in parts) or 100 * len(parts)
         state[storage_key] = {"ContentLength": size, "ETag": '"composite-etag"'}
         state.pop(f"mpu:{storage_key}", None)
@@ -457,7 +457,7 @@ def mock_storage(monkeypatch):
 
 @pytest.fixture
 def auth_headers(make_jwt):
-    """편의 헬퍼 — auth_headers(sub, ...) → Authorization + X-Active-Company-Id."""
+    """편의 헬퍼: auth_headers(sub, ...) → Authorization + X-Active-Company-Id."""
 
     def _headers(
         sub: str,

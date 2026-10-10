@@ -1,5 +1,5 @@
-"""/api/v1/companies/{id}/quota — 회사 quota 조회 (Company Admin) +
-/api/v1/admin/companies/{id}/quota — 설정 (System Admin).
+"""/api/v1/companies/{id}/quota: 회사 quota 조회 (Company Admin) +
+/api/v1/admin/companies/{id}/quota: 설정 (System Admin).
 
 조회는 한도 + 현재 사용량 반환. 설정은 limit 만.
 """

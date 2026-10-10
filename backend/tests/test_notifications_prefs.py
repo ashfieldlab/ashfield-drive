@@ -1,4 +1,4 @@
-"""이메일 알림 카테고리별 설정 — resolve_recipient 게이팅 + API 병합."""
+"""이메일 알림 카테고리별 설정: resolve_recipient 게이팅 + API 병합."""
 
 import pytest
 from httpx import AsyncClient

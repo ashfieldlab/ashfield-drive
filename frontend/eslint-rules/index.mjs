@@ -1,5 +1,5 @@
 /**
- * In-repo ESLint plugin — 프로젝트 전용 커스텀 룰 모음.
+ * In-repo ESLint plugin: 프로젝트 전용 커스텀 룰 모음.
  *
  * 사용: eslint.config.mjs에서
  *   import localRules from "./eslint-rules/index.mjs"

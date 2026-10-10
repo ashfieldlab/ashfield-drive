@@ -1,50 +1,54 @@
+<div align="center">
+
+<img src="frontend/public/icons/ashfield/ashfield-mark.svg" width="72" alt="Ashfield" />
+
 # Ashfield Drive
 
-멀티테넌트 파일 저장·공유 앱입니다 (가벼운 Nextcloud 대안). 워크스페이스(테넌트)마다 개인·공유 영역이 격리됩니다.
-일정 앱 [ashfield-calendar](https://github.com/ashfieldlab/ashfield-calendar), Windows 동기화 클라이언트 [ashfield-sync](https://github.com/ashfieldlab/ashfield-sync) 와는 레포·DB 가 분리돼 있습니다.
+워크스페이스를 위한 파일 저장소
 
-문서: [CONTEXT.md](CONTEXT.md) (도메인 용어) · [docs/adr/](docs/adr/) (설계 결정) · [SPEC.md](SPEC.md) · [docs/local-dev.md](docs/local-dev.md) (로컬 실행)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![S3](https://img.shields.io/badge/S3-compatible-569A31?style=flat-square&logo=amazons3&logoColor=white)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square)](LICENSE)
 
-## 구성
+</div>
 
-```
-frontend/   Next.js 16 · React · Tailwind
-backend/    FastAPI · SQLAlchemy 2.0 async · Alembic · arq 워커 · aioboto3
-infra       Postgres · Redis · MinIO (S3 호환) · Mailpit   (docker compose, dev)
-```
+개인 파일과 팀 공유 파일을 한곳에 두고, 필요한 만큼만 나눕니다.
 
-## 현재 상태
+- **파일과 폴더**: 대용량 업로드, 휴지통, 버전 기록, 검색
+- **공유**: 멤버와 공유하거나 만료, 비밀번호가 있는 외부 링크로
+- **잠긴 폴더**: 서버도 열어볼 수 없는 종단간 암호화 폴더
+- **데스크톱 동기화**: [Ashfield Sync](https://github.com/ashfieldlab/ashfield-sync) 로 Windows 탐색기에서 바로
 
-- 로그인은 [Ashfield 계정 서버](https://github.com/ashfieldlab/ashfield-account)(OIDC)를 통한 SSO 입니다. 한 번 로그인하면 Calendar·Drive 를 오갈 때 다시 로그인하지 않습니다 ([ADR-0024](docs/adr/0024-account-server-sso.md)).
-- 워크스페이스 소속과 멤버 관리는 계정 서버가 맡고, 앱은 로그인 토큰으로 소속을 동기화합니다. 저장 한도는 앱에서 정합니다.
-- 데스크톱 동기화 클라이언트(`ashfield-sync`)는 아직 계정 서버로 옮기지 않았습니다 (ADR-0015).
+## 시작하기
 
-## 기능
+Node 24+, Python 3.14, Docker 가 필요합니다. [Ashfield Account](https://github.com/ashfieldlab/ashfield-account) 를 먼저 띄워 주세요.
 
-- 업로드(대용량 멀티파트, 드래그 앤 드롭), 폴더, 이동·이름 변경, 휴지통
-- 정렬, 유형 필터, 검색 (읽기 권한과 정확히 일치, ADR-0020)
-- 사용자 공유와 외부 링크(권한, 만료, 비밀번호)
-- 볼트: 종단 간 암호화 폴더 (ADR-0016), 파일 버전 (ADR-0022)
-- 워크스페이스·사용자별 저장 한도, 알림(인앱, 이메일, 웹훅), 관리(SMTP, 감사 로그, 잡 모니터링)
-
-## 로컬 개발
-
-Ashfield 계정 서버(`ashfield-account`, http://localhost:3300)를 먼저 띄운 뒤 이 앱을 띄웁니다. 웹 3200, 백엔드 8200 을 씁니다.
-설치 순서, 환경 변수, 포트 표, E2E 전제는 [docs/local-dev.md](docs/local-dev.md) 에 있습니다.
-
-## 검증
-
-```
-make pytest        # 백엔드 테스트
-make vitest        # 프론트 단위·스토리북 테스트
-make e2e           # Playwright (계정 서버 필요, docs/local-dev.md)
-make typecheck     # 프론트 타입 체크
-make lint          # 프론트 eslint + 백엔드 ruff
-make ci-local      # 위 전체 + 프론트 빌드
+```bash
+make setup   # 의존성 설치, 인프라 기동, DB 준비
+make dev     # http://localhost:3200
 ```
 
-전체 명령은 `make help`.
+## 문서
+
+- [로컬 개발](docs/local-dev.md): 환경 변수, 포트, 테스트
+- [도메인 용어](CONTEXT.md)
+- [설계 결정](docs/adr/)
+
+## Ashfield
+
+| | |
+|---|---|
+| [Account](https://github.com/ashfieldlab/ashfield-account) | 계정 · 워크스페이스 |
+| [Calendar](https://github.com/ashfieldlab/ashfield-calendar) | 일정 · 회의실 · 예약 |
+| [Drive](https://github.com/ashfieldlab/ashfield-drive) | 파일 저장 · 공유 |
+| [Sync](https://github.com/ashfieldlab/ashfield-sync) | Drive 데스크톱 동기화 (Windows) |
 
 ## 라이선스
 
-TBD.
+MIT

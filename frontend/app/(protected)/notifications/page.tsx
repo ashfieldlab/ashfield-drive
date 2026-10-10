@@ -28,7 +28,7 @@ export default function NotificationsPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
 
-  // 이 앱 소유 알림만 — 서버에서 entity_types 로 스코프.
+  // 이 앱 소유 알림만: 서버에서 entity_types 로 스코프.
   const entityParams = useCallback(() => {
     const allowed = APP.entityTypes as readonly string[]
     const p = new URLSearchParams({ limit: String(PAGE) })

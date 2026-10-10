@@ -1,5 +1,5 @@
 /**
- * 클라이언트 사이드 API fetch — SPEC §2.3.
+ * 클라이언트 사이드 API fetch: SPEC §2.3.
  *
  * 책임:
  *   - 자동 타임아웃 (NEXT_PUBLIC_API_TIMEOUT_MS)
@@ -18,7 +18,7 @@ import { env } from "@/lib/env"
 import { ApiError, type ApiErrorBody } from "@/lib/errors"
 import { logger } from "@/lib/utils/logger"
 
-// ApiError 는 lib/errors.ts 표준 — code/params/친화 메시지 lookup 통합.
+// ApiError 는 lib/errors.ts 표준: code/params/친화 메시지 lookup 통합.
 export { ApiError } from "@/lib/errors"
 
 // -----------------------------------------------------------------------------
@@ -57,7 +57,7 @@ function buildHeaders(
   body: unknown,
 ): Headers {
   const headers = new Headers(init)
-  // FormData에는 브라우저가 Content-Type을 boundary 포함해서 자동 set — 우리가 박으면 깨짐
+  // FormData에는 브라우저가 Content-Type을 boundary 포함해서 자동 set: 우리가 박으면 깨짐
   const isFormData = typeof FormData !== "undefined" && body instanceof FormData
   if (!isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json")
@@ -130,7 +130,7 @@ export async function api<T = unknown>(
         typeof body.detail === "object" &&
         !Array.isArray(body.detail)
       ) {
-        // 구조화 detail ({code, message, ...}) — 예: STORAGE_QUOTA_EXCEEDED
+        // 구조화 detail ({code, message, ...}): 예: STORAGE_QUOTA_EXCEEDED
         const d = body.detail as { message?: string; code?: string }
         if (d.message) body.message = d.message
         if (d.code && !body.code) body.code = d.code
@@ -188,7 +188,7 @@ export async function api<T = unknown>(
 }
 
 /**
- * 파일 다운로드 — JSON 이 아닌 응답(CSV 등)을 blob 으로 받아 저장.
+ * 파일 다운로드: JSON 이 아닌 응답(CSV 등)을 blob 으로 받아 저장.
  * buildHeaders 로 X-Active-Company-Id 자동 첨부(자격 증명은 BFF 가 쿠키에서 해석).
  */
 export async function apiDownload(

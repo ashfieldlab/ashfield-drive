@@ -33,7 +33,7 @@ async def test_endpoint_crud_admin_only(client: AsyncClient, auth_headers):
     )
     assert r.status_code == 403
 
-    # admin 생성 — secret 1회 반환
+    # admin 생성: secret 1회 반환
     r = await client.post(
         "/api/v1/webhooks",
         json={"url": "https://hook.example/notify", "events": ["node_shared"]},
@@ -45,7 +45,7 @@ async def test_endpoint_crud_admin_only(client: AsyncClient, auth_headers):
     assert body["events"] == ["node_shared"]
     ep_id = body["id"]
 
-    # 목록 — secret 안 보임
+    # 목록: secret 안 보임
     r = await client.get("/api/v1/webhooks", headers=admin)
     assert all(e["secret"] is None for e in r.json()["endpoints"])
 
@@ -120,7 +120,7 @@ async def test_share_dispatches_webhook_with_signature(
     assert call["headers"]["X-Workspace-Signature"] == expected
     assert call["headers"]["X-Workspace-Event"] == "node_shared"
 
-    # delivery 기록 — success
+    # delivery 기록: success
     r = await client.get(
         f"/api/v1/webhooks/{ep_id}/deliveries", headers=admin
     )
@@ -137,7 +137,7 @@ async def test_event_filter_skips_non_matching(
     admin = auth_headers(ADMIN, groups=[ACME], roles=["admin"], active_company=ACME)
     a = auth_headers(ALICE, groups=[ACME], active_company=ACME)
 
-    # event_invited 만 구독 — node_shared 는 매칭 안 됨
+    # event_invited 만 구독: node_shared 는 매칭 안 됨
     await client.post(
         "/api/v1/webhooks",
         json={"url": "https://hook.example/n", "events": ["event_invited"]},

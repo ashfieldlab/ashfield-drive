@@ -1,7 +1,7 @@
-"""Webhook dispatcher — emit_notification 직후 같은 트랜잭션에 row 추가, 백그라운드로 fire-and-forget.
+"""Webhook dispatcher: emit_notification 직후 같은 트랜잭션에 row 추가, 백그라운드로 fire-and-forget.
 
 신뢰성 트레이드오프:
-  - 단순 in-process asyncio.create_task — 워커 재시작 시 진행 중이던 시도는 유실.
+  - 단순 in-process asyncio.create_task: 워커 재시작 시 진행 중이던 시도는 유실.
   - 실패 시 attempt+1 로 즉시 1회 재시도, 그 다음은 별도 cron 으로 backoff (Phase 3a-2 범위 밖).
   - Production scale 에선 Celery/RQ/Cloud Tasks 로 교체. Phase 1.5 같은 단계.
 """
@@ -75,7 +75,7 @@ async def enqueue_for_event(
 
 
 async def dispatch_async(delivery_ids: list[str]) -> None:
-    """백그라운드 fire-and-forget — 자체 세션 / 트랜잭션 사용."""
+    """백그라운드 fire-and-forget: 자체 세션 / 트랜잭션 사용."""
     if not delivery_ids:
         return
     for d_id in delivery_ids:

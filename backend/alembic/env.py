@@ -1,5 +1,5 @@
 """
-Alembic env — async + DATABASE_URL 환경변수 사용.
+Alembic env: async + DATABASE_URL 환경변수 사용.
 
 Phase 3에서 모델 등록 (Base.metadata 주입):
   from app.models import Base
@@ -20,7 +20,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# app.core.config가 .env 파일 + 환경변수 둘 다 처리 — alembic도 그걸 신뢰
+# app.core.config가 .env 파일 + 환경변수 둘 다 처리: alembic도 그걸 신뢰
 from app.core.config import settings  # noqa: E402
 from app.models import Base  # noqa: E402
 

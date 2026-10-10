@@ -22,9 +22,9 @@ from app.services.nodes import _PERM_RANK, effective_permission
 async def assert_can_manage_shares(
     db: AsyncSession, node: Node, *, user: UserContext
 ) -> None:
-    """공유 생성/삭제 권한 — 소유자 또는 'manage' permission 보유자.
+    """공유 생성/삭제 권한: 소유자 또는 'manage' permission 보유자.
 
-    Phase 1.5 (소유자 only) 에서 확장 — Phase 2e ADR-0008 정밀화.
+    Phase 1.5 (소유자 only) 에서 확장: Phase 2e ADR-0008 정밀화.
     """
     if node.owner_id == user.sub:
         return
@@ -88,7 +88,7 @@ async def upsert_group_share(
     granted_by_sub: str,
     expires_at: datetime | None,
 ) -> FileShare:
-    """그룹(= 부서) 공유. group_id 는 department_id (외부 참조). 현재 생성 비활성 — services/departments.py."""
+    """그룹(= 부서) 공유. group_id 는 department_id (외부 참조). 현재 생성 비활성: services/departments.py."""
     stmt = select(FileShare).where(
         and_(
             FileShare.node_id == node.id,

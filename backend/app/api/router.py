@@ -1,4 +1,4 @@
-"""모든 라우터 등록 — main.py가 한 번에 include.
+"""모든 라우터 등록: main.py가 한 번에 include.
 
 """
 

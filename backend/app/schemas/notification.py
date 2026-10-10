@@ -30,7 +30,7 @@ class MarkAllReadResponse(BaseModel):
 
 
 class EmailPreferenceResponse(BaseModel):
-    email_enabled: bool  # 마스터 — off 면 카테고리 무관 전체 off
+    email_enabled: bool  # 마스터: off 면 카테고리 무관 전체 off
     # 카테고리별 이메일 on/off. 키 없으면 on(기본). 카테고리: file_share
     email_categories: dict[str, bool] = {}
 

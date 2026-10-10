@@ -1,4 +1,4 @@
-"""Multipart upload — 50MB+ 파일 흐름."""
+"""Multipart upload: 50MB+ 파일 흐름."""
 
 from httpx import AsyncClient
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Ashfield Drive — 통합 명령
+# Ashfield Drive : 통합 명령
 #
 # SPEC §4.2 참조. 모든 개발 명령은 이 파일을 통과한다.
 # =============================================================================
@@ -7,11 +7,11 @@
 # .env가 있으면 로드 (BACKEND_PORT / FRONTEND_PORT 등). 없으면 조용히 건너뜀.
 -include .env
 
-# dev 서버 포트 — .env에 없으면 기본값 사용.
+# dev 서버 포트: .env에 없으면 기본값 사용.
 BACKEND_PORT ?= 8200
 FRONTEND_PORT ?= 3200
 
-.PHONY: help \
+.PHONY: help setup client-secret dev \
         infra stop \
         backend frontend \
         migrate migration auth-migrate \
@@ -24,6 +24,31 @@ FRONTEND_PORT ?= 3200
 help:  ## 사용 가능한 명령 목록
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+
+# -----------------------------------------------------------------------------
+# 빠른 시작
+# -----------------------------------------------------------------------------
+
+ACCOUNT_DIR ?= ../ashfield-account
+CLIENT_ID := ashfield-drive
+
+setup:  ## 처음 한 번: 의존성 설치, .env 생성, 인프라 기동, DB 마이그레이션
+	$(MAKE) install
+	@test -f .env || cp .env.example .env
+	@test -f frontend/.env || cp frontend/.env.example frontend/.env
+	@$(MAKE) --no-print-directory client-secret
+	docker compose up -d --wait
+	$(MAKE) migrate auth-migrate
+	@echo "✓ 준비 완료. 계정 서버를 띄운 뒤 make dev"
+
+client-secret:  ## 계정 서버가 발급한 client secret 을 frontend/.env 에 채움
+	@f=$(ACCOUNT_DIR)/.secrets/clients.local.json; \
+	if [ ! -f $$f ]; then echo "! $$f 없음: 계정 서버에서 make setup 먼저"; exit 0; fi; \
+	secret=$$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))[sys.argv[2]]['client_secret'])" $$f $(CLIENT_ID)); \
+	sed -i "s|^ASHFIELD_CLIENT_SECRET=.*|ASHFIELD_CLIENT_SECRET=$$secret|" frontend/.env && echo "✓ client secret 설정"
+
+dev:  ## 백엔드 + 프론트 dev 서버 함께 실행 (Ctrl+C 로 둘 다 종료)
+	$(MAKE) -j2 --no-print-directory backend frontend
 
 # -----------------------------------------------------------------------------
 # 인프라 (docker-compose)
@@ -103,7 +128,7 @@ storybook:  ## Storybook dev 서버
 fe-build:  ## 프론트엔드 production 빌드
 	cd frontend && npm run build
 
-ci-local:  ## push 전 전체 검증 (typecheck + lint + pytest + build) — e2e는 ci-full
+ci-local:  ## push 전 전체 검증 (typecheck + lint + pytest + build): e2e는 ci-full
 	$(MAKE) typecheck
 	$(MAKE) lint
 	$(MAKE) pytest
@@ -126,7 +151,7 @@ smoke:  ## docker로 풀스택 띄우고 smoke 호출 (TODO: Phase 5)
 # 운영 배포 (docker-compose.prod.yml)
 # -----------------------------------------------------------------------------
 
-# 모든 prod 명령은 .env.prod 강제 — 없으면 stop. 운영 secret 누락 사고 방지.
+# 모든 prod 명령은 .env.prod 강제: 없으면 stop. 운영 secret 누락 사고 방지.
 PROD_COMPOSE := docker compose -f docker-compose.prod.yml --env-file .env.prod
 
 prod-check-env:

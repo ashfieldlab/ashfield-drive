@@ -1,8 +1,8 @@
-"""/api/v1/audit — 감사 로그 조회.
+"""/api/v1/audit: 감사 로그 조회.
 
 접근:
-  scope=company — 활성 회사의 감사 로그. 그 회사 admin(또는 System Admin).
-  scope=system  — company_id NULL 인 시스템 레벨 로그. System Admin 만.
+  scope=company: 활성 회사의 감사 로그. 그 회사 admin(또는 System Admin).
+  scope=system : company_id NULL 인 시스템 레벨 로그. System Admin 만.
 
 필터: 기간(from/to)·entity_type·action·actor_sub. CSV export 제공(같은 필터).
 """
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/audit", tags=["audit"])
 
 Scope = Literal["company", "system"]
 
-# CSV export 상한 — 너무 큰 응답 방지.
+# CSV export 상한: 너무 큰 응답 방지.
 _EXPORT_CAP = 10_000
 
 
@@ -205,7 +205,7 @@ async def export_audit_csv(
                 r.request_id or "",
             ]
         )
-    # Excel 한글 깨짐 방지 — UTF-8 BOM.
+    # Excel 한글 깨짐 방지: UTF-8 BOM.
     data = "﻿" + buf.getvalue()
     return Response(
         content=data,

@@ -1,4 +1,4 @@
-"""SMTP 발송 — opt-out, dev 모드 스킵, fan-out 호출 검증."""
+"""SMTP 발송: opt-out, dev 모드 스킵, fan-out 호출 검증."""
 
 from httpx import AsyncClient
 

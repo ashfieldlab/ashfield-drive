@@ -1,4 +1,4 @@
-"""/api/v1/webhooks — admin 전용. 외부 시스템에 알림 fan-out.
+"""/api/v1/webhooks: admin 전용. 외부 시스템에 알림 fan-out.
 
 회사 단위 endpoint 등록 → notification 발생 시 매칭 endpoint 에 POST.
 
@@ -89,11 +89,11 @@ async def list_endpoints(
     "",
     response_model=WebhookEndpointResponse,
     status_code=201,
-    summary="endpoint 등록 — secret 생성·1회 노출",
+    summary="endpoint 등록: secret 생성·1회 노출",
     responses={
         403: {"description": "admin 아님"},
         201: {
-            "description": "응답 body 의 `secret` 은 이 호출에서만 노출됨 — 클라이언트가 저장 책임"
+            "description": "응답 body 의 `secret` 은 이 호출에서만 노출됨: 클라이언트가 저장 책임"
         },
     },
 )

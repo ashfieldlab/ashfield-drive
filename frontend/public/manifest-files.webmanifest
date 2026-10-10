@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Ashfield Drive",
   "short_name": "Drive",
-  "description": "Ashfield Drive — 종단간 암호화 보안 폴더 지원 파일 앱.",
+  "description": "Ashfield Drive: 종단간 암호화 보안 폴더 지원 파일 앱.",
   "start_url": "/files",
   "scope": "/",
   "display": "standalone",

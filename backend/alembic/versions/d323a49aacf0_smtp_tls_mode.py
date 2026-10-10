@@ -22,7 +22,7 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """Upgrade schema + 기존 use_tls=true → 'ssl' (implicit TLS) 변환.
 
-    use_tls=true 였던 row 는 대부분 SMTPS(465) 의도였다고 가정 — 'ssl' 로 변환.
+    use_tls=true 였던 row 는 대부분 SMTPS(465) 의도였다고 가정: 'ssl' 로 변환.
     STARTTLS(587) 의도였다면 UI 에서 재선택 필요.
     """
     op.add_column('company_smtp_overrides', sa.Column('tls_mode', sa.String(length=16), server_default='none', nullable=False))

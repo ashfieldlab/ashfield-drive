@@ -1,4 +1,4 @@
-"""/api/v1/companies/{id}/smtp — Company Admin 회사별 SMTP override.
+"""/api/v1/companies/{id}/smtp: Company Admin 회사별 SMTP override.
 
 System Admin 도 자동 통과 (require_company_admin 가 super-set).
 override row 가 있으면 resolve 가 전역보다 우선 적용 (services/smtp_config).
@@ -34,7 +34,7 @@ class CompanySmtpResponse(BaseModel):
     tls_mode: str  # 'none' | 'starttls' | 'ssl'
     from_addr: str
     from_name: str
-    # 실제 발송 시 사용될 source — UI 표시용. company/system/env/none.
+    # 실제 발송 시 사용될 source: UI 표시용. company/system/env/none.
     effective_source: str
 
 
@@ -150,7 +150,7 @@ async def put_company_smtp(
 @router.delete(
     "",
     status_code=204,
-    summary="회사 SMTP override 삭제 — 전역 SMTP 사용으로 복귀 (Company Admin)",
+    summary="회사 SMTP override 삭제: 전역 SMTP 사용으로 복귀 (Company Admin)",
 )
 async def delete_company_smtp(
     company_id: str = Path(...),

@@ -1,7 +1,7 @@
 """SMTP 발송 어댑터 + 알림 템플릿.
 
 DEV: settings.smtp_enabled=False 이면 발송 안 하고 로그만 남김.
-PROD: aiosmtplib 없이 stdlib smtplib 로 충분 — 호출 빈도 낮고 동기 OK (background task).
+PROD: aiosmtplib 없이 stdlib smtplib 로 충분: 호출 빈도 낮고 동기 OK (background task).
 
 수신자 확정:
   - users 테이블에서 email 조회 (lazy upsert 된 캐시)
@@ -36,7 +36,7 @@ _TEMPLATES: dict[str, tuple[str, str]] = {
 
 
 def render(event_type: str, payload: dict, actor_name: str) -> tuple[str, str] | None:
-    """(subject, body) — 템플릿 없거나 payload 키 누락이면 None."""
+    """(subject, body): 템플릿 없거나 payload 키 누락이면 None."""
     tpl = _TEMPLATES.get(event_type)
     if tpl is None:
         return None
@@ -66,7 +66,7 @@ def category_of(event_type: str) -> str | None:
 async def resolve_recipient(
     db: AsyncSession, *, recipient_sub: str, event_type: str | None = None
 ) -> str | None:
-    """수신 이메일 — 마스터 off거나 해당 카테고리 off면 None(발송 안 함)."""
+    """수신 이메일: 마스터 off거나 해당 카테고리 off면 None(발송 안 함)."""
     pref = await db.get(UserNotificationPreference, recipient_sub)
     if pref is not None:
         if not pref.email_enabled:
@@ -125,7 +125,7 @@ def _send_sync(cfg: SmtpRuntime, to_email: str, subject: str, body: str) -> None
     # tls_mode:
     #   'ssl'      → SMTP_SSL (implicit TLS, 보통 465)
     #   'starttls' → SMTP plain → starttls() 후 인증·발송 (보통 587)
-    #   'none'     → 평문 SMTP (보통 25 / 2525 — 운영 비추천)
+    #   'none'     → 평문 SMTP (보통 25 / 2525: 운영 비추천)
     if cfg.tls_mode == "ssl":
         with SMTP_SSL(cfg.host, cfg.port, timeout=10) as smtp:
             if cfg.user:

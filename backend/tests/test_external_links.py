@@ -1,4 +1,4 @@
-"""ExternalLink — 토큰 발급, 인증 없이 공개 접근, 비밀번호, 만료."""
+"""ExternalLink: 토큰 발급, 인증 없이 공개 접근, 비밀번호, 만료."""
 
 from datetime import UTC, datetime, timedelta
 

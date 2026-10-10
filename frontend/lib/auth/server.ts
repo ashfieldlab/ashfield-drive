@@ -6,7 +6,7 @@
  *
  *   - 핸들러: app/api/auth/[...all]/route.ts (`/api/auth/*`). 콜백 `/api/auth/callback/ashfield`.
  *   - DB: 백엔드와 같은 Postgres, 테이블은 별도 스키마 `auth` (Alembic 은 무시).
- *     테이블 생성은 Better Auth CLI — `make auth-migrate`.
+ *     테이블 생성은 Better Auth CLI: `make auth-migrate`.
  *   - genericOAuth provider `ashfield`: 디스커버리, client_secret_basic + PKCE,
  *     scope `openid profile email offline_access`, 모든 토큰 요청에 `resource=<이 앱 URL>`
  *     (그래야 액세스 토큰이 백엔드가 JWKS 로 검증할 수 있는 JWT 로 나온다: 계약 §3).

@@ -1,6 +1,6 @@
-"""/api/v1/search — 파일 검색.
+"""/api/v1/search: 파일 검색.
 
-이름 ILIKE 매치 후보를 effective_permission 으로 사후 필터(ADR-0020) —
+이름 ILIKE 매치 후보를 effective_permission 으로 사후 필터(ADR-0020).
 검색 가시성 = 열람 권한. 필터: kind·종류·수정일. FTS 는 보류(ILIKE).
 """
 
@@ -19,7 +19,7 @@ from app.models.node import Node
 from app.schemas.node import NodeResponse
 from app.services.nodes import effective_permission
 
-# 종류(category) 필터 — 프론트 files-list 와 동일 분류.
+# 종류(category) 필터: 프론트 files-list 와 동일 분류.
 _IMAGE_EXTS = {
     "png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "tiff", "tif",
     "heic", "heif", "avif", "ico",
@@ -35,7 +35,7 @@ _DOC_EXTS = {
 FileCategory = Literal["image", "document", "other"]
 NodeKindFilter = Literal["file", "folder"]
 
-# 이름 매치 후보 상한 — 권한 필터 후 limit 개 반환. 대부분 즉시 판정.
+# 이름 매치 후보 상한: 권한 필터 후 limit 개 반환. 대부분 즉시 판정.
 _CANDIDATE_CAP = 200
 
 

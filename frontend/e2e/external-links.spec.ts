@@ -24,7 +24,7 @@ test.describe("external links", () => {
     await page.getByTestId("share-tab-links").click()
     await page.getByTestId("link-create-button").click()
 
-    // 첫 활성 링크의 URL 텍스트 — `/s/{token}` 형태 캡처
+    // 첫 활성 링크의 URL 텍스트: `/s/{token}` 형태 캡처
     const linkRow = page.locator(`li[data-testid^="link-row-"]`).first()
     await expect(linkRow).toBeVisible()
     const tokenUrl = await linkRow.locator(`[data-testid$="-url"]`).innerText()

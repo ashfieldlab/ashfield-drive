@@ -1,4 +1,4 @@
-"""FileShare — 직접 공유, ancestor 상속, 소유자 외 share 관리 금지."""
+"""FileShare: 직접 공유, ancestor 상속, 소유자 외 share 관리 금지."""
 
 from httpx import AsyncClient
 

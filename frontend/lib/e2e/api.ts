@@ -1,5 +1,5 @@
 /**
- * E2E 엔드포인트 클라이언트 (ADR-0016) — backend 의 불투명 blob 보관소와 통신.
+ * E2E 엔드포인트 클라이언트 (ADR-0016): backend 의 불투명 blob 보관소와 통신.
  * 암호 연산은 전혀 없음 (전부 crypto.ts/session.ts). 여기는 전송만.
  */
 
@@ -18,7 +18,7 @@ export interface VaultOut {
   created_by: string
   /** 요청자가 이 vault 의 멤버인지 (접근 가능 여부) */
   is_member: boolean
-  /** 요청자의 권한 (read/write/manage) — 없으면 null */
+  /** 요청자의 권한 (read/write/manage): 없으면 null */
   my_permission: "read" | "write" | "manage" | null
 }
 

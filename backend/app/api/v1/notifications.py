@@ -1,7 +1,7 @@
-"""/api/v1/notifications — in-app 알림 조회/읽음 + 이메일 수신 설정.
+"""/api/v1/notifications: in-app 알림 조회/읽음 + 이메일 수신 설정.
 
 알림은 본인이 한 행동이 아닌 변경에 대해 자동 발생:
-  - `node_shared` — 누가 본인에게 파일/폴더 공유
+  - `node_shared`: 누가 본인에게 파일/폴더 공유
 
 각 알림은 (1) DB row (in-app) (2) 매칭 Webhook fan-out (3) 이메일 (opt-out 가능) 3채널.
 이메일은 `smtp_enabled=true` + `email_enabled=true` 일 때만.
@@ -141,7 +141,7 @@ async def patch_preferences(
     if body.email_enabled is not None:
         pref.email_enabled = body.email_enabled
     if body.email_categories is not None:
-        # 넘어온 키만 병합 — 새 dict 재할당으로 ORM 변경 감지.
+        # 넘어온 키만 병합: 새 dict 재할당으로 ORM 변경 감지.
         pref.email_categories = {**(pref.email_categories or {}), **body.email_categories}
     await db.commit()
     await db.refresh(pref)
@@ -199,7 +199,7 @@ async def mark_all_read(
         Notification.read_at.is_(None),
     ]
     # 뱃지·목록이 현재 앱 알림만 보여주므로, "모두 읽음"도 그 앱 범위만
-    # 처리해야 함 — 안 그러면 안 본 다른 앱 알림까지 읽음 처리되어 놓친다.
+    # 처리해야 함: 안 그러면 안 본 다른 앱 알림까지 읽음 처리되어 놓친다.
     if entity_types:
         conds.append(Notification.entity_type.in_(entity_types))
     stmt = update(Notification).where(and_(*conds)).values(read_at=now)

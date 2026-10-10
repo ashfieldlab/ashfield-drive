@@ -38,14 +38,14 @@ async function proxy(
       cache: "no-store",
     })
   } catch {
-    // backend 자체 도달 불가 (네트워크/DNS/down) — 표준 JSON 으로 응답
+    // backend 자체 도달 불가 (네트워크/DNS/down): 표준 JSON 으로 응답
     return NextResponse.json(
       { detail: "Backend unavailable" },
       { status: 502, headers: { "Cache-Control": "no-store" } },
     )
   }
 
-  // 5xx 응답은 backend 의 HTML 에러 페이지일 수 있음 — JSON 으로 정규화
+  // 5xx 응답은 backend 의 HTML 에러 페이지일 수 있음: JSON 으로 정규화
   if (upstream.status >= 500) {
     return NextResponse.json(
       { detail: `Service error (${upstream.status})` },

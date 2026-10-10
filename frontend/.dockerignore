@@ -1,10 +1,10 @@
-# dev 전용 env — 이미지에 섞이면 prod 빌드가 dev 값(localhost)을 구워버림.
+# dev 전용 env: 이미지에 섞이면 prod 빌드가 dev 값(localhost)을 구워버림.
 # prod 값은 build-arg → ENV 로만 주입한다.
 .env
 .env.local
 .env.*.local
 
-# 빌드 산출물 / 의존성 — COPY . . 가 deps 스테이지 node_modules 를 덮지 않게.
+# 빌드 산출물 / 의존성: COPY . . 가 deps 스테이지 node_modules 를 덮지 않게.
 node_modules
 .next
 out

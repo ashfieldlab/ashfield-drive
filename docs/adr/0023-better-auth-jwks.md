@@ -15,7 +15,7 @@
    - `ALLOWED_EMAILS` 가 있으면 `user.validateUserInfo`(가입·연결·OAuth 재로그인) + `databaseHooks.session.create.before`(모든 세션 발급)에서 목록 밖 이메일을 거부한다. 백엔드도 같은 목록으로 403 (이중 방어). 비어 있으면 누구나 가입한다.
    - `AUTH_DEV_PASSWORD_LOGIN=true` 이고 `NODE_ENV≠production` 일 때만 이메일+비밀번호 로그인(로컬·E2E). 운영에선 플래그가 있어도 무시하고 에러 로그를 남긴다.
 2. **백엔드 신뢰 = Better Auth JWT 플러그인.**
-   - 흐름: 브라우저 —(세션 쿠키, httpOnly)→ BFF(`/api/v1/*` route) —`auth.api.getToken()`→ 5분짜리 RS256 JWT —`Authorization: Bearer`→ FastAPI —`AUTH_JWKS_URL`(= `/api/auth/jwks`)→ 서명·`iss`·`aud`·`exp` 검증.
+   - 흐름: 브라우저 , (세션 쿠키, httpOnly)→ BFF(`/api/v1/*` route) , `auth.api.getToken()`→ 5분짜리 RS256 JWT , `Authorization: Bearer`→ FastAPI , `AUTH_JWKS_URL`(= `/api/auth/jwks`)→ 서명·`iss`·`aud`·`exp` 검증.
    - 키는 RS256(기존 python-jose 검증 코드 재사용). 모르는 `kid` 면 JWKS 를 다시 받되 30초에 한 번까지.
    - `AUTH_ISSUER`·`AUTH_AUDIENCE` 는 필수 (`BETTER_AUTH_URL`). 비어 있으면 503 이지 "검증 생략"이 아니다. dev 우회 키·세션 헤더 경로는 없다.
 3. **사용자·소속은 로컬 DB 가 원천 (임시 설계).**
@@ -35,5 +35,5 @@
 
 - 로그아웃은 세션 삭제 → BFF 가 새 JWT 를 못 받는다. 이미 발급된 JWT 는 최대 5분 유효 (sid revocation·OIDC back-channel logout 은 폐기, ADR-0003).
 - 백엔드는 네트워크로 JWKS 를 받는다. 테스트는 프로세스마다 RSA 키를 만들고 JWKS 조회만 대체한다 (`backend/tests/conftest.py`).
-- 데스크톱·서버 간 클라이언트도 Better Auth JWT 를 Bearer 로 보내면 된다 (발급 흐름은 클라이언트 이전 때 결정 — 예: 세션 토큰 + `GET /api/auth/token`).
+- 데스크톱·서버 간 클라이언트도 Better Auth JWT 를 Bearer 로 보내면 된다 (발급 흐름은 클라이언트 이전 때 결정: 예: 세션 토큰 + `GET /api/auth/token`).
 - 개인 워크스페이스 자동 생성과 이메일 기반 멤버 추가는 조직·초대 모델을 다시 설계할 때 바뀔 수 있다.

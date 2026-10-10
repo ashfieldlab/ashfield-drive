@@ -1,4 +1,4 @@
-"""Notification 도메인 — emit 헬퍼.
+"""Notification 도메인: emit 헬퍼.
 
 호출자가 trigger 시점에 emit_notification() 만 부르면 됨. row 만 add, commit 은 호출자가.
 Phase 3a-2 에서 webhook dispatch · 3a-3 에서 email 발송 fan-out 추가 예정.
@@ -18,7 +18,7 @@ from app.services.webhooks import dispatch_async, enqueue_for_event
 
 
 async def send_notification_email(notification_id: str) -> None:
-    """Notification 한 건의 이메일 발송 + emailed_at 스탬프 — 즉시경로·relay 공용.
+    """Notification 한 건의 이메일 발송 + emailed_at 스탬프: 즉시경로·relay 공용.
 
     idempotent: 이미 emailed_at 있으면 skip. send 결과가 terminal(sent/skipped)이면
     스탬프, transient(failed)면 NULL 유지해 relay 가 다음 사이클에 재시도.
@@ -42,7 +42,7 @@ async def send_notification_email(notification_id: str) -> None:
 # emit_notification 호출자가 commit 한 뒤 dispatch 가능하도록, 같은 트랜잭션에서 적재된
 # WebhookDelivery row ID + Notification ID 들을 모아서 호출자에게 돌려줌.
 class PendingDispatch:
-    """commit 후 fire — webhook + email 즉시 발송(각 durable row 를 done 표시)."""
+    """commit 후 fire: webhook + email 즉시 발송(각 durable row 를 done 표시)."""
 
     def __init__(self) -> None:
         self.delivery_ids: list[str] = []

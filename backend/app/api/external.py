@@ -1,4 +1,4 @@
-"""/s/{token} — 인증 없이 접근하는 외부 공유 링크.
+"""/s/{token}: 인증 없이 접근하는 외부 공유 링크.
 
 `api/v1` prefix 아님. JWT/X-Active-Company-Id 안 받음. 토큰 자체가 capability.
 
@@ -35,7 +35,7 @@ router = APIRouter(prefix="/s", tags=["external"])
 @router.get(
     "/{token}",
     response_model=PublicNodeMeta,
-    summary="공개 링크 메타 — 인증 불필요",
+    summary="공개 링크 메타: 인증 불필요",
     responses={404: {"description": "링크 없음, 만료, 철회 또는 노드 삭제됨"}},
 )
 async def public_link_meta(

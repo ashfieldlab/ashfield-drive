@@ -31,7 +31,7 @@ export async function loginAs(page: Page, key: E2EUserKey): Promise<void> {
 }
 
 /**
- * 앱 확인 창(useConfirm — components/ui-custom/use-confirm.tsx)의 확인 버튼을 누른다.
+ * 앱 확인 창(useConfirm: components/ui-custom/use-confirm.tsx)의 확인 버튼을 누른다.
  */
 export async function confirmDialog(page: Page): Promise<void> {
   await page.getByTestId("confirm-dialog-confirm").click()

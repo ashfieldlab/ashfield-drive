@@ -1,4 +1,4 @@
-"""/api/v1/admin/companies — System Admin 의 회사·멤버 role 관리 (ADR-0010).
+"""/api/v1/admin/companies: System Admin 의 회사·멤버 role 관리 (ADR-0010).
 
 System Admin 은 모든 회사 super-set 권한. 본인이 그 회사 멤버일 필요 X.
 회사 admin (role='admin') 임명/강등 = 여기서만 가능.
@@ -128,9 +128,9 @@ async def list_members(
 @router.patch(
     "/{company_id}/members/{user_sub}",
     response_model=MemberItem,
-    summary="멤버 role 변경 — admin 임명/강등 (System Admin)",
+    summary="멤버 role 변경: admin 임명/강등 (System Admin)",
     responses={
-        404: {"description": "멤버십 없음 — 그 사용자가 그 회사로 한 번도 로그인 안 함"},
+        404: {"description": "멤버십 없음: 그 사용자가 그 회사로 한 번도 로그인 안 함"},
         409: {"description": "마지막 admin 강등 시도 (운영 lock-out 방지)"},
     },
 )
@@ -146,7 +146,7 @@ async def patch_member_role(
         raise HTTPException(404, "Membership not found")
 
     if membership.role == body.role:
-        # no-op — 그래도 멱등 응답
+        # no-op: 그래도 멱등 응답
         user = await db.get(User, user_sub)
         return MemberItem(
             user_sub=user_sub,
@@ -155,7 +155,7 @@ async def patch_member_role(
             role=membership.role,  # type: ignore[arg-type]
         )
 
-    # 마지막 admin 강등 방지 — System Admin 이 자기 자신을 잠그는 사고는 OK
+    # 마지막 admin 강등 방지: System Admin 이 자기 자신을 잠그는 사고는 OK
     # (어차피 다시 임명 가능), 하지만 회사 admin 0 명 되는 건 명시적 경고.
     # → 차단까지는 안 함, 강등 자체는 허용. 클라이언트 UI 가 경고.
     # (운영 안전성 vs 유연성 trade-off: 유연성 채택.)

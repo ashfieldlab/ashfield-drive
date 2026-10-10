@@ -44,7 +44,7 @@ export default function CompanyMembersView({
   const { isCompanyAdmin, companyNames } = useAppContext()
   const { toast } = useToast()
   const [busy, setBusy] = useState<string | null>(null)
-  // 한도 설정 모달 — 대상 멤버 + GB 입력(빈값 = 무제한).
+  // 한도 설정 모달: 대상 멤버 + GB 입력(빈값 = 무제한).
   const [quotaFor, setQuotaFor] = useState<MemberItem | null>(null)
   const [quotaGb, setQuotaGb] = useState("")
 

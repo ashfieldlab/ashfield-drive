@@ -100,7 +100,7 @@ async def version_download_url(
 @router.post(
     "/{version_id}/restore",
     response_model=NodeResponse,
-    summary="버전 복원 — 현재 내용은 새 버전으로 남고 이 버전이 현재가 된다",
+    summary="버전 복원: 현재 내용은 새 버전으로 남고 이 버전이 현재가 된다",
     responses={409: {"description": "업로드·교체가 진행 중인 파일"}},
 )
 async def restore_version(

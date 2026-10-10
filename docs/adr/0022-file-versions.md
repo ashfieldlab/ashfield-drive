@@ -1,4 +1,4 @@
-# ADR-0022 — 파일 버전: 10분 묶기 + 한도 포함하되 저장은 막지 않음
+# ADR-0022: 파일 버전: 10분 묶기 + 한도 포함하되 저장은 막지 않음
 
 - **상태**: 결정 (2026-10-09)
 - **컨텍스트 ADR**: [0005](0005-storage-s3-compatible-presigned.md) presigned 저장, [0015](0015-desktop-client.md) 데스크톱 싱크(덮어쓰기의 유일한 경로), [0016](0016-e2e-encrypted-vault.md) 보안 폴더

@@ -1,4 +1,4 @@
-"""cron 잡 등록표 — 이름·함수·스케줄의 단일 소스.
+"""cron 잡 등록표: 이름·함수·스케줄의 단일 소스.
 
 worker.py 가 이 JOBS 로 arq cron_jobs 를 만들고(recorded() 로 감쌈), admin 조회
 엔드포인트가 "돌아야 할 잡" 목록으로 읽는다(원장에 실행 기록이 없어도 표시 →
@@ -28,7 +28,7 @@ class JobSpec:
 
 
 async def heartbeat(ctx: dict) -> int:
-    """매시 정각 1회 — worker liveness. JobRun 원장에 한 줄 남아 grep 졸업."""
+    """매시 정각 1회: worker liveness. JobRun 원장에 한 줄 남아 grep 졸업."""
     logger.info("arq_worker_heartbeat", extra={"category": "biz"})
     return 0
 

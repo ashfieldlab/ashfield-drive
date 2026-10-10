@@ -1,5 +1,5 @@
 # =============================================================================
-# Frontend (Next.js) Dockerfile — multi-stage, standalone output, 비root
+# Frontend (Next.js) Dockerfile: multi-stage, standalone output, 비root
 #
 # 빌드:
 #   docker build \

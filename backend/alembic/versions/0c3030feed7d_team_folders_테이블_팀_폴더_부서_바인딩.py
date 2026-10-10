@@ -1,4 +1,4 @@
-"""team_folders 테이블 — 팀 폴더(부서 바인딩)
+"""team_folders 테이블: 팀 폴더(부서 바인딩)
 
 Revision ID: 0c3030feed7d
 Revises: 552434e2233f

@@ -15,7 +15,7 @@
  * 새 에러 코드 추가 시:
  *   1. 백엔드: BusinessError(code=..., params=...) raise
  *   2. ERROR_MESSAGES 에 항목 추가 (string 또는 (params) => string)
- *   3. 한국어 톤 일관 유지 — "방금 다른 분이 …" 같은 친화 카피
+ *   3. 한국어 톤 일관 유지: "방금 다른 분이 …" 같은 친화 카피
  */
 
 type ParamMap = Record<string, unknown>
@@ -27,7 +27,7 @@ type ErrorMessage = string | ((params: ParamMap) => string)
  * 추가·변경은 한 곳에서.
  */
 export const HTTP_STATUS_MESSAGES: Record<number, string> = {
-  // 4xx — 클라이언트 측 문제
+  // 4xx: 클라이언트 측 문제
   400: "잘못된 요청입니다.",
   401: "로그인이 필요합니다.",
   402: "결제가 필요합니다.",
@@ -50,7 +50,7 @@ export const HTTP_STATUS_MESSAGES: Record<number, string> = {
   431: "요청 헤더가 너무 큽니다.",
   451: "법적 사유로 이용할 수 없습니다.",
 
-  // 5xx — 서버 측 문제
+  // 5xx: 서버 측 문제
   500: "서버에 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
   501: "지원하지 않는 기능입니다.",
   502: "서버와 통신할 수 없습니다.",
@@ -99,7 +99,7 @@ export class ApiError extends Error {
   readonly status: number
   readonly params: ParamMap
   readonly requestId?: string
-  /** 백엔드 원본 message — 운영 디버그용. 사용자 UI 노출 금지 (raw stack 방어). */
+  /** 백엔드 원본 message: 운영 디버그용. 사용자 UI 노출 금지 (raw stack 방어). */
   readonly rawMessage?: string
 
   constructor(status: number, body: ApiErrorBody) {
@@ -128,7 +128,7 @@ export class ApiError extends Error {
  *   4. 네트워크 끊김 (status 0) → 일반 네트워크 오류
  *   5. 모르는 케이스 → "알 수 없는 오류"
  *
- * **백엔드 raw message/detail 은 절대 노출하지 않음** — 영문 stack/디버그 카피 차단.
+ * **백엔드 raw message/detail 은 절대 노출하지 않음**: 영문 stack/디버그 카피 차단.
  * 운영 카피로 보이고 싶으면 code 부여 + ERROR_MESSAGES 등록.
  */
 export function friendlyError(
@@ -140,7 +140,7 @@ export function friendlyError(
   let status: number | undefined = fallbackStatus
 
   if (typeof err === "string") {
-    // 호출자가 명시 카피 문자열을 직접 전달한 경우 — 그대로 신뢰 (그쪽 책임)
+    // 호출자가 명시 카피 문자열을 직접 전달한 경우: 그대로 신뢰 (그쪽 책임)
     return err
   }
   if (err instanceof ApiError) {
@@ -163,7 +163,7 @@ export function friendlyError(
   // 2) HTTP status 표준
   if (typeof status === "number") {
     if (HTTP_STATUS_MESSAGES[status]) return HTTP_STATUS_MESSAGES[status]
-    if (status === 0) return "네트워크 오류 — 연결을 확인해주세요."
+    if (status === 0) return "네트워크 오류: 연결을 확인해주세요."
     if (status >= 500)
       return "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
     if (status >= 400) return "요청 처리에 실패했습니다."

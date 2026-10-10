@@ -1,5 +1,5 @@
 /**
- * BFF Proxy — `/api/v1/*` → 백엔드로 서버 사이드 forward.
+ * BFF Proxy: `/api/v1/*` → 백엔드로 서버 사이드 forward.
  *
  *   - 같은 오리진이라 CORS 없음.
  *   - 자격 증명은 서버 사이드에서만 만든다: 브라우저 JS 에 노출 X.
@@ -14,7 +14,7 @@ import { endSessionCookies, resolveBackendAuth } from "@/lib/auth/session"
 import { COOKIES } from "@/lib/cookies"
 import { authEnv } from "@/lib/env"
 
-// 백엔드 도달 주소 — BACKEND_INTERNAL_URL. 운영(컨테이너/k8s 등)에서는 backend 서비스 host.
+// 백엔드 도달 주소: BACKEND_INTERNAL_URL. 운영(컨테이너/k8s 등)에서는 backend 서비스 host.
 const BACKEND_URL = authEnv.backendURL
 
 async function proxy(
@@ -48,7 +48,7 @@ async function proxy(
   const targetUrl = new URL(targetPath, BACKEND_URL)
   targetUrl.search = req.nextUrl.search
 
-  // 헤더 구성 — 인증·테넌트만 명시적으로, content-type은 passthrough
+  // 헤더 구성: 인증·테넌트만 명시적으로, content-type은 passthrough
   const headers = new Headers()
   for (const [k, v] of Object.entries(authHeaders)) headers.set(k, v)
 
@@ -56,9 +56,9 @@ async function proxy(
     req.headers.get("X-Active-Company-Id") ??
     req.cookies.get(COOKIES.activeCompany)?.value
   if (activeCompany) {
-    // HTTP header 는 ByteString (≤ 0xFF) 만 허용 — 한글이 박히면 fetch 가 throw.
+    // HTTP header 는 ByteString (≤ 0xFF) 만 허용: 한글이 박히면 fetch 가 throw.
     // 잘못된 cookie/header (예: 회사 ID 에 한글 회사명) 가 들어와도 500 대신
-    // 헤더만 skip 하고 통과 — backend 가 active company 누락으로 4xx 응답하면
+    // 헤더만 skip 하고 통과: backend 가 active company 누락으로 4xx 응답하면
     // 사용자가 회사 재선택할 수 있다.
     if (/^[\x20-\x7E]+$/.test(activeCompany)) {
       headers.set("X-Active-Company-Id", activeCompany)
@@ -87,7 +87,7 @@ async function proxy(
       cache: "no-store",
     })
   } catch (err) {
-    // 백엔드 도달 자체 실패 — ECONNREFUSED, DNS, timeout 등.
+    // 백엔드 도달 자체 실패: ECONNREFUSED, DNS, timeout 등.
     // 무처리로 throw 하면 Next.js 가 generic 500 을 뱉어 사용자가 원인을 모름.
     // 명시적 502 + JSON 응답으로 BFF·backend 경계의 책임을 분명히.
      

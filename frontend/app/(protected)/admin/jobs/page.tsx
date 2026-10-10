@@ -53,7 +53,7 @@ const DOT: Record<JobRunOut["status"], string> = {
 
 export default function AdminJobsPage() {
   const { isSystemAdmin } = useAppContext()
-  // 15초 자동 새로고침 — 백그라운드 잡 상태를 살아있는 화면으로.
+  // 15초 자동 새로고침: 백그라운드 잡 상태를 살아있는 화면으로.
   const { data, error, isLoading } = useApiGet<JobsResponse>(
     isSystemAdmin ? URL : null,
     { refreshInterval: 15_000 },

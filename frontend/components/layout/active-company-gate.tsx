@@ -27,7 +27,7 @@ export function ActiveCompanyGate({ children }: { children: React.ReactNode }) {
     )
   }
   if (!activeCompanyId) {
-    // AppContext 가 곧 /access-denied 로 redirect — 깜빡 안 보이게 빈 화면.
+    // AppContext 가 곧 /access-denied 로 redirect: 깜빡 안 보이게 빈 화면.
     return null
   }
   return <>{children}</>

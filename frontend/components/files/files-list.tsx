@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { ChevronDown, ChevronUp, Download, File, Folder, FolderInput, History, Pencil, RotateCcw, Share2, Trash2 } from "lucide-react"
 
-// 문서류 확장자 — 타입 필터의 "문서" 분류에 사용.
+// 문서류 확장자: 타입 필터의 "문서" 분류에 사용.
 const _DOC_EXTS = new Set([
   "doc","docx","docm","dot","dotx","dotm","odt","ott","rtf","txt",
   "html","htm","mht","epub","fb2","xps","oxps","djvu","hwp","hwpx",
@@ -28,7 +28,7 @@ function extOf(name: string): string {
   return dot < 0 ? "" : name.slice(dot + 1).toLowerCase()
 }
 
-// 타입 필터 카테고리 — 폴더 / 이미지 / 문서 / 기타.
+// 타입 필터 카테고리: 폴더 / 이미지 / 문서 / 기타.
 type FileFilter = "all" | "folder" | "image" | "document" | "other"
 const FILTER_LABELS: Record<FileFilter, string> = {
   all: "전체",
@@ -42,7 +42,7 @@ const FILTER_LABELS: Record<FileFilter, string> = {
 type SortKey = "name" | "size" | "updated"
 type SortDir = "asc" | "desc"
 
-// pending 노드 판별 — 진행 중 vs 방치. status 만으로는 구별 불가(둘 다 pending)
+// pending 노드 판별: 진행 중 vs 방치. status 만으로는 구별 불가(둘 다 pending)
 // 이라 시각 기반 휴리스틱: 최근이면 업로드 중(데스크톱 multipart 등), 오래되면
 // 끊긴 업로드. 데스크톱 동기화가 큰 파일을 pending 상태로 한동안 두기 때문.
 const PENDING_STALE_MS = 30 * 60 * 1000 // 30분
@@ -65,7 +65,7 @@ import type { DownloadUrlResponse, NodeResponse } from "@/lib/types/api"
 interface Props {
   nodes: NodeResponse[]
   trash?: boolean
-  // E2E vault (ADR-0016) — null 이면 일반 폴더.
+  // E2E vault (ADR-0016): null 이면 일반 폴더.
   vaultRootId?: string | null
   ensureUnlocked?: () => Promise<void>
   unlocked?: boolean
@@ -95,7 +95,7 @@ export function FilesList({
   const [versioning, setVersioning] = useState<NodeResponse | null>(null)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
-  // 정렬·필터 (UI 환경설정 — localStorage 로 새로고침 후 유지).
+  // 정렬·필터 (UI 환경설정: localStorage 로 새로고침 후 유지).
   const [filter, setFilter] = useState<FileFilter>("all")
   const [sortKey, setSortKey] = useState<SortKey>("name")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
@@ -109,7 +109,7 @@ export function FilesList({
         if (v.sortDir) setSortDir(v.sortDir)
       }
     } catch {
-      // 무시 — 기본값 사용
+      // 무시: 기본값 사용
     }
   }, [])
   useEffect(() => {
@@ -132,10 +132,10 @@ export function FilesList({
     }
   }
 
-  // E2E vault — 파일명은 ciphertext. 잠금해제 후에만 복호화해 표시.
+  // E2E vault: 파일명은 ciphertext. 잠금해제 후에만 복호화해 표시.
   const [decNames, setDecNames] = useState<Record<string, string>>({})
   useEffect(() => {
-    // 잠겨있으면 복호화본 즉시 폐기 — 잠금 전환 시 평문이 화면에 남지 않게.
+    // 잠겨있으면 복호화본 즉시 폐기: 잠금 전환 시 평문이 화면에 남지 않게.
     if (!vaultRootId || !unlocked) {
       setDecNames({})
       return
@@ -157,7 +157,7 @@ export function FilesList({
     }
   }, [vaultRootId, unlocked, nodes])
 
-  // 표시용 이름 — 3상태:
+  // 표시용 이름: 3상태:
   //   vault 밖     → 원본
   //   vault+잠김   → "🔒 잠김" (원본 ciphertext·평문 절대 노출 X)
   //   vault+해제   → 복호화본 (진행 중이면 "🔒 …")
@@ -188,7 +188,7 @@ export function FilesList({
       } else if (sortKey === "updated") {
         r = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
       }
-      // name 또는 tie-break — displayName 로 자연 정렬.
+      // name 또는 tie-break: displayName 로 자연 정렬.
       if (r === 0) {
         r = displayName(a).localeCompare(displayName(b), "ko", {
           numeric: true,
@@ -199,7 +199,7 @@ export function FilesList({
       return r * dir
     }
     return [...filtered].sort(cmp)
-    // displayName 은 decNames(vault) 에 의존 — deps 에 포함해 잠금해제 후 재정렬.
+    // displayName 은 decNames(vault) 에 의존: deps 에 포함해 잠금해제 후 재정렬.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, filter, sortKey, sortDir, decNames])
 
@@ -210,7 +210,7 @@ export function FilesList({
     }
   }, [nodes, filter])
 
-  // 타입 필터 칩 — 항목이 있는 카테고리만 노출 (+ 항상 '전체').
+  // 타입 필터 칩: 항목이 있는 카테고리만 노출 (+ 항상 '전체').
   const catCounts = useMemo(() => {
     const c: Record<FileFilter, number> = {
       all: nodes.length,
@@ -260,7 +260,7 @@ export function FilesList({
         `/api/v1/nodes/${node.id}/download-url`,
         { method: "POST" },
       )
-      // E2E vault — 암호문 받아 복호화 후 평문 파일로 저장 (브라우저가 직접 못 엶).
+      // E2E vault: 암호문 받아 복호화 후 평문 파일로 저장 (브라우저가 직접 못 엶).
       if (vaultRootId && node.wrapped_dek) {
         await ensureUnlocked?.()
         const resp = await fetch(res.url)
@@ -574,7 +574,7 @@ export function FilesList({
                               )
                               return
                             }
-                            // vault 파일은 미리보기 대신 다운로드(복호화) — 서버가 평문을
+                            // vault 파일은 미리보기 대신 다운로드(복호화): 서버가 평문을
                             // 못 주므로 inline preview 불가.
                             if (vaultRootId) {
                               void download(n)
@@ -698,7 +698,7 @@ export function FilesList({
                                   <FolderInput size={14} />
                                 </button>
                               )}
-                              {/* vault 안에서는 개별 공유 숨김 — 보안 폴더는 폴더(루트) 단위로만 공유.
+                              {/* vault 안에서는 개별 공유 숨김: 보안 폴더는 폴더(루트) 단위로만 공유.
                                   vault 루트 자체는 부모 목록(회사 공유)에서 공유. */}
                               {!vaultRootId && (
                                 <button

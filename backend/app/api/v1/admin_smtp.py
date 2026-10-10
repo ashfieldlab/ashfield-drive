@@ -1,4 +1,4 @@
-"""/api/v1/admin/smtp — System Admin 전역 SMTP 설정.
+"""/api/v1/admin/smtp: System Admin 전역 SMTP 설정.
 
 DB row 가 있으면 우선, 없으면 env fallback (services/smtp_config.resolve).
 비밀번호는 Fernet 암호화 저장 + 마스킹 노출.
@@ -30,7 +30,7 @@ class SmtpConfigResponse(BaseModel):
     host: str
     port: int
     smtp_user: str
-    smtp_password: str  # 마스킹 — 평문 노출 X
+    smtp_password: str  # 마스킹: 평문 노출 X
     tls_mode: str  # 'none' | 'starttls' | 'ssl'
     from_addr: str
     from_name: str
@@ -113,7 +113,7 @@ async def patch_smtp(
     row.from_addr = body.from_addr
     row.from_name = body.from_name
 
-    # 비밀번호 — 마스킹·빈 문자열은 미변경, 그 외만 재암호화 저장
+    # 비밀번호: 마스킹·빈 문자열은 미변경, 그 외만 재암호화 저장
     if body.smtp_password and body.smtp_password != _PW_MASK:
         try:
             row.smtp_password_encrypted = encrypt(body.smtp_password)
@@ -122,7 +122,7 @@ async def patch_smtp(
 
     await write_audit(
         db,
-        company_id=None,  # 시스템 레벨 — D-1 이후 NULL 허용
+        company_id=None,  # 시스템 레벨: D-1 이후 NULL 허용
         actor=actor,
         action="create" if is_new else "update",
         entity_type="system_smtp_config",
@@ -161,7 +161,7 @@ async def test_smtp_connection(
     _: UserContext = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    # 비밀번호 — 빈/마스킹이면 저장된 row 의 평문으로 보완 (저장 전 검증 시 편의)
+    # 비밀번호: 빈/마스킹이면 저장된 row 의 평문으로 보완 (저장 전 검증 시 편의)
     password = body.smtp_password
     if not password or password == _PW_MASK:
         row = await db.get(SystemSmtpConfig, 1)

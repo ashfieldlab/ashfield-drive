@@ -1,9 +1,9 @@
-"""SMTP 설정 — 전역 singleton + 회사별 override.
+"""SMTP 설정: 전역 singleton + 회사별 override.
 
 resolve 순서 (services/smtp_config.py):
   CompanySmtpOverride[company_id] → SystemSmtpConfig (id=1) → env
 
-비밀번호는 Fernet 암호화 (app/core/crypto.py). 마스킹 표시 — 평문 조회 X.
+비밀번호는 Fernet 암호화 (app/core/crypto.py). 마스킹 표시: 평문 조회 X.
 """
 
 from datetime import datetime
@@ -15,7 +15,7 @@ from app.models.base import Base
 
 
 class SystemSmtpConfig(Base):
-    """전역 SMTP — System Admin 이 관리. 항상 id=1 한 row 만 사용 (singleton)."""
+    """전역 SMTP: System Admin 이 관리. 항상 id=1 한 row 만 사용 (singleton)."""
 
     __tablename__ = "system_smtp_config"
 
@@ -39,9 +39,9 @@ class SystemSmtpConfig(Base):
 
 
 class CompanySmtpOverride(Base):
-    """회사별 SMTP override — Company Admin 이 관리. row 있으면 전체 set 사용.
+    """회사별 SMTP override: Company Admin 이 관리. row 있으면 전체 set 사용.
 
-    부분 override 불가 — host 만 다르고 password 는 전역 같은 패턴 금지 (resolve 단순).
+    부분 override 불가: host 만 다르고 password 는 전역 같은 패턴 금지 (resolve 단순).
     """
 
     __tablename__ = "company_smtp_overrides"

@@ -1,4 +1,4 @@
-"""cron 잡 등록표(registry.JOBS) 정합성 — 스케줄이 데이터라 테스트 가능(#4).
+"""cron 잡 등록표(registry.JOBS) 정합성: 스케줄이 데이터라 테스트 가능(#4).
 
 worker 가 이 등록표로 cron 을 만들고 admin 엔드포인트가 읽으므로, 이름 유일성·
 스케줄 표기·worker 반영을 회귀로 못 박는다.
@@ -21,5 +21,5 @@ def test_every_job_has_schedule_and_cron_kwargs():
 
 
 def test_worker_registers_every_job():
-    # worker cron_jobs 는 registry 단일 소스에서 생성 — 개수 일치
+    # worker cron_jobs 는 registry 단일 소스에서 생성: 개수 일치
     assert len(WorkerSettings.cron_jobs) == len(JOBS)

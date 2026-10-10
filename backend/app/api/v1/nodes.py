@@ -1,4 +1,4 @@
-"""/api/v1/nodes — 파일/폴더 트리.
+"""/api/v1/nodes: 파일/폴더 트리.
 
 권한 모델 (ADR-0008):
   - personal: owner 만 접근. FileShare 로 명시적 부여 가능.
@@ -8,7 +8,7 @@
 업로드/다운로드 (ADR-0005):
   - 본문은 절대 백엔드 통과 안 함.
   - 작은 파일: presigned PUT(60s) → /complete.
-  - 50MB+: multipart — /upload-url 응답에 upload_id, /parts/{n}/url 로 per-part PUT, /complete-multipart.
+  - 50MB+: multipart: /upload-url 응답에 upload_id, /parts/{n}/url 로 per-part PUT, /complete-multipart.
   - 다운로드: presigned GET(30s). 폴더 zip 만 백엔드가 합쳐서 반환.
 
 다른 회사 리소스는 403 이 아니라 404 로 마스킹.
@@ -110,12 +110,12 @@ def _check_if_match(node: Node, if_match: str | None) -> None:
     """Sync 클라이언트 (desktop) 의 optimistic locking.
 
     클라이언트가 `If-Match: <etag>` 헤더 보내면 현재 server etag 와 비교.
-    mismatch 면 412 — 클라이언트가 변경된 server 본 후 충돌 사본 생성.
+    mismatch 면 412: 클라이언트가 변경된 server 본 후 충돌 사본 생성.
     헤더 미제공 시 검증 skip (기존 클라이언트 호환).
     """
     if if_match is None:
         return
-    # RFC 7232 — value 는 "<etag>" 같이 따옴표 가능. 양쪽 다 받기
+    # RFC 7232: value 는 "<etag>" 같이 따옴표 가능. 양쪽 다 받기
     expected = if_match.strip().strip('"')
     current = node.etag or ""
     if expected != current:
@@ -216,7 +216,7 @@ async def get_tree(
     ),
     recursive: bool = Query(
         False,
-        description="True 면 scope 전체 서브트리(모든 깊이) 평탄 반환 — desktop sync 용. parent_id 무시.",
+        description="True 면 scope 전체 서브트리(모든 깊이) 평탄 반환: desktop sync 용. parent_id 무시.",
     ),
     user: UserContext = Depends(get_current_user),
     company_id: str = Depends(require_active_company),
@@ -267,7 +267,7 @@ class TrashEmptyResponse(BaseModel):
 @router.delete(
     "/trash",
     response_model=TrashEmptyResponse,
-    summary="휴지통 비우기 — soft-deleted 노드 전체 영구 삭제",
+    summary="휴지통 비우기: soft-deleted 노드 전체 영구 삭제",
     responses={200: {"description": "삭제된 노드 수"}},
 )
 async def empty_trash(
@@ -314,7 +314,7 @@ async def get_shared_with_me(
     company_id: str = Depends(require_active_company),
     db: AsyncSession = Depends(get_db),
 ) -> TreeResponse:
-    """본인이 직접 grantee 인 `FileShare` 의 노드 (ancestor 상속은 제외 — 거기엔 자손이 함께 노출되므로 중복).
+    """본인이 직접 grantee 인 `FileShare` 의 노드 (ancestor 상속은 제외: 거기엔 자손이 함께 노출되므로 중복).
 
     expired share 는 제외.
     """
@@ -325,7 +325,7 @@ async def get_shared_with_me(
 @router.get(
     "/changes",
     response_model=ChangesResponse,
-    summary="Desktop sync — delta polling. since 이후 변경분.",
+    summary="Desktop sync: delta polling. since 이후 변경분.",
     responses={
         400: {"description": "since 파라미터 형식 오류"},
     },
@@ -343,7 +343,7 @@ async def get_changes(
     권한 layer: scope=shared (회사 멤버 모두) / scope=personal owner / FileShare direct grantee.
     Ancestor share 상속은 Phase 4 (지금은 direct share 만).
 
-    limit 초과 시 has_more=true — 클라이언트가 마지막 occurred_at 으로 다시 호출.
+    limit 초과 시 has_more=true: 클라이언트가 마지막 occurred_at 으로 다시 호출.
     """
     # audit + node JOIN. node 가 hard-delete 됐어도 audit row 만 남으면 그건 반환 (node=None)
     stmt = (
@@ -357,10 +357,10 @@ async def get_changes(
             AuditLog.company_id == company_id,
             AuditLog.entity_type == "node",
             AuditLog.created_at > since,
-            # node 권한 — node 가 살아있을 때만 의미. hard-delete 면 audit 만 (어차피
+            # node 권한: node 가 살아있을 때만 의미. hard-delete 면 audit 만 (어차피
             # 삭제 알림이라 모든 사용자에 일관)
             (
-                (Node.id.is_(None))  # hard-delete — audit 만 남음, 모든 user 노출
+                (Node.id.is_(None))  # hard-delete: audit 만 남음, 모든 user 노출
                 | (Node.scope == "shared")
                 | ((Node.scope == "personal") & (Node.owner_id == user.sub))
                 | (FileShare.id.is_not(None))
@@ -395,7 +395,7 @@ async def get_changes(
 
 @router.get(
     "/events",
-    summary="Desktop sync — SSE nudge. 변경 발생 시 즉시 신호 (delta 는 /changes 로).",
+    summary="Desktop sync: SSE nudge. 변경 발생 시 즉시 신호 (delta 는 /changes 로).",
 )
 async def node_events(
     user: UserContext = Depends(get_current_user),
@@ -403,7 +403,7 @@ async def node_events(
 ) -> StreamingResponse:
     """활성 회사의 node 변경을 Redis pub/sub 로 받아 SSE 로 push.
 
-    payload 없이 'change' 신호만 — 클라이언트가 신호 받으면 `/changes?since=` 로
+    payload 없이 'change' 신호만: 클라이언트가 신호 받으면 `/changes?since=` 로
     실제 delta 를 가져온다. polling 의 실시간 대체 (polling 은 fallback 으로 유지).
     25초 heartbeat 로 idle 연결 유지. nginx 버퍼링은 X-Accel-Buffering 로 해제.
     """
@@ -422,7 +422,7 @@ async def node_events(
                 if msg is not None:
                     yield "data: change\n\n"
                 else:
-                    yield ": ping\n\n"  # heartbeat — 연결 유지
+                    yield ": ping\n\n"  # heartbeat: 연결 유지
         finally:
             try:
                 await pubsub.unsubscribe(f"node_events:{company_id}")
@@ -454,7 +454,7 @@ class AncestorsResponse(BaseModel):
 @router.get(
     "/{node_id}/ancestors",
     response_model=AncestorsResponse,
-    summary="조상 체인 — root 부터 leaf 까지 순서",
+    summary="조상 체인: root 부터 leaf 까지 순서",
     responses={404: {"description": "노드 없음 또는 다른 회사"}},
 )
 async def get_ancestors(
@@ -513,7 +513,7 @@ async def patch_node(
 ) -> NodeResponse:
     """필드만 보낸 것만 변경. parent_id 변경 시 사이클·scope 일관 검사.
 
-    Desktop sync 클라이언트가 If-Match 헤더 보내면 etag 비교 — mismatch 시 412.
+    Desktop sync 클라이언트가 If-Match 헤더 보내면 etag 비교: mismatch 시 412.
     """
     node = await get_node_or_404(db, node_id)
     await assert_access(db, node, user=user, company_id=company_id, permission="write")
@@ -579,7 +579,7 @@ async def _hard_delete_vault_node(
     user: UserContext,
     company_id: str,
 ) -> None:
-    """vault 노드 즉시 영구 삭제 — 자손 file 의 S3 객체 제거 + 노드 row 삭제(CASCADE).
+    """vault 노드 즉시 영구 삭제: 자손 file 의 S3 객체 제거 + 노드 row 삭제(CASCADE).
     휴지통을 거치지 않음 (보안 폴더 정책)."""
     storage_deleted = await purge_subtree_storage(db, [node.id])
     if node.multipart_upload_id and node.storage_key:
@@ -622,7 +622,7 @@ async def delete_node(
     db: AsyncSession = Depends(get_db),
     if_match: str | None = Header(default=None, alias="If-Match"),
 ) -> None:
-    """soft delete — `deleted_at = now()`. S3 객체는 그대로 남고 휴지통에서 보임.
+    """soft delete: `deleted_at = now()`. S3 객체는 그대로 남고 휴지통에서 보임.
 
     진행 중 multipart 업로드는 S3 abort 시도 후 계속.
     Desktop sync 의 If-Match 헤더 검증.
@@ -652,7 +652,7 @@ async def delete_node(
             )
         node.multipart_upload_id = None
     soft_delete(node)
-    # 폴더면 자손까지 cascade soft-delete — 안 하면 고아로 남아 desktop recursive
+    # 폴더면 자손까지 cascade soft-delete: 안 하면 고아로 남아 desktop recursive
     # sync 에 떠다니고 휴지통/트리 정합성 깨짐.
     descendant_count = 0
     if node.kind == "folder":
@@ -718,14 +718,14 @@ async def restore_node(
 
 
 # ---------------------------------------------------------------------------
-# 파일 — 업로드/다운로드 presigned URL
+# 파일: 업로드/다운로드 presigned URL
 # ---------------------------------------------------------------------------
 
 
 @router.post(
     "/upload-url",
     response_model=UploadUrlResponse,
-    summary="업로드 시작 — presigned URL 발급",
+    summary="업로드 시작: presigned URL 발급",
     responses={
         400: {"description": "부모 폴더 검증 실패"},
         403: {"description": "부모 폴더 write 권한 없음"},
@@ -754,7 +754,7 @@ async def create_upload_url(
         user=user,
         company_id=company_id,
     )
-    # 회사 + 업로더 개인 스토리지 quota 검증 — 초과 시 413 (D-3).
+    # 회사 + 업로더 개인 스토리지 quota 검증: 초과 시 413 (D-3).
     from app.services.quotas import ensure_capacity, ensure_user_capacity
 
     await ensure_capacity(
@@ -850,7 +850,7 @@ async def get_part_url(
 @router.post(
     "/{node_id}/complete-multipart",
     response_model=NodeResponse,
-    summary="Multipart: 완료 — CompleteMultipartUpload",
+    summary="Multipart: 완료: CompleteMultipartUpload",
     responses={
         400: {"description": "parts 비어있음 또는 S3 complete 실패 (abort 후 보고)"},
         409: {"description": "multipart 진행 중 노드가 아님"},
@@ -863,7 +863,7 @@ async def complete_multipart(
     company_id: str = Depends(require_active_company),
     db: AsyncSession = Depends(get_db),
 ) -> NodeResponse:
-    """parts = [{PartNumber, ETag}, ...] — 모든 파트 PUT 후 호출.
+    """parts = [{PartNumber, ETag}, ...]: 모든 파트 PUT 후 호출.
 
     실패 시 S3 측 multipart abort 시도 후 400. status → ready 로 전이 + audit row.
     """
@@ -927,10 +927,10 @@ async def complete_multipart(
 @router.post(
     "/{node_id}/complete",
     response_model=NodeResponse,
-    summary="단일 PUT 완료 — head_object 로 확인 후 ready 전이",
+    summary="단일 PUT 완료: head_object 로 확인 후 ready 전이",
     responses={
         400: {"description": "S3 에 객체가 아직 없음 (PUT 미완료)"},
-        409: {"description": "multipart 노드 — `/complete-multipart` 사용해야 함"},
+        409: {"description": "multipart 노드: `/complete-multipart` 사용해야 함"},
     },
 )
 async def complete_upload(
@@ -979,7 +979,7 @@ async def complete_upload(
 @router.post(
     "/{node_id}/overwrite-url",
     response_model=UploadUrlResponse,
-    summary="내용 교체 시작 — 기존 file 노드에 새 내용 presigned URL",
+    summary="내용 교체 시작: 기존 file 노드에 새 내용 presigned URL",
     responses={
         400: {"description": "폴더이거나 업로드 미완료(pending) 노드"},
         403: {"description": "write 권한 없음"},
@@ -1000,9 +1000,9 @@ async def create_overwrite_url(
 
     write-to-new-key + swap: 새 내용은 별도 S3 key (`pending_storage_key`) 로
     올라가고 `/overwrite-complete` 에서 승격. 업로드 실패가 현재 내용을 깨뜨리지
-    않음. If-Match 로 optimistic locking — 412 면 클라이언트가 충돌 사본 생성.
+    않음. If-Match 로 optimistic locking: 412 면 클라이언트가 충돌 사본 생성.
 
-    이미 진행 중인 교체가 있으면 새 교체가 그것을 대체 (옛 pending key 는 고아 —
+    이미 진행 중인 교체가 있으면 새 교체가 그것을 대체 (옛 pending key 는 고아.
     cron 정리 대상, 기능 영향 없음).
     """
     node = await get_node_or_404(db, node_id)
@@ -1021,7 +1021,7 @@ async def create_overwrite_url(
     await ensure_capacity(
         db, company_id=company_id, additional_bytes=_delta
     )
-    # 파일 소유자(업로더 아님) 개인 한도 기준 — 사용량은 소유자에게 귀속.
+    # 파일 소유자(업로더 아님) 개인 한도 기준: 사용량은 소유자에게 귀속.
     await ensure_user_capacity(
         db,
         company_id=company_id,
@@ -1060,7 +1060,7 @@ async def create_overwrite_url(
 @router.post(
     "/{node_id}/overwrite-complete",
     response_model=NodeResponse,
-    summary="내용 교체 완료 — 새 key 승격, 옛 내용은 버전으로 (ADR-0022)",
+    summary="내용 교체 완료: 새 key 승격, 옛 내용은 버전으로 (ADR-0022)",
     responses={
         400: {"description": "S3 에 새 객체 없음, 또는 multipart parts 문제"},
         409: {"description": "진행 중인 교체 없음"},
@@ -1110,7 +1110,7 @@ async def complete_overwrite(
     node.storage_key = pending_key
     node.pending_storage_key = None
     node.multipart_upload_id = None
-    # E2E: 새 내용의 wrapped DEK 승격 (pending 이 있을 때만 — 일반 파일은 None 유지)
+    # E2E: 새 내용의 wrapped DEK 승격 (pending 이 있을 때만: 일반 파일은 None 유지)
     if node.pending_wrapped_dek is not None:
         node.wrapped_dek = node.pending_wrapped_dek
         node.pending_wrapped_dek = None
@@ -1129,7 +1129,7 @@ async def complete_overwrite(
     stale_keys += await file_versions.reclaim_space(db, node, actor=user)
     await db.commit()
     await db.refresh(node)
-    # 묶기로 버려진 옛 내용·한도 정리분 삭제 — 실패해도 교체는 성공 (고아 객체만 남음)
+    # 묶기로 버려진 옛 내용·한도 정리분 삭제: 실패해도 교체는 성공 (고아 객체만 남음)
     await file_versions.delete_objects(stale_keys)
 
     logger.info(
@@ -1189,7 +1189,7 @@ async def create_download_url(
             "content": {"application/zip": {}},
             "description": "ZIP 본문. Content-Disposition 헤더로 다운로드 유도.",
         },
-        400: {"description": "파일 노드 — `/download-url` 사용"},
+        400: {"description": "파일 노드: `/download-url` 사용"},
         413: {"description": "200MB 또는 500 files 한도 초과"},
     },
 )
@@ -1279,7 +1279,7 @@ async def create_node_share(
     await assert_access(db, node, user=user, company_id=company_id, permission="read")
     await assert_can_manage_shares(db, node, user=user)
 
-    # 그룹(= 디렉터리 부서) 공유 — 개인 공유와 분기. (docs/group-sharing.html)
+    # 그룹(= 디렉터리 부서) 공유: 개인 공유와 분기. (docs/group-sharing.html)
     # 개인 공유처럼 owner/manage 면 가능 (scope 제한 없음). shared 는 이미 회사 전원이
     # 접근하므로 그룹 공유 의미가 없고, 의미 있는 건 personal 폴더를 부서에 여는 것 = 팀 폴더.
     if body.grantee_group_id:
@@ -1401,7 +1401,7 @@ async def delete_node_share(
 
 
 # ---------------------------------------------------------------------------
-# 외부 공유 링크 (ExternalLink) — 소유자만 관리
+# 외부 공유 링크 (ExternalLink): 소유자만 관리
 # ---------------------------------------------------------------------------
 
 
@@ -1450,7 +1450,7 @@ async def list_external_links(
     "/{node_id}/external-links",
     response_model=ExternalLinkResponse,
     status_code=201,
-    summary="외부 링크 발급 — 인증 없이 `/s/{token}` 으로 접근 가능",
+    summary="외부 링크 발급: 인증 없이 `/s/{token}` 으로 접근 가능",
     responses={
         403: {"description": "manage 권한 없음"},
         404: {"description": "노드 없음"},
@@ -1493,7 +1493,7 @@ async def create_external_link(
 @router.delete(
     "/{node_id}/external-links/{link_id}",
     status_code=204,
-    summary="외부 링크 철회 — `revoked_at` 세팅",
+    summary="외부 링크 철회: `revoked_at` 세팅",
     responses={
         403: {"description": "manage 권한 없음"},
         404: {"description": "링크/노드 없음"},

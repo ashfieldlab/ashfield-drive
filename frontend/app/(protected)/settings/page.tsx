@@ -49,7 +49,7 @@ export default function SettingsPage() {
 
   function toggleCategory(key: string) {
     if (!data) return
-    // 키 없으면 on 이 기본 — 없으면 현재값 true 로 간주.
+    // 키 없으면 on 이 기본: 없으면 현재값 true 로 간주.
     const current = data.email_categories[key] !== false
     void patchPref({ email_categories: { [key]: !current } })
   }
@@ -196,7 +196,7 @@ export default function SettingsPage() {
   )
 }
 
-// 보안 폴더(E2E) 비밀번호 — 폴더에 들어가기 전에 미리 설정해 둘 수 있는 진입점.
+// 보안 폴더(E2E) 비밀번호: 폴더에 들어가기 전에 미리 설정해 둘 수 있는 진입점.
 // 미설정이면 남이 보안 폴더를 공유해 줄 수 없으므로(공개키가 없어서), 여기서 먼저 생성.
 function E2ESettingsSection() {
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null)

@@ -1,4 +1,4 @@
-"""GET /api/v1/me — 가장 단순한 인증 경로 검증."""
+"""GET /api/v1/me: 가장 단순한 인증 경로 검증."""
 
 import pytest
 

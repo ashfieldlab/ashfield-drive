@@ -9,7 +9,7 @@ import { invalidateApi, useApiGet } from "@/lib/hooks/use-api"
 import type { NodeResponse, TreeResponse } from "@/lib/types/api"
 
 /**
- * 파일/폴더 이동 목적지 선택 — 같은 scope 의 폴더 트리에서 고른다.
+ * 파일/폴더 이동 목적지 선택: 같은 scope 의 폴더 트리에서 고른다.
  * 자기 자신 + 자손 폴더는 제외(순환 방지). 이동은 PATCH /nodes {parent_id}.
  */
 export function MoveModal({

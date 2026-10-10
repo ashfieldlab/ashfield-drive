@@ -1,5 +1,5 @@
 /**
- * 프론트엔드 카테고리 로거 — SPEC §2.7.
+ * 프론트엔드 카테고리 로거: SPEC §2.7.
  *
  * 카테고리 (프론트 한정): auth | api | biz | ui
  *
@@ -28,7 +28,7 @@ const RAW_CATEGORIES = process.env.NEXT_PUBLIC_LOG_CATEGORIES ?? ""
 const debugCategories: Set<string> | null = (() => {
   const raw = RAW_CATEGORIES.trim()
   if (raw === "*") return null // 전부
-  if (!raw) return new Set() // 없음 — debug는 출력 안 함
+  if (!raw) return new Set() // 없음: debug는 출력 안 함
   return new Set(raw.split(",").map((c) => c.trim()).filter(Boolean))
 })()
 

@@ -1,4 +1,4 @@
-"""E2E 키 번들 API (ADR-0016) — 서버는 불투명 blob 보관만."""
+"""E2E 키 번들 API (ADR-0016): 서버는 불투명 blob 보관만."""
 
 from httpx import AsyncClient
 
@@ -53,7 +53,7 @@ async def test_public_key_visible_to_others(
     b = auth_headers(BOB, groups=[ACME], active_company=ACME)
     await client.put("/api/v1/e2e/keys/me", json=BUNDLE, headers=a)
 
-    # Bob 이 Alice 공개키 조회 (공유용) — 공개키만, 개인키 blob 은 안 나옴
+    # Bob 이 Alice 공개키 조회 (공유용): 공개키만, 개인키 blob 은 안 나옴
     r = await client.get(f"/api/v1/e2e/keys/{ALICE}/public", headers=b)
     assert r.status_code == 200
     body = r.json()

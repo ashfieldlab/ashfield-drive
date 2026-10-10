@@ -19,11 +19,11 @@ _Avoid_: "Item", "Entry"
 _Avoid_: "Document" (Office 편집 기능 의미 따로)
 
 **Folder**:
-다른 Node를 자식으로 둘 수 있는 Node. 트리 구조의 분기점. S3엔 폴더 개념 없음 — DB에만 존재.
+다른 Node를 자식으로 둘 수 있는 Node. 트리 구조의 분기점. S3엔 폴더 개념 없음: DB에만 존재.
 _Avoid_: "Directory"
 
 **Scope**:
-Node의 공유 범위 — `personal` 또는 `shared`.
+Node의 공유 범위: `personal` 또는 `shared`.
 - `personal`: owner만 접근.
 - `shared`: 같은 회사의 모든 멤버 접근.
 자식 Node의 scope는 부모와 강제 일치.
@@ -44,7 +44,7 @@ _Avoid_: "Revision", "사본"
 _Avoid_: "Recycle Bin"
 
 **Vault (보안 폴더)** (설계 단계):
-E2E 암호화가 적용된 Folder. 서브트리의 파일 내용·이름이 클라이언트에서만 복호화됨 — 서버·관리자는 암호문만 봄 (ADR-0016). 멤버 추가 = 소유자 클라이언트의 vault_key 재포장 (서버가 대신 못 함). 비밀번호+복구코드 모두 분실 = 영구 손실. Vault 내에선 서버 검색·zip 불가.
+E2E 암호화가 적용된 Folder. 서브트리의 파일 내용·이름이 클라이언트에서만 복호화됨: 서버·관리자는 암호문만 봄 (ADR-0016). 멤버 추가 = 소유자 클라이언트의 vault_key 재포장 (서버가 대신 못 함). 비밀번호+복구코드 모두 분실 = 영구 손실. Vault 내에선 서버 검색·zip 불가.
 _Avoid_: "암호화 폴더" (서버측 암호화 SSE 와 혼동), "비밀 폴더"
 
 **FileShare** :
@@ -54,7 +54,7 @@ Node를 회사 내 특정 사용자에게 명시적으로 공유. `file_shares (
 Node를 회사 밖 외부 사용자가 token URL로 접근. 만료·비밀번호 선택. readonly이 기본.
 
 **Desktop Client** (`ashfield-sync`, 별도 repo):
-Windows-only 데스크톱 sync 앱. 사용자 표시 이름 "Ashfield". ashfield-drive backend 의 클라이언트 — 새 파일 시스템 X (ADR-0015).
+Windows-only 데스크톱 sync 앱. 사용자 표시 이름 "Ashfield". ashfield-drive backend 의 클라이언트: 새 파일 시스템 X (ADR-0015).
 - **VFS**: Windows Cloud Files API 의 placeholder + 필요 시 hydrate (OneDrive 패턴)
 - **양방향 sync**: 양쪽 변경 시 충돌 사본 자동 (`foo (충돌본 2026-06-12 hostname).docx`)
 - **변경 감지**: `GET /api/v1/nodes/changes?since=` delta polling 1분 (SSE 는 Phase 3 이후)
@@ -87,9 +87,9 @@ _Avoid_: "멤버십 동기화", "자동 감지"
 - **Node**는 정확히 한 부모를 가짐 (`parent_id`, NULL이면 루트)
 - 자식 **Node**의 `scope`는 부모와 일치 (강제)
 - 자식 personal **Node**의 `owner_id`는 부모와 일치 (강제). shared는 자유.
-- **File**의 storage_key는 트리와 무관 — `{company_id}/{file_uuid}` flat
+- **File**의 storage_key는 트리와 무관: `{company_id}/{file_uuid}` flat
 - **FileShare** 는 **Node** ↔ **User** 명시 grant
-- **ExternalLink** 는 **Node**에 1:N — 같은 노드에 여러 링크 가능
+- **ExternalLink** 는 **Node**에 1:N: 같은 노드에 여러 링크 가능
 
 ## Flagged ambiguities
 

@@ -1,4 +1,4 @@
-"""CompanyQuota — 회사별 스토리지 한도.
+"""CompanyQuota: 회사별 스토리지 한도.
 
 storage_bytes_limit NULL = 무제한 (운영 기본). 값 = 그 회사 의 활성 파일 합계가
 이 값을 넘으면 신규 업로드 거부.

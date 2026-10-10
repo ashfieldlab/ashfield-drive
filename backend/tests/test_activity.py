@@ -1,4 +1,4 @@
-"""/api/v1/me/activity — 본인 행동 + 본인 알림 entity 만 노출."""
+"""/api/v1/me/activity: 본인 행동 + 본인 알림 entity 만 노출."""
 
 from httpx import AsyncClient
 

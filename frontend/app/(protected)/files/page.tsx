@@ -31,7 +31,7 @@ export default function FilesPage() {
   const scopeParam = sp.get("scope")
   const scope: NodeScope = scopeParam === "shared" ? "shared" : "personal"
   const folderId = sp.get("folder")
-  // 부서 폴더 메뉴를 통해 진입했는지 — 빵부스러기/사이드바를 "부서 폴더"로 표기.
+  // 부서 폴더 메뉴를 통해 진입했는지: 빵부스러기/사이드바를 "부서 폴더"로 표기.
   const fromTeam = sp.get("from") === "team-folders"
 
   // ActiveCompanyGate 가 activeCompanyId ready 보장. race 차단 layout 차원.
@@ -48,7 +48,7 @@ export default function FilesPage() {
   const { requestUnlock, unlocked: e2eUnlocked } = e2eUi
   const vaultCtx = useVaultContext(trash || sharedWithMe ? null : folderId)
   const isEmptyFolder = !!folderId && (data?.nodes.length ?? 0) === 0
-  // 현재 폴더가 팀(부서) 폴더 루트인지 — 팀 폴더는 vault 전환 불가(가드), 버튼 숨김.
+  // 현재 폴더가 팀(부서) 폴더 루트인지: 팀 폴더는 vault 전환 불가(가드), 버튼 숨김.
   const { data: teamFolders } = useApiGet<TeamFolderItem[]>(
     scope === "shared" && folderId ? "/api/v1/team-folders" : null,
   )
@@ -61,13 +61,13 @@ export default function FilesPage() {
     vaultCtx.canMakeVault &&
     isEmptyFolder &&
     !isTeamFolder
-  // 비멤버가 들어온 보안 폴더 — 업로드/액션 막고 명시적으로 안내.
+  // 비멤버가 들어온 보안 폴더: 업로드/액션 막고 명시적으로 안내.
   const vaultNoAccess = vaultCtx.vaultRootId !== null && !vaultCtx.hasAccess
-  // 멤버지만 아직 잠금해제 안 함 — 목록 자체를 숨김 (개수·크기·수정일·종류 노출 방지).
+  // 멤버지만 아직 잠금해제 안 함: 목록 자체를 숨김 (개수·크기·수정일·종류 노출 방지).
   const vaultLocked =
     vaultCtx.vaultRootId !== null && vaultCtx.hasAccess && !e2eUnlocked
 
-  // 드래그앤드롭 업로드 — 툴바가 마운트되는 조건과 동일할 때만 활성.
+  // 드래그앤드롭 업로드: 툴바가 마운트되는 조건과 동일할 때만 활성.
   const toolbarRef = useRef<FilesToolbarHandle>(null)
   const [dragging, setDragging] = useState(false)
   const dragDepth = useRef(0)
@@ -147,7 +147,7 @@ export default function FilesPage() {
           <p className="text-xs text-gray-500">파일 · 폴더 모두 가능</p>
         </div>
       )}
-      {/* 스크롤은 이 안에서만 — overlay(위 absolute)는 바깥 anchor 에 붙어 항상 보이는 영역을 덮음 */}
+      {/* 스크롤은 이 안에서만: overlay(위 absolute)는 바깥 anchor 에 붙어 항상 보이는 영역을 덮음 */}
       <div className="h-full overflow-y-auto px-4 py-8 sm:px-6 lg:px-8">
       <section className="min-w-0 flex-1 space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -194,7 +194,7 @@ export default function FilesPage() {
           )}
           {!trash && !sharedWithMe && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {/* 보안 폴더 배지 — 권한과 무관하게 항상 표시 (읽기전용도) */}
+              {/* 보안 폴더 배지: 권한과 무관하게 항상 표시 (읽기전용도) */}
               {vaultCtx.vaultRootId && !vaultNoAccess && (
                 <span
                   className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700"

@@ -1,4 +1,4 @@
-"""사용자별(회사 멤버) 스토리지 quota — 설정·조회·enforcement."""
+"""사용자별(회사 멤버) 스토리지 quota: 설정·조회·enforcement."""
 
 import pytest
 
@@ -45,7 +45,7 @@ async def test_upload_blocked_when_user_quota_exceeded(
     bob_h = auth_headers("bob", groups=[CO], active_company=CO)
     await client.get("/api/v1/me", headers=bob_h)
 
-    # bob 개인 한도 0 — 회사 한도는 무제한이어도 개인에서 막힘
+    # bob 개인 한도 0: 회사 한도는 무제한이어도 개인에서 막힘
     await client.put(
         f"/api/v1/companies/{CO}/members/bob/quota",
         headers=admin_h,

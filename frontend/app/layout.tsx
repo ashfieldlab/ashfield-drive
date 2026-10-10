@@ -37,7 +37,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  // 인증 = Better Auth (ADR-0023). 앱엔 세션 프로바이더 없음 — 신원은 AppContext(/api/v1/me).
+  // 인증 = Better Auth (ADR-0023). 앱엔 세션 프로바이더 없음: 신원은 AppContext(/api/v1/me).
   // 신원은 AppProvider 가 /api/v1/me(백엔드가 검증한 신원)에서 가져온다.
   return (
     <html

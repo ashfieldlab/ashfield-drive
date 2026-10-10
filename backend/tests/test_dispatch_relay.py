@@ -1,4 +1,4 @@
-"""dispatch_relay — 미처리 알림 수거 cron (#2).
+"""dispatch_relay: 미처리 알림 수거 cron (#2).
 
 즉시경로가 놓친(2분+ 미처리) Notification 만 relay 가 주워 발송 + emailed_at 스탬프.
 send_for_event 는 성공 스텁(SMTP 없이), 세션은 테스트 트랜잭션으로 monkeypatch.

@@ -1,4 +1,4 @@
-"""폴더 → zip — 트리 traverse + 상대 경로 보존."""
+"""폴더 → zip: 트리 traverse + 상대 경로 보존."""
 
 import io
 import zipfile
@@ -37,7 +37,7 @@ async def test_zip_folder_with_files(
             headers=h,
         )
         nid = r.json()["node_id"]
-        # body 등록 — mock_storage state 에 직접
+        # body 등록: mock_storage state 에 직접
         storage_key = f"{ACME}/{nid}"
         mock_storage[f"body:{storage_key}"] = body
         await client.post(f"/api/v1/nodes/{nid}/complete", headers=h)

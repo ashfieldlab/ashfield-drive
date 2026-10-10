@@ -1,5 +1,5 @@
 #!/bin/sh
-# pre-push hook — push 직전 빠른 검증
+# pre-push hook: push 직전 빠른 검증
 # 활성화: make hooks
 
 set -e

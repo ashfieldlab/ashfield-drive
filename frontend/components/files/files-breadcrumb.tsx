@@ -13,9 +13,9 @@ interface Props {
   scope: NodeScope
   folderId: string | null
   unlocked?: boolean
-  // 보안 폴더 다크 배경 위 — 밝은 텍스트로.
+  // 보안 폴더 다크 배경 위: 밝은 텍스트로.
   onDark?: boolean
-  // 부서 폴더 진입(from=team-folders) — 루트를 "부서 폴더"로 표기하고 링크에 컨텍스트 유지.
+  // 부서 폴더 진입(from=team-folders): 루트를 "부서 폴더"로 표기하고 링크에 컨텍스트 유지.
   teamFolder?: boolean
 }
 
@@ -45,11 +45,11 @@ export function FilesBreadcrumb({
 
   const vaultIdx = vaultRootId ? chain.findIndex((n) => n.id === vaultRootId) : -1
 
-  // 잠긴 보안폴더 안에서는 자손 체인을 통째로 숨긴다 — 이름뿐 아니라 "몇 단계
+  // 잠긴 보안폴더 안에서는 자손 체인을 통째로 숨긴다: 이름뿐 아니라 "몇 단계
   // 깊이인지(구조)"까지 새면 안 됨. vault 루트까지만 노출하고 그 아래는 잘라냄.
   const displayChain = !unlocked && vaultIdx >= 0 ? chain.slice(0, vaultIdx + 1) : chain
 
-  // vault 자손 폴더명은 ciphertext — 잠금해제 후에만 복호화. 잠기면 폐기.
+  // vault 자손 폴더명은 ciphertext: 잠금해제 후에만 복호화. 잠기면 폐기.
   useEffect(() => {
     if (!vaultRootId || !unlocked || vaultIdx < 0) {
       setDecNames({})
@@ -72,7 +72,7 @@ export function FilesBreadcrumb({
     }
   }, [vaultRootId, unlocked, vaultIdx, data]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 표시 — vault 자손은 잠김 시 마스킹(원본 ciphertext 노출 X), root/상위는 평문.
+  // 표시: vault 자손은 잠김 시 마스킹(원본 ciphertext 노출 X), root/상위는 평문.
   const label = (idx: number, id: string, name: string): string => {
     const isVaultDescendant = vaultIdx >= 0 && idx > vaultIdx
     if (!isVaultDescendant) return name

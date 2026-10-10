@@ -14,19 +14,19 @@ interface Props {
 }
 
 /**
- * SWR 글로벌 에러 핸들러 — SPEC §2.6.
+ * SWR 글로벌 에러 핸들러: SPEC §2.6.
  *
  *   상태   처리
- *   0      상단 배너 (persistent) — 진짜 무응답(전 요청 실패) 만
+ *   0      상단 배너 (persistent): 진짜 무응답(전 요청 실패) 만
  *   401    signOut (api-client에서 이미 처리)
- *   4xx/5xx 토스트 — 특정 요청 실패는 그 페이지의 인라인 에러가 맥락을 보여줌
+ *   4xx/5xx 토스트: 특정 요청 실패는 그 페이지의 인라인 에러가 맥락을 보여줌
  *   성공   배너 자동 해제
  *
  * 502 같은 단일 엔드포인트 5xx 에 전역 배너를 띄우면 페이지 인라인 에러와 겹치고
  * "서버 전체 불가"로 오인시킴 → status 0(무응답) 만 배너.
  */
 export function SwrErrorBridge({ children }: Props) {
-  void useAppContext() // provider 존재 확인용 — bootstrapped 게이팅은 제거
+  void useAppContext() // provider 존재 확인용: bootstrapped 게이팅은 제거
   const { toast } = useToast()
   const [systemError, setSystemError] = useState<string | null>(null)
 
@@ -84,7 +84,7 @@ function SystemErrorBanner({
   message: string
   onDismiss: () => void
 }) {
-  // SSR 안전 — 클라이언트에서만 렌더
+  // SSR 안전: 클라이언트에서만 렌더
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   if (!mounted) return null

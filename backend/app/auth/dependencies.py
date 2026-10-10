@@ -2,9 +2,9 @@
 FastAPI dependencies: 인증/인가 (ADR-0024).
 
   get_current_user       : Bearer JWT(계정 서버 액세스 토큰, JWKS 검증) + 로컬 사용자·소속 동기화 → UserContext
-  require_active_company  — X-Active-Company-Id 헤더 검증 (로컬 멤버십에 포함되는지)
-  require_admin           — System Admin 검증
-  require_company_admin   — 활성 회사의 admin (System Admin 은 super-set, ADR-0010)
+  require_active_company : X-Active-Company-Id 헤더 검증 (로컬 멤버십에 포함되는지)
+  require_admin          : System Admin 검증
+  require_company_admin  : 활성 회사의 admin (System Admin 은 super-set, ADR-0010)
 """
 
 from fastapi import Depends, Header, HTTPException, status
@@ -86,7 +86,7 @@ def require_admin(user: UserContext = Depends(get_current_user)) -> UserContext:
 
 
 async def require_company_admin(
-    company_id: str,  # path param — `{company_id}` 가 있는 라우트에서만 사용
+    company_id: str,  # path param: `{company_id}` 가 있는 라우트에서만 사용
     user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> UserContext:

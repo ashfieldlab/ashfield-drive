@@ -2,7 +2,7 @@
 JWKS 공개키 캐시: Ashfield 계정 서버의 `${ACCOUNT_URL}/api/auth/jwks` (ADR-0024).
 
 AUTH_JWKS_URL 에서 가져와 1시간 캐싱. 토큰 kid 가 캐시에 없으면 validator 가 강제 재조회
-(키 회전 대응, 30초에 한 번까지). 개발·운영 경로가 같다 — 로컬 우회 키 같은 분기 없음.
+(키 회전 대응, 30초에 한 번까지). 개발·운영 경로가 같다: 로컬 우회 키 같은 분기 없음.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.core.logging import logger
 
 _JWKS_TTL = 3600  # 1시간
-# 모르는 kid 로 강제 재조회하는 최소 간격 — 위조 토큰 폭주가 JWKS 조회 폭주로 번지지 않게.
+# 모르는 kid 로 강제 재조회하는 최소 간격: 위조 토큰 폭주가 JWKS 조회 폭주로 번지지 않게.
 _FORCED_REFRESH_MIN_INTERVAL = 30.0
 
 _jwks_cache: list[dict] | None = None
@@ -60,7 +60,7 @@ async def get_jwks(*, force_refresh: bool = False) -> list[dict]:
             "jwks_fetch_failed",
             extra={"category": "auth", "url": settings.auth_jwks_url, "error": str(exc)},
         )
-        return []  # 실패는 캐시하지 않는다 — 다음 요청이 다시 시도
+        return []  # 실패는 캐시하지 않는다: 다음 요청이 다시 시도
 
     _jwks_cache = keys
     _jwks_cache_expiry = now + _JWKS_TTL

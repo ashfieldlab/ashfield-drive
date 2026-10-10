@@ -1,5 +1,5 @@
 """
-UserContext — 인증된 요청의 사용자 컨텍스트.
+UserContext: 인증된 요청의 사용자 컨텍스트.
 
 신원(sub·email·name)은 검증된 JWT 에서, 회사 소속(groups)·System Admin 여부(roles)는
 로컬 DB(users / user_company_memberships)에서 온다. 소속은 토큰 `workspaces` 클레임으로

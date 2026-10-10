@@ -1,4 +1,4 @@
-"""audit_logs — mutation 후 row 생성 + admin 필요."""
+"""audit_logs: mutation 후 row 생성 + admin 필요."""
 
 from httpx import AsyncClient
 

@@ -1,4 +1,4 @@
-"""Node — 파일/폴더 단일 트리 (ADR-0006).
+"""Node: 파일/폴더 단일 트리 (ADR-0006).
 
 scope=personal: owner_id 본인만 접근 (Phase 1).
 scope=shared: 같은 company 멤버 모두 접근.
@@ -59,14 +59,14 @@ class Node(Base, TimestampMixin):
     )
     # 내용 교체 (overwrite) 진행 중일 때 새 내용이 올라가는 S3 key.
     # 교체 완료 시 storage_key 로 승격 + NULL. 기존 내용은 완료 순간까지 유지
-    # — 업로드 실패가 현재 파일을 깨뜨리지 않게 (write-to-new-key + swap).
+    #: 업로드 실패가 현재 파일을 깨뜨리지 않게 (write-to-new-key + swap).
     pending_storage_key: Mapped[str | None] = mapped_column(
         String(512), nullable=True
     )
-    # E2E vault 파일의 wrapped DEK (ADR-0016) — DEK 를 vault_key 로 암호화한 것.
+    # E2E vault 파일의 wrapped DEK (ADR-0016): DEK 를 vault_key 로 암호화한 것.
     # vault 밖 일반 파일은 NULL. 서버는 이걸 보관·전달만 (복호화 불가).
     wrapped_dek: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # overwrite 진행 중 새 내용의 wrapped DEK — 완료 시 wrapped_dek 로 승격.
+    # overwrite 진행 중 새 내용의 wrapped DEK: 완료 시 wrapped_dek 로 승격.
     pending_wrapped_dek: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # 현재 내용을 마지막으로 저장한 사람·시각 (ADR-0022 버전 묶기 기준).

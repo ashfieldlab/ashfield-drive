@@ -15,8 +15,8 @@ import { APP_PORT } from "./e2e/env"
  *   - webServer 가 frontend 를 자동 부팅 (이미 떠 있으면 재사용)
  *
  * 실행:
- *   make e2e          — headless
- *   make e2e-ui       — UI 모드 (디버깅)
+ *   make e2e         : headless
+ *   make e2e-ui      : UI 모드 (디버깅)
  */
 
 export default defineConfig({

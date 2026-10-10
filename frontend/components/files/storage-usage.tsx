@@ -14,7 +14,7 @@ interface MyStorage {
   company_bytes_limit: number | null
 }
 
-// 파일앱 내 본인 저장 사용량 — 개인 한도 있으면 바, 없으면 사용량만.
+// 파일앱 내 본인 저장 사용량: 개인 한도 있으면 바, 없으면 사용량만.
 export function StorageUsage() {
   const { data } = useApiGet<MyStorage>("/api/v1/me/storage")
   if (!data) return null

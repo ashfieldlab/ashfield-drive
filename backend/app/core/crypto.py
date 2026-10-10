@@ -2,8 +2,8 @@
 
 용도: DB 저장 비밀번호(SMTP 등) 보호. 평문 노출 방지.
 
-키: settings.smtp_encryption_key (env SMTP_ENCRYPTION_KEY) — 32 bytes base64.
-키 없으면 부팅 시 RuntimeError — SMTP DB 설정 기능 비활성 의미.
+키: settings.smtp_encryption_key (env SMTP_ENCRYPTION_KEY): 32 bytes base64.
+키 없으면 부팅 시 RuntimeError: SMTP DB 설정 기능 비활성 의미.
 """
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -15,7 +15,7 @@ def _fernet() -> Fernet:
     key = settings.smtp_encryption_key
     if not key:
         raise RuntimeError(
-            "SMTP_ENCRYPTION_KEY is not set — DB-based SMTP config disabled."
+            "SMTP_ENCRYPTION_KEY is not set: DB-based SMTP config disabled."
         )
     return Fernet(key.encode())
 

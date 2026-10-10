@@ -45,7 +45,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py314"
-# alembic autogenerate 생성물 — 손대지 않는다 (fix-forward 규칙)
+# alembic autogenerate 생성물: 손대지 않는다 (fix-forward 규칙)
 extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]

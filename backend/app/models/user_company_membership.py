@@ -1,4 +1,4 @@
-"""UserCompanyMembership — 회사 멤버십 + 회사 내 역할 (ADR-0004, ADR-0010).
+"""UserCompanyMembership: 회사 멤버십 + 회사 내 역할 (ADR-0004, ADR-0010).
 
 로컬 DB 가 소속의 유일한 원천이다:
   - 첫 로그인 시 소속이 하나도 없으면 개인 워크스페이스(회사)를 만들고 admin 으로 넣는다.

@@ -1,5 +1,5 @@
 """
-카테고리 로거 — SPEC §3.11.
+카테고리 로거: SPEC §3.11.
 
 카테고리: auth | authz | api | db | cache | biz
 
@@ -31,7 +31,7 @@ Category = Literal["auth", "authz", "api", "db", "cache", "biz"]
 _VALID_CATEGORIES: set[str] = {"auth", "authz", "api", "db", "cache", "biz"}
 
 # -----------------------------------------------------------------------------
-# request_id ContextVar — 미들웨어가 set, 로그 record가 read
+# request_id ContextVar: 미들웨어가 set, 로그 record가 read
 # -----------------------------------------------------------------------------
 _request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
 
@@ -45,7 +45,7 @@ def get_request_id() -> str | None:
 
 
 # -----------------------------------------------------------------------------
-# 카테고리 필터 — LOG_CATEGORIES 환경변수 해석
+# 카테고리 필터: LOG_CATEGORIES 환경변수 해석
 # -----------------------------------------------------------------------------
 
 def _parse_categories(raw: str) -> set[str] | None:
@@ -69,7 +69,7 @@ class _CategoryFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno >= logging.INFO:
             return True
-        # debug 레벨 — 카테고리 화이트리스트 확인
+        # debug 레벨: 카테고리 화이트리스트 확인
         if _debug_categories is None:  # "*"
             return True
         category = getattr(record, "category", None)
@@ -109,7 +109,7 @@ _RESERVED_LOG_KEYS = {
 
 
 class _TextFormatter(logging.Formatter):
-    """개발용 — 카테고리 + request_id 컬럼화."""
+    """개발용: 카테고리 + request_id 컬럼화."""
 
     _COLORS = {
         "DEBUG": "\033[36m",
@@ -139,7 +139,7 @@ class _TextFormatter(logging.Formatter):
 
 
 # -----------------------------------------------------------------------------
-# 셋업 — 앱 부팅 시 한 번 호출
+# 셋업: 앱 부팅 시 한 번 호출
 # -----------------------------------------------------------------------------
 
 def setup_logging() -> None:
@@ -159,7 +159,7 @@ def setup_logging() -> None:
 
 
 # -----------------------------------------------------------------------------
-# 모듈 공용 logger — 모든 카테고리 호출자가 이 인스턴스 사용
+# 모듈 공용 logger: 모든 카테고리 호출자가 이 인스턴스 사용
 # -----------------------------------------------------------------------------
 logger = logging.getLogger("ashfield")
 

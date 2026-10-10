@@ -1,7 +1,7 @@
-"""/api/v1/admin/jobs — System Admin 백그라운드 잡 관측.
+"""/api/v1/admin/jobs: System Admin 백그라운드 잡 관측.
 
 등록된 cron 잡(registry.JOBS) 별로 최신 실행 + 최근 이력을 JobRun 원장에서 읽어
-반환. 원장에 기록이 없는 잡은 last=null (한 번도 안 돎 — dev 워커 미기동 등).
+반환. 원장에 기록이 없는 잡은 last=null (한 번도 안 돎: dev 워커 미기동 등).
 """
 
 from datetime import datetime

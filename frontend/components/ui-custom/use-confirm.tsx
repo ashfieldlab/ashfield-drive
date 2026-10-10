@@ -1,9 +1,9 @@
 "use client"
 
 /**
- * 전역 확인 다이얼로그 — native confirm() 드롭인 대체 (shadcn/ui AlertDialog 기반).
+ * 전역 확인 다이얼로그: native confirm() 드롭인 대체 (shadcn/ui AlertDialog 기반).
  *
- * 토스트(<Toaster />)와 같은 UI 프리미티브 성격의 provider — 앱 도메인
+ * 토스트(<Toaster />)와 같은 UI 프리미티브 성격의 provider: 앱 도메인
  * 상태가 아니라 명령형 UI 유틸. layout 에 ConfirmProvider 1회 마운트.
  *
  * 사용:

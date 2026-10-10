@@ -24,7 +24,7 @@ import type {
 interface Props {
   scope: NodeScope
   parentId: string | null
-  // E2E vault (ADR-0016) — null 이면 일반(비암호) 폴더
+  // E2E vault (ADR-0016): null 이면 일반(비암호) 폴더
   vaultRootId?: string | null
   ensureUnlocked?: () => Promise<void>
   showMakeVault?: boolean
@@ -38,7 +38,7 @@ export interface FilesToolbarHandle {
 
 type UploadState = "uploading" | "success" | "failed"
 
-// 폴더 업로드 단위 — relPath 는 "루트폴더/하위/파일.ext" 형식.
+// 폴더 업로드 단위: relPath 는 "루트폴더/하위/파일.ext" 형식.
 interface FolderItem {
   file: File
   relPath: string
@@ -125,7 +125,7 @@ function toUploadError(e: unknown, label: string): Error {
 function readAllEntries(
   reader: FileSystemDirectoryReader,
 ): Promise<FileSystemEntry[]> {
-  // readEntries 는 한 번에 최대 100개만 반환 — 빈 배열 나올 때까지 반복.
+  // readEntries 는 한 번에 최대 100개만 반환: 빈 배열 나올 때까지 반복.
   return new Promise((resolve, reject) => {
     const all: FileSystemEntry[] = []
     const pump = () => {
@@ -179,7 +179,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
     const [progress, setProgress] = useState<ProgressState | null>(null)
     const [elapsedSec, setElapsedSec] = useState(0)
 
-    // uploading 상태일 때만 카운트다운 — 사용자가 hang 을 빨리 인지하도록.
+    // uploading 상태일 때만 카운트다운: 사용자가 hang 을 빨리 인지하도록.
     useEffect(() => {
       if (progress?.state !== "uploading") return
       setElapsedSec(Math.floor((Date.now() - progress.startedAt) / 1000))
@@ -201,7 +201,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
     ) {
       let pendingNodeId: string | null = null
       try {
-        // E2E vault 면 업로드 전 암호화 — 본문/파일명은 암호문, DEK 는 wrap.
+        // E2E vault 면 업로드 전 암호화: 본문/파일명은 암호문, DEK 는 wrap.
         // (일반 폴더는 원본 그대로.) 암호화 파일은 mime 미전송(노출 방지).
         let body: Blob = file
         let uploadName = file.name
@@ -329,7 +329,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
       }
     }
 
-    // 여러 개의 낱개 파일(폴더 구조 없음) — 현재 폴더에 평면 업로드. DnD 다중 파일용.
+    // 여러 개의 낱개 파일(폴더 구조 없음): 현재 폴더에 평면 업로드. DnD 다중 파일용.
     async function uploadMany(files: File[]) {
       if (files.length === 1) return uploadFile(files[0])
       setBusy(true)
@@ -386,14 +386,14 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
       }
     }
 
-    // 폴더 트리 업로드 핵심 — relPath 로 폴더를 1회씩 생성 후 파일을 자기 부모에 업로드.
+    // 폴더 트리 업로드 핵심: relPath 로 폴더를 1회씩 생성 후 파일을 자기 부모에 업로드.
     async function runFolderUpload(items: FolderItem[]) {
       setBusy(true)
       const folderIdByPath = new Map<string, string | null>()
       folderIdByPath.set("", parentId)
       const startedAt = Date.now()
       try {
-        // 1) 폴더 경로 수집 — 부모부터 정렬해 순서대로 생성.
+        // 1) 폴더 경로 수집: 부모부터 정렬해 순서대로 생성.
         const folderPaths = new Set<string>()
         for (const it of items) {
           const parts = it.relPath.split("/")
@@ -434,7 +434,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
           })
         }
 
-        // 2) 파일 업로드 — 각자 자기 부모 폴더 id 사용.
+        // 2) 파일 업로드: 각자 자기 부모 폴더 id 사용.
         let okCount = 0
         const failed: FolderItem[] = []
         for (let i = 0; i < items.length; i++) {
@@ -504,7 +504,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
       }
     }
 
-    // 폴더 <input> — webkitRelativePath 로 FolderItem 구성 후 공통 로직 호출.
+    // 폴더 <input>: webkitRelativePath 로 FolderItem 구성 후 공통 로직 호출.
     function uploadFolderInput(filesArg: FileList | File[]) {
       const files = Array.isArray(filesArg) ? filesArg : Array.from(filesArg)
       const items: FolderItem[] = files.map((f) => ({
@@ -516,7 +516,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
       void runFolderUpload(items)
     }
 
-    // 드래그앤드롭 — 파일/폴더 혼합 가능. 폴더가 하나라도 있으면 폴더 업로드로,
+    // 드래그앤드롭: 파일/폴더 혼합 가능. 폴더가 하나라도 있으면 폴더 업로드로,
     // 아니면 다중 파일 업로드로 처리.
     async function handleDrop(dt: DataTransfer) {
       const items = dt.items
@@ -528,7 +528,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
         }
       }
       if (entries.length === 0) {
-        // 엔트리 API 미지원 — 낱개 파일만.
+        // 엔트리 API 미지원: 낱개 파일만.
         const files = Array.from(dt.files)
         if (files.length > 0) void uploadMany(files)
         return
@@ -563,7 +563,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
       if (!name) return
       setBusy(true)
       try {
-        // vault 안이면 폴더명도 암호화 (파일명과 동일 — ADR-0016 "파일명까지 암호화")
+        // vault 안이면 폴더명도 암호화 (파일명과 동일: ADR-0016 "파일명까지 암호화")
         let storedName = name
         if (vaultRootId) {
           await ensureUnlocked?.()

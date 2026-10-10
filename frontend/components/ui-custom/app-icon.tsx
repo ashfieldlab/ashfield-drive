@@ -6,7 +6,7 @@ interface AppIconProps {
   /** public/icons/ashfield/ 아래 파일명 */
   file?: string
   alt: string
-  /** 렌더 크기(px) — 실제 표시 크기는 className 으로 조절 */
+  /** 렌더 크기(px): 실제 표시 크기는 className 으로 조절 */
   size?: number
   className?: string
 }

@@ -4,12 +4,12 @@
 
 ## 인증·세션 (Ashfield 계정 서버 SSO: ADR-0024)
 
-- **Better Auth 서버 설정은 `lib/auth/server.ts` 한 곳** (핸들러 `app/api/auth/[...all]/route.ts`). Better Auth CLI 가 이 파일을 직접 읽으므로 `@/` 별칭·`server-only` 를 쓰지 않는다. 테이블은 Postgres 스키마 `auth` — `make auth-migrate`.
+- **Better Auth 서버 설정은 `lib/auth/server.ts` 한 곳** (핸들러 `app/api/auth/[...all]/route.ts`). Better Auth CLI 가 이 파일을 직접 읽으므로 `@/` 별칭·`server-only` 를 쓰지 않는다. 테이블은 Postgres 스키마 `auth`: `make auth-migrate`.
   - provider 는 `genericOAuth` 의 `ashfield` 하나 (계정 서버 OIDC). 디스커버리·PKCE·`client_secret_basic`, 모든 토큰 요청에 `resource=${BETTER_AUTH_URL}` (없으면 JWT 가 안 나온다). 소셜 로그인·이메일 비밀번호·허용 이메일은 **앱에 두지 않는다**: 계정 서버 몫.
   - 앱 코드는 `getAuth()` 로 인스턴스를 얻는다 (기동 때 디스커버리 실패 시 재생성). `auth` export 는 CLI 용.
 - **BFF → 백엔드 자격 증명은 `lib/auth/session.ts` 의 `resolveBackendAuth()`**: `account` 테이블의 계정 서버 액세스 토큰을 `Authorization: Bearer` 로. 만료 60초 전 refresh(계정당 single-flight: refresh_token 재사용 감지 때문), 실패하면 `reauth` → BFF 가 세션을 지우고 401. 브라우저 JS 엔 토큰이 없다.
 - **신원은 `useAppContext()`** 로만 (내부적으로 `/api/v1/me`). Better Auth `useSession` 으로 앱 신원·회사·권한을 판단하지 말 것.
-- **`X-Forwarded-User`/`-Email` 를 보안 판단에 쓰지 말 것** — 권위는 백엔드가 검증한 JWT. 표시 신원도 `/me` 에서.
+- **`X-Forwarded-User`/`-Email` 를 보안 판단에 쓰지 말 것**: 권위는 백엔드가 검증한 JWT. 표시 신원도 `/me` 에서.
 - 페이지 가드 = `proxy.ts`(세션 쿠키 존재만, 복귀 주소 보존) + `(protected)/layout.tsx`(서버에서 세션 유효성 재확인). 로그아웃 = `lib/actions/auth.ts` 의 `signOutAction()`(refresh 폐기 → 세션 삭제 → 계정 서버 end-session URL) 이 돌려준 주소로 `window.location` 이동.
 - 외부 Bearer(데스크톱 클라이언트가 계정 서버에서 받은 토큰)는 BFF 가 그대로 통과시킨다.
 - 세션 쿠키 이름은 `AUTH_COOKIE_PREFIX`(앱 이름): 같은 localhost 의 다른 앱·계정 서버와 섞이지 않게.
@@ -21,15 +21,15 @@
 - **클라이언트 컴포넌트**: `lib/api-client.ts`의 `api<T>(path, opts)` (same-origin BFF → 쿠키를 자격 증명 헤더로 변환).
 - 서버 컴포넌트에서 백엔드 호출이 필요하면 `resolveBackendAuth(await headers())` 로 헤더를 만들어 호출하는 헬퍼를 새로 작성.
 - **SWR 훅**: `lib/hooks/use-api.ts`의 `useApiGet<T>` + `invalidateApi(prefix)`. `useSWR` 직접 호출 금지.
-- `X-Active-Company-Id` 헤더는 `api-client`가 자동 첨부 — 수동 추가 금지.
-- `fetch` 직접 호출 금지 (단, 외부 API 호출은 OK — 주석으로 사유 명시).
+- `X-Active-Company-Id` 헤더는 `api-client`가 자동 첨부: 수동 추가 금지.
+- `fetch` 직접 호출 금지 (단, 외부 API 호출은 OK: 주석으로 사유 명시).
 
 ## 멀티테넌트 + 권한
 
 - 활성 회사는 `AppContext.activeCompanyId` 단일 source of truth. 다른 곳에 또 저장 금지.
-- System Admin 체크는 `useAppContext().isSystemAdmin` — 직접 `session.user.roles.includes("admin")` 금지.
-- 활성 회사 admin 체크는 `useAppContext().isCompanyAdmin` — System Admin 은 자동 true (ADR-0010).
-- 사용자가 회사 ≥ 2일 때만 `CompanySwitcher`가 dropdown 표시. 임시 selector는 헤더 — 공통 헤더로 옮길 때 제거.
+- System Admin 체크는 `useAppContext().isSystemAdmin`: 직접 `session.user.roles.includes("admin")` 금지.
+- 활성 회사 admin 체크는 `useAppContext().isCompanyAdmin`: System Admin 은 자동 true (ADR-0010).
+- 사용자가 회사 ≥ 2일 때만 `CompanySwitcher`가 dropdown 표시. 임시 selector는 헤더: 공통 헤더로 옮길 때 제거.
 
 ## 테스트 선택자 (data-testid)
 

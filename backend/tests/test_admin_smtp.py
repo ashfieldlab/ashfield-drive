@@ -1,4 +1,4 @@
-"""/api/v1/admin/smtp — 전역 SMTP CRUD + 암호화 마스킹."""
+"""/api/v1/admin/smtp: 전역 SMTP CRUD + 암호화 마스킹."""
 
 import pytest
 
@@ -63,7 +63,7 @@ async def test_smtp_patch_then_get_masks_password(client, auth_headers):
 
 @pytest.mark.asyncio
 async def test_smtp_patch_preserves_password_when_masked(client, auth_headers, db_session):
-    """마스킹 값으로 PATCH 시 비밀번호 미변경 — 다른 필드만 갱신."""
+    """마스킹 값으로 PATCH 시 비밀번호 미변경: 다른 필드만 갱신."""
     from app.core.crypto import decrypt
     from app.models.smtp_config import SystemSmtpConfig
 

@@ -1,7 +1,7 @@
-"""WebhookEndpoint / WebhookDelivery — 외부 서비스 알림 fan-out.
+"""WebhookEndpoint / WebhookDelivery: 외부 서비스 알림 fan-out.
 
 회사 단위로 등록. notification.type 화이트리스트(events) 와 일치하면 dispatch.
-서명: X-Workspace-Signature = HMAC-SHA256(secret, body) — 수신측 검증용.
+서명: X-Workspace-Signature = HMAC-SHA256(secret, body): 수신측 검증용.
 """
 
 from datetime import datetime

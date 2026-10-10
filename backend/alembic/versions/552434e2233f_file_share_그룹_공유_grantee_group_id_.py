@@ -1,4 +1,4 @@
-"""file_share 그룹 공유 — grantee_group_id + grantee_sub nullable
+"""file_share 그룹 공유: grantee_group_id + grantee_sub nullable
 
 Revision ID: 552434e2233f
 Revises: 24692a0781ac
@@ -30,7 +30,7 @@ def upgrade() -> None:
     op.create_index('uq_file_shares_node_grantee', 'file_shares', ['node_id', 'grantee_sub'], unique=True, postgresql_where=sa.text('grantee_sub IS NOT NULL'))
     op.create_index(op.f('ix_file_shares_grantee_group_id'), 'file_shares', ['grantee_group_id'], unique=False)
     op.create_index('uq_file_shares_node_group', 'file_shares', ['node_id', 'grantee_group_id'], unique=True, postgresql_where=sa.text('grantee_group_id IS NOT NULL'))
-    # autogenerate 가 CheckConstraint 를 못 잡아 수동 추가 — grantee_sub/grantee_group_id 정확히 하나.
+    # autogenerate 가 CheckConstraint 를 못 잡아 수동 추가: grantee_sub/grantee_group_id 정확히 하나.
     op.create_check_constraint(
         'ck_file_shares_one_grantee',
         'file_shares',

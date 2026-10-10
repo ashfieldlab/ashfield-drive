@@ -22,7 +22,7 @@ class NodeResponse(BaseModel):
     mime: str | None
     etag: str | None
     status: NodeStatus
-    # E2E vault 파일의 wrapped DEK (ADR-0016) — 클라이언트가 vault_key 로 풀어
+    # E2E vault 파일의 wrapped DEK (ADR-0016): 클라이언트가 vault_key 로 풀어
     # 내용 복호화. vault 밖 파일은 None.
     wrapped_dek: str | None = None
     created_at: datetime
@@ -42,7 +42,7 @@ class UploadUrlRequest(BaseModel):
     size: int = Field(ge=0)
     mime: str | None = None
     scope: NodeScope = "personal"
-    # E2E vault 파일이면 wrapped DEK (선택) — 일반 파일은 None
+    # E2E vault 파일이면 wrapped DEK (선택): 일반 파일은 None
     wrapped_dek: str | None = None
 
 
@@ -74,7 +74,7 @@ class OverwriteUrlRequest(BaseModel):
 
 
 class OverwriteCompleteRequest(BaseModel):
-    # multipart 교체일 때만 — [{"PartNumber": int, "ETag": "..."}, ...]
+    # multipart 교체일 때만: [{"PartNumber": int, "ETag": "..."}, ...]
     parts: list[dict] | None = None
 
 
@@ -92,7 +92,7 @@ class TreeResponse(BaseModel):
     nodes: list[NodeResponse]
 
 
-# Desktop sync — delta polling 응답 (GET /api/v1/nodes/changes?since=)
+# Desktop sync: delta polling 응답 (GET /api/v1/nodes/changes?since=)
 class NodeChange(BaseModel):
     """audit_logs 의 변경 한 건 + 그 시점의 node snapshot.
 

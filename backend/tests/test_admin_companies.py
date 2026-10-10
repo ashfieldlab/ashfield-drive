@@ -1,4 +1,4 @@
-"""/api/v1/admin/companies — System Admin 회사·멤버 관리 (ADR-0010)."""
+"""/api/v1/admin/companies: System Admin 회사·멤버 관리 (ADR-0010)."""
 
 import pytest
 
@@ -16,7 +16,7 @@ async def test_member_role_lifecycle(client, auth_headers):
     sys_h = auth_headers("sys", groups=["acme-corp"], roles=["admin"])
     user_h = auth_headers("user1", groups=["acme-corp"])
 
-    # user1 의 lazy upsert 발생 — default role='member'
+    # user1 의 lazy upsert 발생: default role='member'
     await client.get("/api/v1/me", headers=user_h)
 
     # 회사 목록

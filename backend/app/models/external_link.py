@@ -1,4 +1,4 @@
-"""ExternalLink — 인증 없이 URL 로 접근할 수 있는 공유 링크.
+"""ExternalLink: 인증 없이 URL 로 접근할 수 있는 공유 링크.
 
 token: URL-safe 랜덤. password_hash: PBKDF2-SHA256("salt_hex:hash_hex") 옵션.
 expired/revoked 면 비활성. access_count + last_accessed_at 로 사용 흔적 기록.

@@ -16,10 +16,10 @@ interface Props {
   type?: ErrorPageType
   title?: string
   description?: string
-  /** primary 액션 — 보통 "다시 시도" */
+  /** primary 액션: 보통 "다시 시도" */
   onClickPrimary?: () => void
   primaryLabel?: string
-  /** secondary 액션 — 보통 "처음으로" */
+  /** secondary 액션: 보통 "처음으로" */
   onClickSecondary?: () => void
   secondaryLabel?: string
 }

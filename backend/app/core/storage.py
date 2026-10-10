@@ -4,7 +4,7 @@ dev: MinIO (S3_ENDPOINT_URL=http://localhost:19200)
 prod: S3-compatible storage / AWS S3 등
 
 aioboto3 사용. 업로드/다운로드 presigned URL 발급 + head_object로 업로드 검증.
-앱은 객체 본문을 절대 통과시키지 않는다 — 클라이언트 ↔ S3 직접.
+앱은 객체 본문을 절대 통과시키지 않는다: 클라이언트 ↔ S3 직접.
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ async def ensure_bucket() -> None:
             )
 
         # 브라우저가 presigned URL 로 직접 PUT/GET 하므로 CORS 필수.
-        # MinIO 는 PutBucketCors 미지원 — 컨테이너 환경변수 MINIO_API_CORS_ALLOW_ORIGIN 으로 설정.
+        # MinIO 는 PutBucketCors 미지원: 컨테이너 환경변수 MINIO_API_CORS_ALLOW_ORIGIN 으로 설정.
         # S3-compatible storage 등 진짜 S3 호환 서비스는 PutBucketCors 를 지원하므로 운영에선 별도 적용.
 
 
@@ -74,7 +74,7 @@ def _rewrite_public(url: str) -> str:
 
 
 async def presign_put(storage_key: str, *, content_type: str | None = None) -> str:
-    """단일 PUT presigned URL — TTL = settings.presign_upload_ttl_seconds."""
+    """단일 PUT presigned URL: TTL = settings.presign_upload_ttl_seconds."""
     session = _get_session()
     params: dict = {"Bucket": settings.s3_bucket, "Key": storage_key}
     if content_type:
@@ -97,7 +97,7 @@ async def presign_get(
     """GET presigned URL.
 
     download_name 지정 시 ResponseContentDisposition=attachment (브라우저 다운로드).
-    inline=True 면 미리보기 — Content-Disposition 미설정 (브라우저 inline 처리) +
+    inline=True 면 미리보기: Content-Disposition 미설정 (브라우저 inline 처리) +
     TTL=presign_preview_ttl_seconds. 그 외 = TTL=presign_download_ttl_seconds.
     """
     session = _get_session()
@@ -148,14 +148,14 @@ async def get_object_bytes(storage_key: str) -> bytes:
 
 
 # ---------------------------------------------------------------------------
-# Multipart upload — 50MB+ 파일용 (S3 표준 흐름)
+# Multipart upload: 50MB+ 파일용 (S3 표준 흐름)
 # ---------------------------------------------------------------------------
 
 
 async def create_multipart_upload(
     storage_key: str, *, content_type: str | None = None
 ) -> str:
-    """CreateMultipartUpload — UploadId 반환."""
+    """CreateMultipartUpload: UploadId 반환."""
     session = _get_session()
     params: dict = {"Bucket": settings.s3_bucket, "Key": storage_key}
     if content_type:
@@ -190,7 +190,7 @@ async def complete_multipart_upload(
     upload_id: str,
     parts: list[dict],  # [{"PartNumber": int, "ETag": str}, ...]
 ) -> dict:
-    """CompleteMultipartUpload — 응답 dict (Location/ETag 등) 반환."""
+    """CompleteMultipartUpload: 응답 dict (Location/ETag 등) 반환."""
     session = _get_session()
     async with session.client("s3", **_client_kwargs()) as s3:
         return await s3.complete_multipart_upload(

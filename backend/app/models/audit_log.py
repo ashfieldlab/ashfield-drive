@@ -1,4 +1,4 @@
-"""AuditLog — 변경 이벤트 기록 (read 는 기록하지 않음, Phase 1).
+"""AuditLog: 변경 이벤트 기록 (read 는 기록하지 않음, Phase 1).
 
 scope: 회사별. 본인 회사 로그만 조회 가능 (admin role 필요).
 entity_type: 'node' 등 (자유롭게 확장).

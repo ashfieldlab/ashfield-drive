@@ -1,7 +1,7 @@
-"""ExternalLink 도메인 — 토큰 발급, 비밀번호 PBKDF2, 만료/철회 확인.
+"""ExternalLink 도메인: 토큰 발급, 비밀번호 PBKDF2, 만료/철회 확인.
 
 비밀번호 저장 포맷: "salt_hex:hash_hex" (PBKDF2-SHA256, 100k iterations).
-production 에서 부하 커지면 argon2/scrypt 로 교체 가능 — Phase 2 검토.
+production 에서 부하 커지면 argon2/scrypt 로 교체 가능: Phase 2 검토.
 """
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ def new_link_id() -> str:
 
 
 async def touch_access(db: AsyncSession, link: ExternalLink) -> None:
-    """원자적 increment — 동시 다운로드 시 race 없이 카운터 +1.
+    """원자적 increment: 동시 다운로드 시 race 없이 카운터 +1.
 
     SQL `access_count = access_count + 1` 로 DB 가 row lock 잡고 처리.
     """

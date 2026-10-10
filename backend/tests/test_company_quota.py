@@ -1,4 +1,4 @@
-"""회사 스토리지 quota — 조회·설정·enforcement (D-3)."""
+"""회사 스토리지 quota: 조회·설정·enforcement (D-3)."""
 
 import pytest
 

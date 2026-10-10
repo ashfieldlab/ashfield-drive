@@ -31,7 +31,7 @@ export function useVaultContext(folderId: string | null): VaultContext {
   const { data: vaults, isLoading: vLoading } = useApiGet<VaultOut[]>(
     "/api/v1/e2e/vaults",
   )
-  // 조상 — folderId 있을 때만. 루트(null)면 vault 일 수 없음.
+  // 조상: folderId 있을 때만. 루트(null)면 vault 일 수 없음.
   const { data: anc, isLoading: aLoading } = useApiGet<AncestorsResponse>(
     folderId ? `/api/v1/nodes/${folderId}/ancestors` : null,
   )
@@ -62,7 +62,7 @@ export function useVaultContext(folderId: string | null): VaultContext {
     vaultRootId,
     isVaultRoot: vaultRootId === folderId,
     canMakeVault: vaultRootId === null, // vault 밖 일반 폴더 (빈 폴더 여부는 호출측)
-    // vault 밖이면 접근 가능. vault 면 실제 권한(my_permission) 기준 —
+    // vault 밖이면 접근 가능. vault 면 실제 권한(my_permission) 기준.
     // is_member(키 보유)만으론 ACL 과 어긋나 403 스팸이 날 수 있어 effective 권한으로.
     hasAccess: vaultRootId === null ? true : matched?.my_permission != null,
     // vault 밖이면 쓰기 가능. vault 면 write/manage 권한일 때만 (읽기전용 멤버는 false).

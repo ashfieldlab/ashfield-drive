@@ -1,4 +1,4 @@
-"""모델 패키지 — Alembic autogenerate가 이 Base.metadata를 읽음."""
+"""모델 패키지: Alembic autogenerate가 이 Base.metadata를 읽음."""
 
 from app.models.audit_log import AuditLog
 from app.models.base import Base
