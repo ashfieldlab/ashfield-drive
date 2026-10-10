@@ -1,0 +1,61 @@
+[project]
+name = "ashfield-drive-backend"
+version = "0.1.0"
+description = "Ashfield Drive 백엔드 (FastAPI + SQLAlchemy + S3)"
+requires-python = ">=3.14"   # uuid.uuid7() 사용 (3.14 에 추가)
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pydantic[email]>=2.9",
+    "pydantic-settings>=2.6",
+    "python-jose[cryptography]>=3.3",
+    "redis>=5.2",
+    "httpx>=0.27",
+    "python-multipart>=0.0.20",
+    # ashfield-drive 추가
+    "aioboto3>=13.0",          # S3-compatible storage (ADR-0005)
+    "arq>=0.26",               # Redis-backed job queue (cron + 백그라운드 잡)
+    "cryptography>=43",        # Fernet 대칭 암호화 (SMTP 비밀번호 등)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+# alembic autogenerate 생성물 — 손대지 않는다 (fix-forward 규칙)
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N"]
+ignore = [
+    "E501",  # line-length은 위에서
+    "B008",  # FastAPI의 Depends(...)를 인자 default로 쓰는 건 표준 패턴
+]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+ignore_missing_imports = true

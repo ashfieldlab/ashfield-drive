@@ -1,0 +1,111 @@
+# Hybrid 워크플로우 (SPEC §4.1):
+#   - 인프라(redis, postgres, minio)만 docker로 띄움
+#   - 앱(frontend, backend)은 호스트에서 실행 (hot-reload + 디버거 친화)
+#
+# 포트 충돌 회피:
+#   - 호스트 포트는 모두 .env 환경변수로 오버라이드 가능
+#   - 프로젝트 namespace는 COMPOSE_PROJECT_NAME으로 분리
+#
+# 시작: make infra
+# 정지: make stop
+
+name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}-redis
+    ports:
+      - "${REDIS_HOST_PORT:-6479}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ashfield}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ashfield_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-ashfield_drive}
+    ports:
+      - "${POSTGRES_HOST_PORT:-5532}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ashfield} -d ${POSTGRES_DB:-ashfield_drive}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # SMTP catcher — dev 전용. 실제 메일 발송 없이 web UI 로 확인.
+  #   SMTP:  localhost:${MAILPIT_SMTP_HOST_PORT:-11025}
+  #   Web:   http://localhost:${MAILPIT_WEB_HOST_PORT:-18025}
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}-mailpit
+    ports:
+      - "${MAILPIT_SMTP_HOST_PORT:-11025}:1025"
+      - "${MAILPIT_WEB_HOST_PORT:-18025}:8025"
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  # S3-compatible storage (ADR-0005) — 개발 전용. 운영은 S3-compatible storage.
+  minio:
+    image: minio/minio:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}-minio
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minio}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minio_dev_secret}
+      # 브라우저가 presigned URL 로 직접 PUT/GET — CORS 허용 (dev 한정 * )
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+    ports:
+      - "${MINIO_HOST_PORT:-19000}:9000"
+      - "${MINIO_CONSOLE_HOST_PORT:-19001}:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # 백그라운드 잡 워커 (arq) — cron 잡 실행 → JobRun 원장(모니터링 페이지 데이터원).
+  # backend 는 호스트 실행이지만 워커는 상주 프로세스라 컨테이너로.
+  # 라이브 잡 코드 마운트(app 만) → 이미지 재빌드 없이 워커 재시작만으로 반영.
+  # 설정은 호스트 .env 상속 + 컨테이너 내부 주소(postgres/redis/minio/mailpit)만 override.
+  worker:
+    build:
+      context: ./backend
+    container_name: ${COMPOSE_PROJECT_NAME:-ashfield-drive}-worker
+    command: ["python", "-m", "arq", "app.jobs.worker.WorkerSettings"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-ashfield}:${POSTGRES_PASSWORD:-ashfield_dev}@postgres:5432/${POSTGRES_DB:-ashfield_drive}
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT_URL: http://minio:9000
+      SMTP_ENABLED: "true"
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_USE_TLS: "false"
+    volumes:
+      - ./backend/app:/app/app:ro
+    # 이미지 HEALTHCHECK 는 uvicorn :8000/health 용 — arq 워커엔 그 포트가 없어
+    # 항상 unhealthy 로 오인됨. dev 에선 비활성화(잡 자체 관측은 JobRun 원장이 담당).
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  miniodata:

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보안 폴더는 어떻게 안전한가요? — 원리부터 차근차근</title>
+<style>
+  :root {
+    --ink: #1a1f2e; --sub: #5a6478; --line: #e3e7ef;
+    --brand: #e83a3d; --brand-soft: #fdeced;
+    --lock: #b07a00; --lock-soft: #fdf6e3;
+    --ok: #1a7f4b; --ok-soft: #e9f7ef;
+    --key: #2563c9; --key-soft: #eaf1fc;
+    --pub: #6d4ad1; --pub-soft: #f3f0ff;
+    --bg: #fafbfd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 100px; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    line-height: 1.78; font-size: 16px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lead { color: var(--sub); font-size: 17px; margin: 0 0 36px; }
+  h2 {
+    font-size: 22px; margin: 56px 0 14px; padding-bottom: 10px;
+    border-bottom: 3px solid var(--brand); display: inline-block;
+  }
+  h3 { font-size: 17px; margin: 22px 0 6px; }
+  p { margin: 12px 0; }
+  .step-no { color: var(--brand); font-weight: 800; }
+  .hero {
+    background: var(--ink); color: #fff; border-radius: 16px; padding: 28px 30px; font-size: 19px;
+  }
+  .hero b { color: #ffd34d; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; margin: 16px 0; }
+  .rule {
+    background: var(--key-soft); border: 2px solid var(--key); border-radius: 12px;
+    padding: 16px 20px; margin: 18px 0; font-size: 17px; font-weight: 600; text-align: center;
+  }
+  .note { background: var(--lock-soft); border-left: 4px solid var(--lock); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 16px 0; font-size: 15px; }
+  .warn { background: var(--brand-soft); border-left: 4px solid var(--brand); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 16px 0; font-size: 15px; }
+  .ok { background: var(--ok-soft); border-left: 4px solid var(--ok); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 16px 0; font-size: 15px; }
+
+  /* 공개키/개인키 한 쌍 */
+  .pair { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0; }
+  .pairbox { flex: 1; min-width: 240px; border-radius: 14px; padding: 18px 20px; border: 2px solid; }
+  .pairbox.pub { background: var(--pub-soft); border-color: var(--pub); }
+  .pairbox.prv { background: var(--lock-soft); border-color: var(--lock); }
+  .pairbox h4 { margin: 0 0 8px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .pairbox .can { color: var(--ok); font-weight: 700; }
+  .pairbox .cant { color: var(--brand); font-weight: 700; }
+  .pairbox ul { margin: 8px 0 0; padding-left: 18px; font-size: 14.5px; color: var(--ink); }
+  .pairbox li { margin: 4px 0; }
+
+  /* 키 카드 — 역할/왜 */
+  .keycard { border-left: 5px solid; border-radius: 10px; padding: 14px 18px; margin: 12px 0; background: #fff; border: 1px solid var(--line); }
+  .keycard.k-pw { border-left-color: var(--ok); }
+  .keycard.k-prv { border-left-color: var(--lock); }
+  .keycard.k-vault { border-left-color: var(--key); }
+  .keycard.k-dek { border-left-color: var(--brand); }
+  .keycard h4 { margin: 0 0 4px; font-size: 16px; }
+  .keycard .grid { display: grid; grid-template-columns: 70px 1fr; gap: 4px 12px; font-size: 14.5px; margin-top: 8px; }
+  .keycard .grid .lab { color: var(--sub); font-weight: 700; }
+
+  /* 사슬 */
+  .chain { margin: 22px 0; }
+  .link { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; }
+  .link .badge { flex: 0 0 auto; width: 130px; font-weight: 700; font-size: 14px; padding: 8px 10px; border-radius: 10px; text-align: center; }
+  .b-pw { background: var(--ok-soft); color: var(--ok); }
+  .b-prv { background: var(--lock-soft); color: var(--lock); }
+  .b-vault { background: var(--key-soft); color: var(--key); }
+  .b-dek { background: var(--brand-soft); color: var(--brand); }
+  .b-file { background: #eef1f6; color: var(--sub); }
+  .link .why { flex: 1; font-size: 14.5px; }
+  .link .why b { color: var(--ink); }
+  .down { text-align: center; color: var(--sub); font-size: 20px; margin: -2px 0; padding-left: 60px; }
+
+  /* 가로 흐름 */
+  .flow { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; margin: 20px 0; justify-content: center; }
+  .fstep { flex: 1; min-width: 130px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 12px; text-align: center; font-size: 14px; }
+  .fstep .ico { font-size: 28px; display: block; margin-bottom: 6px; }
+  .fstep b { display: block; font-size: 14px; margin-bottom: 3px; }
+  .fstep small { color: var(--sub); font-size: 12.5px; line-height: 1.5; display: block; }
+  .arrow { display: flex; align-items: center; font-size: 24px; color: var(--brand); font-weight: 700; }
+  @media (max-width: 640px) { .flow { flex-direction: column; } .arrow { justify-content: center; transform: rotate(90deg); } }
+
+  table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 16px 0; font-size: 15px; }
+  th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #f4f6fa; font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  code { background: #f0f2f6; padding: 1px 6px; border-radius: 5px; font-size: 14px; }
+  footer { margin-top: 70px; color: var(--sub); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .big { font-size: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>🔒 보안 폴더는 어떻게 안전한가요?</h1>
+<p class="lead">자물쇠 비유가 아니라, <b>실제 원리</b>를 차근차근 — 용어 하나하나가 왜 필요한지까지.</p>
+
+<div class="hero">
+  보안 폴더의 모든 안전은 딱 하나의 원리에서 나옵니다:<br>
+  <b>"공개키로 잠근 것은, 짝이 맞는 개인키로만 풀린다."</b><br>
+  이 한 문장을 이해하면 나머지는 전부 따라옵니다.
+</div>
+
+<h2><span class="step-no">0.</span> 먼저 — 공개키와 개인키 (제일 중요)</h2>
+<p>암호화에는 두 가지 방식이 있어요. 보안 폴더의 뼈대는 <b>비대칭 암호화</b>입니다. 이게 핵심이라 먼저 짚습니다.</p>
+<p><b>비대칭(asymmetric)</b> = <b>잠그는 열쇠와 푸는 열쇠가 서로 다르다.</b> 항상 <b>한 쌍</b>으로 만들어집니다:</p>
+
+<div class="pair">
+  <div class="pairbox pub">
+    <h4>📢 공개키 (public key)</h4>
+    <p style="margin:4px 0"><span class="can">잠그기(암호화)만 가능</span> · <span class="cant">풀기는 불가능</span></p>
+    <ul>
+      <li>푸는 능력이 없으니 <b>아무에게나 줘도 안전</b> → 그래서 이름이 "<b>공개</b>"</li>
+      <li>누구든 이 키로 "그 사람에게 보낼 데이터"를 잠글 수 있음</li>
+      <li>서버에 그냥 공개로 보관</li>
+    </ul>
+  </div>
+  <div class="pairbox prv">
+    <h4>🔑 개인키 (private key)</h4>
+    <p style="margin:4px 0"><span class="can">풀기(복호화)만 가능</span> · 짝꿍 공개키로 잠근 것만</p>
+    <ul>
+      <li>공개키로 잠근 걸 푸는 <b>유일한</b> 열쇠</li>
+      <li>이게 새면 모든 게 뚫리므로 <b>절대 남에게 주지 않음</b></li>
+      <li>그래서 <b>안전하게 보관</b>되어야 함 (아래 1번)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="rule">A의 공개키로 잠근 데이터 = <u>오직 A의 개인키로만</u> 풀린다</div>
+
+<div class="note">
+  <b>우체통으로 비유하면</b> — 우체통 <b>투입구(공개키)</b>는 길에 있어 누구나 편지를 넣을 수 있지만,
+  꺼내는 <b>열쇠(개인키)</b>는 주인만 갖죠. "넣는 건 누구나, 꺼내는 건 주인만." 이게 비대칭 암호의 전부입니다.
+</div>
+
+<h2>🌐 잠깐 — 이건 인터넷의 기본 기술이에요</h2>
+<p>비대칭 암호는 우리가 만든 게 아니라, <b>현대 인터넷 전체를 떠받치는 표준 기술</b>입니다. 짧은 배경을 알면 더 믿음이 가요.</p>
+
+<h3>왜 발명됐나 — "열쇠를 어떻게 안전하게 나눠 갖지?"</h3>
+<p>옛날 암호는 전부 <b>대칭</b>이었어요 — 잠그고 푸는 열쇠가 같죠. 그런데 멀리 있는 사람과 비밀을 주고받으려면
+   <b>먼저 같은 열쇠를 공유</b>해야 하는데, 그 열쇠를 보내는 길이 안전하지 않다면? (열쇠를 안전하게 보내려면 또 열쇠가 필요한… 닭-달걀 문제)
+   이걸 <b>키 분배 문제</b>라 불렀고, 수천 년간 풀지 못한 난제였습니다.</p>
+
+<h3>해결 — 1970년대의 혁명</h3>
+<div class="card" style="padding:18px 22px">
+  <table style="border:none; margin:0">
+    <tr><td style="width:90px; border:none; color:var(--brand); font-weight:800">1976</td>
+        <td style="border:none"><b>Diffie & Hellman</b> — "잠그는 열쇠와 푸는 열쇠를 다르게 만들면 되잖아?" 라는 발상으로 <b>공개키 개념</b>을 세상에 발표. 키를 미리 나눠 갖지 않아도 안전하게 통신 가능해짐.</td></tr>
+    <tr><td style="border:none; color:var(--brand); font-weight:800">1977</td>
+        <td style="border:none"><b>RSA</b> (Rivest·Shamir·Adleman, MIT) — 그 개념을 실제로 동작하는 방식으로 구현. <b>큰 수를 소인수분해하기 어렵다</b>는 수학에 기반. 오늘날까지 널리 쓰임.</td></tr>
+    <tr><td style="border:none; color:var(--sub); font-weight:800">1997</td>
+        <td style="border:none">재밌는 사실 — 사실 영국 정보기관(GCHQ)이 <b>1970년대 초에 이미 비밀리에 같은 걸 발견</b>했지만 기밀로 묻어뒀다가 이때 공개됨.</td></tr>
+  </table>
+</div>
+
+<h3>지금 어디에 쓰이나 — 사실 당신은 매일 쓰고 있어요</h3>
+<table>
+  <tr><th>여기</th><th>비대칭 암호가 하는 일</th></tr>
+  <tr><td>🔒 <b>브라우저 자물쇠 (HTTPS)</b></td><td>사이트 접속할 때마다 — 사이트가 진짜인지 확인 + 안전하게 통신 열쇠 교환</td></tr>
+  <tr><td>🎫 <b>로그인 토큰 서명</b></td><td>우리 워크스페이스 로그인 토큰(Keycloak)도 비대칭 키로 <b>서명</b>해 위조 방지</td></tr>
+  <tr><td>💬 <b>메신저 E2E</b></td><td>시그널·왓츠앱의 종단간 암호화 — <b>우리 보안 폴더와 같은 원리</b></td></tr>
+  <tr><td>🖥️ <b>서버 접속 (SSH)</b>, 🪙 <b>블록체인 지갑</b></td><td>비밀번호 대신 키 쌍으로 로그인 / 지갑 주소가 곧 공개키</td></tr>
+</table>
+
+<div class="rule" style="font-size:16px; font-weight:600">
+  핵심 — HTTPS도 우리 보안 폴더도 <u>같은 "하이브리드" 방식</u>:<br>
+  <b>비대칭으로 "열쇠"를 안전하게 전달</b> → 그 다음 <b>빠른 대칭 암호로 실제 데이터</b>를 처리
+</div>
+<p>우리 보안 폴더에서 <b>vault_key를 공개키로 잠가 전달</b>하고, 실제 <b>파일은 빠른 AES(대칭)로 암호화</b>하는 게
+   바로 이 하이브리드예요. 브라우저가 HTTPS로 하는 것과 똑같은 패턴입니다 — <b>검증된 방식</b>이죠.</p>
+
+<h2><span class="step-no">1.</span> 개인키는 어디에? — 비밀번호의 역할</h2>
+<p>개인키가 그렇게 중요하면, 어디에 둘까요? 내 컴퓨터에만 두면 다른 기기에서 못 쓰고, 서버에 그냥 두면 위험합니다.
+   그래서 — <b>개인키를 "내 비밀번호로 잠가서" 서버에 보관</b>합니다.</p>
+<div class="flow">
+  <div class="fstep"><span class="ico">🧠</span><b>비밀번호</b><small>내 머릿속에만<br>(서버에 저장 안 됨)</small></div>
+  <div class="arrow">→</div>
+  <div class="fstep"><span class="ico">⚙️</span><b>튼튼한 열쇠로 변환</b><small>비번을 암호용 열쇠로<br>(KDF)</small></div>
+  <div class="arrow">→</div>
+  <div class="fstep"><span class="ico">🔒</span><b>개인키를 잠금</b><small>잠긴 개인키를<br>서버에 보관</small></div>
+</div>
+<p>그래서 <b>서버는 "잠긴 개인키"를 갖고 있지만 풀 수 없습니다.</b> 비밀번호가 없으니까요.
+   내가 로그인 후 <b>비밀번호를 입력하는 순간</b>, 내 컴퓨터에서 잠긴 개인키가 풀려 메모리에 잠깐 살아납니다.</p>
+<div class="ok"><b>그래서 비밀번호의 진짜 역할은</b> — "서버에 저장된 잠긴 개인키를 푸는 열쇠". 모든 사슬의 출발점입니다.</div>
+
+<h2><span class="step-no">2.</span> 열쇠 4개 — 각자 무엇이고, 왜 필요한가</h2>
+
+<div class="keycard k-pw">
+  <h4>🧠 비밀번호</h4>
+  <div class="grid">
+    <span class="lab">역할</span><span>서버에 저장된 <b>잠긴 개인키를 푸는</b> 열쇠</span>
+    <span class="lab">왜 필요</span><span>모든 것의 뿌리. 이것만 머릿속에 있고 어디에도 저장 안 되므로, 결국 <b>나만</b> 풀 수 있게 됨</span>
+  </div>
+</div>
+
+<div class="keycard k-prv">
+  <h4>🔑 개인키 / 📢 공개키 (한 쌍)</h4>
+  <div class="grid">
+    <span class="lab">역할</span><span>공개키로 잠그고 → 개인키로 푼다. <b>"나에게 안전하게 전달"</b> 을 가능하게 함</span>
+    <span class="lab">왜 필요</span><span>비밀(폴더 열쇠)을 직접 주고받지 않고도, <b>남이 내 공개키로 잠가서</b> 줄 수 있게 → <b>공유의 토대</b></span>
+  </div>
+</div>
+
+<div class="keycard k-vault">
+  <h4>🟦 vault_key (폴더 마스터 열쇠)</h4>
+  <div class="grid">
+    <span class="lab">역할</span><span>그 보안 폴더 <b>전체</b>를 다루는 열쇠. 이게 있으면 폴더 안 모든 파일 열쇠(DEK)를 풀 수 있음</span>
+    <span class="lab">왜 필요</span><span><b>공유의 핵심.</b> 멤버마다 "각자 공개키로 잠근 vault_key 사본"을 줌 → 한 폴더를 여러 사람이 각자 비번으로 접근</span>
+  </div>
+</div>
+
+<div class="keycard k-dek">
+  <h4>🔴 DEK (파일 열쇠)</h4>
+  <div class="grid">
+    <span class="lab">역할</span><span><b>파일 하나하나</b>를 실제로 암·복호화하는 열쇠. 파일마다 다름</span>
+    <span class="lab">왜 필요</span><span>파일별로 분리해야 <b>파일 하나만 따로</b> 다루거나, 한 파일 열쇠가 새도 <b>그 파일만</b> 노출. 또 빠른 방식(대칭)이라 큰 파일도 빠름</span>
+  </div>
+</div>
+
+<h2><span class="step-no">3.</span> 전부 연결한 사슬 (한 칸씩 푸는 순서)</h2>
+<p>보안 폴더 파일을 열 때, <b>위에서 아래로</b> 한 칸씩 풀려 내려갑니다. 각 칸이 왜 있는지 함께 보세요.</p>
+
+<div class="chain">
+  <div class="link"><span class="badge b-pw">🧠 비밀번호</span><span class="why">내가 입력. 이걸로 →</span></div>
+  <div class="down">↓ 푼다</div>
+  <div class="link"><span class="badge b-prv">🔑 개인키</span><span class="why">서버의 잠긴 개인키가 풀려 내 메모리에 살아남. 개인키로 →</span></div>
+  <div class="down">↓ 푼다</div>
+  <div class="link"><span class="badge b-vault">🟦 vault_key</span><span class="why"><b>내 공개키로 잠겨 있던</b> vault_key를 풀어 폴더 마스터 열쇠 확보. 이걸로 →</span></div>
+  <div class="down">↓ 푼다</div>
+  <div class="link"><span class="badge b-dek">🔴 DEK</span><span class="why">폴더 안 <b>각 파일의 열쇠</b>(파일마다 다름)를 풀어냄. 이걸로 →</span></div>
+  <div class="down">↓ 푼다</div>
+  <div class="link"><span class="badge b-file">📄 파일</span><span class="why">드디어 원래 내용이 내 화면에 복원됨.</span></div>
+</div>
+<div class="ok">이 모든 과정은 <b>내 기기 안에서만</b> 일어납니다. 서버는 잠긴 것들을 건네줄 뿐, 푸는 데 전혀 못 끼어듭니다 — 비밀번호가 없으니까요.</div>
+
+<h2><span class="step-no">4.</span> 그래서 "공유"란?</h2>
+<p class="big">폴더 공유의 핵심은 <b>vault_key</b> 입니다.</p>
+<p>다른 사람도 폴더를 보려면 <b>vault_key</b> 가 있어야 해요. 그런데 열쇠를 그냥 건네면 위험하죠.
+   그래서 주인은 — <b>받는 사람의 공개키로 vault_key를 잠가서</b>, "이 사람도 vault_key를 풀 수 있다"는 권한을 DB에 등록합니다.</p>
+<div class="flow">
+  <div class="fstep"><span class="ico">🙋</span><b>주인</b><small>vault_key 보유</small></div>
+  <div class="arrow">→</div>
+  <div class="fstep"><span class="ico">📢</span><b>동료 공개키</b><small>서버에서 가져옴</small></div>
+  <div class="arrow">→</div>
+  <div class="fstep"><span class="ico">🔒</span><b>그걸로 vault_key 잠금</b><small>동료 개인키로만 풀림</small></div>
+  <div class="arrow">→</div>
+  <div class="fstep"><span class="ico">🗄️</span><b>DB에 권한 등록</b><small>동료의 잠긴 vault_key 사본</small></div>
+</div>
+<p>즉 <b>"공유" = vault_key를 복호화할 수 있는 권한(잠긴 사본)을 DB에 추가</b>하는 것. 그러면 동료는 자기 비밀번호 → 개인키 → 그 vault_key → 폴더 안 모든 파일의 DEK 순으로 풀어서 접근할 수 있게 됩니다.</p>
+<div class="note">
+  멤버가 N명이면 <b>각자의 공개키로 잠근 vault_key 사본이 N개</b>. 같은 열쇠지만 <b>각자 자기 비밀번호로만</b> 꺼냅니다. 주인도 서버도 동료 것을 대신 못 엽니다.
+  <br><b>단, 받는 사람이 먼저 보안 폴더를 한 번 설정해야</b> 공개키가 생겨서 공유가 가능합니다.
+</div>
+
+<h2><span class="step-no">5.</span> 왜 굳이 여러 겹일까?</h2>
+<p>"비밀번호로 파일을 바로 잠그면 안 되나?" 싶죠. 층을 나눈 건 <b>각 열쇠의 "단위"가 다르기 때문</b>입니다.</p>
+<table>
+  <tr><th>열쇠</th><th>단위</th><th>층이 따로 있어 좋은 점</th></tr>
+  <tr><td>🔴 DEK</td><td>파일마다</td><td>파일 하나만 따로 다루기 / 한 파일 노출돼도 그 파일만</td></tr>
+  <tr><td>🟦 vault_key</td><td>폴더(공유)마다</td><td>멤버 추가 = vault_key 하나만 그 사람 공개키로 잠그면 끝 (파일 수와 무관)</td></tr>
+  <tr><td>🔑 개인키 / 🧠 비밀번호</td><td>사람마다</td><td>비밀번호를 바꿔도 개인키만 다시 잠그면 됨 (파일 전체 재암호화 불필요)</td></tr>
+</table>
+<div class="note">예: 멤버 추가 시 vault_key가 없다면 파일 1000개의 열쇠를 전부 그 사람 공개키로 다시 잠가야 합니다. vault_key 한 겹 덕에 <b>딱 한 번</b>이면 끝납니다.</div>
+
+<h2><span class="step-no">6.</span> 비밀번호와 복구 코드</h2>
+<p>이 비밀번호는 <b>로그인 비밀번호와 다른</b> 보안 폴더 전용 비밀번호예요. 잊으면? 서버는 도와줄 수 없습니다(애초에 모르니까).
+   그래서 처음 설정할 때 <b>복구 코드</b>를 딱 한 번 보여줍니다 — 잊었을 때 개인키를 푸는 <b>비상 열쇠</b>입니다.</p>
+<div class="warn">
+  <b class="big">⚠️ 비밀번호와 복구 코드를 둘 다 잃으면 → 개인키를 못 풀고 → 파일을 영원히 못 엽니다.</b><br>
+  관리자도 못 살립니다. "아무도 못 본다"는 건 곧 "나도 열쇠를 잃으면 못 본다"는 뜻이에요. 복구 코드는 꼭 안전한 곳에 보관하세요.
+</div>
+
+<h2><span class="step-no">7.</span> 서버가 할 수 없는 일 (보안의 대가)</h2>
+<table>
+  <tr><th>일반 폴더</th><th>보안 폴더</th></tr>
+  <tr><td>파일 이름으로 검색 ✅</td><td>불가 ❌ — 파일 이름도 암호라 서버가 모름</td></tr>
+  <tr><td>미리보기·썸네일 ✅</td><td>없음 ❌ — 풀어봐야 알 수 있음</td></tr>
+  <tr><td>큰 파일 바로 열기 ✅</td><td>전체를 받아 풀어야 열림 (조금 느림)</td></tr>
+  <tr><td>비번 분실 시 관리자 복구 ✅</td><td>불가 ❌ — 복구 코드가 유일</td></tr>
+</table>
+<div class="note">그래서 보안 폴더는 <b>정말 민감한 문서</b>에 쓰고, 평범한 파일은 일반 폴더에 두는 걸 권합니다.</div>
+
+<div class="hero" style="margin-top:48px">
+  💡 다시 정리 — <b>비밀번호</b>로 <b>개인키</b>를 풀고, 개인키로 <b>vault_key</b>를 풀고,
+  vault_key로 <b>DEK</b>를 풀고, DEK로 <b>파일</b>을 엽니다.<br>
+  그리고 <b>공유 = vault_key를 상대 공개키로 잠가 DB에 등록</b>하는 것. 이 사슬 하나가 전부입니다.
+</div>
+
+<footer>
+  Ashfield Drive · 보안 폴더(E2E 암호화, ADR-0016) 원리 설명 · 2026-06-14<br>
+  기술 상세: <code>docs/adr/0016-*.md</code> · 이 문서는 비개발자용 개념 설명입니다.
+</footer>
+
+</div>
+</body>
+</html>

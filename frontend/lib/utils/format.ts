@@ -1,0 +1,23 @@
+export function formatBytes(bytes: number | null | undefined): string {
+  if (bytes == null) return ""
+  if (bytes < 1024) return `${bytes} B`
+  const units = ["KB", "MB", "GB", "TB"]
+  let v = bytes / 1024
+  let i = 0
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024
+    i++
+  }
+  return `${v.toFixed(v < 10 ? 1 : 0)} ${units[i]}`
+}
+
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}

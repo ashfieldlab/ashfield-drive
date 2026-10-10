@@ -1,0 +1,37 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./theme.css";
+
+/* 보안 폴더(vault) 파일 목록 — 어두운 회색 배경으로 일반 폴더와 구분 (ADR-0016) */
+.files-table-dark {
+  background: theme("colors.gray.800");
+  border-color: theme("colors.gray.700");
+}
+.files-table-dark thead {
+  background: theme("colors.gray.900");
+  color: theme("colors.gray.400");
+}
+.files-table-dark tbody tr {
+  border-color: theme("colors.gray.700");
+}
+.files-table-dark tbody tr:hover {
+  background: theme("colors.gray.700");
+}
+.files-table-dark a,
+.files-table-dark button {
+  color: theme("colors.gray.300");
+}
+.files-table-dark .text-gray-900,
+.files-table-dark .text-gray-700 {
+  color: theme("colors.gray.100");
+}
+.files-table-dark .text-gray-600,
+.files-table-dark .text-gray-500 {
+  color: theme("colors.gray.400");
+}
+.files-table-dark a:hover,
+.files-table-dark button:hover {
+  background: theme("colors.gray.700");
+  color: #fff;
+}

@@ -1,0 +1,127 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+
+import { api } from "@/lib/api-client"
+import type { CompanyMember, CompanyMembersResponse } from "@/lib/types/api"
+
+interface Props {
+  /** 선택된 sub */
+  value: string
+  onChange: (sub: string, member: CompanyMember | null) => void
+  placeholder?: string
+  testId?: string
+}
+
+/**
+ * 회사 멤버 자동완성 — 디바운스 200ms.
+ *
+ * 표시 ↔ 값 분리:
+ *   - 입력 박스에는 사람이 보는 문자열(name·email)
+ *   - 선택 후 hidden value 에 sub 저장
+ *   - 빈 문자열 입력 시 onChange("", null) 호출 → grantee 클리어
+ */
+export function UserAutocomplete({
+  value,
+  onChange,
+  placeholder = "이름 또는 이메일",
+  testId,
+}: Props) {
+  const [text, setText] = useState("")
+  const [open, setOpen] = useState(false)
+  const [items, setItems] = useState<CompanyMember[]>([])
+  const [loading, setLoading] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!value) setText("")
+  }, [value])
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current)
+    setLoading(true)
+    timer.current = setTimeout(async () => {
+      try {
+        const r = await api<CompanyMembersResponse>(
+          `/api/v1/me/company/members?q=${encodeURIComponent(text)}&limit=10`,
+        )
+        setItems(r.members)
+      } catch {
+        setItems([])
+      } finally {
+        setLoading(false)
+      }
+    }, 200)
+    return () => {
+      if (timer.current) clearTimeout(timer.current)
+    }
+  }, [text])
+
+  useEffect(() => {
+    if (!open) return
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    window.addEventListener("mousedown", onClick)
+    return () => window.removeEventListener("mousedown", onClick)
+  }, [open])
+
+  function select(m: CompanyMember) {
+    setText(m.name ? `${m.name} (${m.email})` : m.email)
+    setOpen(false)
+    onChange(m.sub, m)
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value)
+          setOpen(true)
+          if (!e.target.value) onChange("", null)
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        data-testid={testId ?? "user-autocomplete-input"}
+        className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+      />
+      {open && (
+        <div
+          data-testid={`${testId ?? "user-autocomplete"}-results`}
+          className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg"
+        >
+          {loading ? (
+            <div className="p-3 text-center text-xs text-gray-500">검색 중…</div>
+          ) : items.length === 0 ? (
+            <div className="p-3 text-center text-xs text-gray-500">
+              일치하는 멤버가 없습니다.
+            </div>
+          ) : (
+            <ul>
+              {items.map((m) => (
+                <li key={m.sub}>
+                  <button
+                    type="button"
+                    onClick={() => select(m)}
+                    data-testid={`user-autocomplete-option-${m.sub}`}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                  >
+                    <span className="block font-medium text-gray-900">
+                      {m.name ?? m.email}
+                    </span>
+                    {m.name && (
+                      <span className="block text-xs text-gray-500">{m.email}</span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

@@ -1,0 +1,16 @@
+#!/bin/sh
+# pre-push hook — push 직전 빠른 검증
+# 활성화: make hooks
+
+set -e
+
+echo "→ typecheck..."
+make typecheck
+
+echo "→ lint..."
+make lint || { echo "✗ lint 실패. 수정 후 다시 push."; exit 1; }
+
+echo "→ pytest..."
+make pytest || { echo "✗ pytest 실패. 수정 후 다시 push."; exit 1; }
+
+echo "✓ pre-push 검증 통과"

@@ -1,0 +1,199 @@
+# 운영 배포 — 단일 호스트 docker compose.
+#
+# 인프라(redis·postgres·minio·mailpit) + 앱(backend·worker·frontend) 모두 컨테이너로.
+# 모든 서비스 `restart: unless-stopped` — 죽으면 즉시 재시작 (운영 supervision).
+#
+# 시작:
+#   1. .env.prod 작성 (예시는 .env.prod.example)
+#   2. cd ashfield-drive && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#   3. docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
+#
+# 또는 Makefile: make prod-up / prod-migrate / prod-logs / prod-down.
+
+name: ${COMPOSE_PROJECT_NAME:-ashfield-drive-prod}
+
+x-restart-policy: &restart_policy
+  restart: unless-stopped
+
+services:
+  # ───── 인프라 ─────
+  postgres:
+    image: postgres:16-alpine
+    <<: *restart_policy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    <<: *restart_policy
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    <<: *restart_policy
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+    command: server /data --console-address ":9001"
+    volumes:
+      - miniodata:/data
+    # 127.0.0.1 only — 호스트 reverse proxy 가 /_minio 로 접근. console 은 ssh tunnel.
+    ports:
+      - "127.0.0.1:${MINIO_HOST_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_HOST_PORT:-9001}:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ───── 앱 ─────
+  backend:
+    build:
+      context: ./backend
+    <<: *restart_policy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_REGION: ${S3_REGION}
+      # presigned URL 유효기간 — 대용량 다운로드/미리보기 시작 여유 (기본 30s 는 빠듯)
+      PRESIGN_DOWNLOAD_TTL_SECONDS: ${PRESIGN_DOWNLOAD_TTL_SECONDS:-300}
+      PRESIGN_PREVIEW_TTL_SECONDS: ${PRESIGN_PREVIEW_TTL_SECONDS:-300}
+      # SMTP / OIDC / 기타 — .env.prod 에서 docker 가 자동 전달
+      SMTP_ENABLED: ${SMTP_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Ashfield}
+      SMTP_ENCRYPTION_KEY: ${SMTP_ENCRYPTION_KEY:-}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_JWKS_URL: ${OIDC_JWKS_URL:-}
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-}
+      SKIP_AUTH: ${SKIP_AUTH:-false}
+      GATEWAY_URL: ${GATEWAY_URL}
+      DIRECTORY_URL: ${DIRECTORY_URL:-}
+      TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
+      LOG_CATEGORIES: ${LOG_CATEGORIES:-}
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-8000}:8000"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_started }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()",
+        ]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # arq worker — 같은 backend 이미지, CMD 만 다름. 동일 env 공유.
+  worker:
+    build:
+      context: ./backend
+    <<: *restart_policy
+    command: ["python", "-m", "arq", "app.jobs.worker.WorkerSettings"]
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_REGION: ${S3_REGION}
+      PRESIGN_DOWNLOAD_TTL_SECONDS: ${PRESIGN_DOWNLOAD_TTL_SECONDS:-300}
+      PRESIGN_PREVIEW_TTL_SECONDS: ${PRESIGN_PREVIEW_TTL_SECONDS:-300}
+      SMTP_ENABLED: ${SMTP_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Ashfield}
+      SMTP_ENCRYPTION_KEY: ${SMTP_ENCRYPTION_KEY:-}
+      TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
+      LOG_CATEGORIES: ${LOG_CATEGORIES:-}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      # arq 자체는 health 엔드포인트 없음 — 프로세스 생존만 점검.
+      # Redis 연결 ping 시도로 갈음. 실패 시 docker 가 재시작.
+      test: ["CMD-SHELL", "pgrep -f 'arq app.jobs' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-}
+        NEXT_PUBLIC_CALENDAR_URL: ${NEXT_PUBLIC_CALENDAR_URL:-}
+        NEXT_PUBLIC_API_TIMEOUT_MS: ${NEXT_PUBLIC_API_TIMEOUT_MS:-10000}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Ashfield}
+        NEXT_PUBLIC_COOKIE_NS: ${NEXT_PUBLIC_COOKIE_NS:-ashfield-drive}
+        NEXT_PUBLIC_COOKIE_DOMAIN: ${NEXT_PUBLIC_COOKIE_DOMAIN:-}
+    <<: *restart_policy
+    environment:
+      # 인증 모드·게이트웨이 (ADR-0021). 런타임 서버 변수라 빌드 arg 아님.
+      SKIP_AUTH: ${SKIP_AUTH:-false}
+      GATEWAY_URL: ${GATEWAY_URL}
+      BACKEND_INTERNAL_URL: http://backend:8000
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-3000}:3000"
+    depends_on:
+      - backend
+      - redis
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 3s
+      start_period: 20s
+      retries: 3
+
+networks:
+  default:
+    ipam:
+      config:
+        # 흔한 LAN 대역(192.168.0.0/16)과 충돌 회피 — 서브넷 고정
+        - subnet: 172.60.0.0/24
+
+volumes:
+  pgdata:
+  miniodata:

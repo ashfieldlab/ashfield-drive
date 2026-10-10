@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Ashfield Drive",
+  "short_name": "Drive",
+  "description": "Ashfield Drive — 종단간 암호화 보안 폴더 지원 파일 앱.",
+  "start_url": "/files",
+  "scope": "/",
+  "display": "standalone",
+  "lang": "ko",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icons/ashfield/appicon_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/ashfield/appicon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
