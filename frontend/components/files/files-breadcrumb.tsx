@@ -13,8 +13,6 @@ interface Props {
   scope: NodeScope
   folderId: string | null
   unlocked?: boolean
-  // 보안 폴더 다크 배경 위: 밝은 텍스트로.
-  onDark?: boolean
   // 부서 폴더 진입(from=team-folders): 루트를 "부서 폴더"로 표기하고 링크에 컨텍스트 유지.
   teamFolder?: boolean
 }
@@ -23,7 +21,6 @@ export function FilesBreadcrumb({
   scope,
   folderId,
   unlocked = false,
-  onDark = false,
   teamFolder = false,
 }: Props) {
   // backend 가 recursive CTE 로 root→leaf 체인을 한 번에 반환.
@@ -62,7 +59,7 @@ export function FilesBreadcrumb({
         try {
           out[chain[i].id] = await e2e.decryptName(vaultRootId, chain[i].name)
         } catch {
-          out[chain[i].id] = "🔒 (복호화 실패)"
+          out[chain[i].id] = "(복호화 실패)"
         }
       }
       if (!cancelled) setDecNames(out)
@@ -76,55 +73,51 @@ export function FilesBreadcrumb({
   const label = (idx: number, id: string, name: string): string => {
     const isVaultDescendant = vaultIdx >= 0 && idx > vaultIdx
     if (!isVaultDescendant) return name
-    if (!unlocked) return "🔒 잠김"
-    return decNames[id] ?? "🔒 …"
+    if (!unlocked) return "잠김"
+    return decNames[id] ?? "…"
   }
 
-  const linkHover = onDark ? "hover:text-white hover:underline" : "hover:text-foreground hover:underline"
-  const chevron = onDark ? "text-slate-500" : "text-muted-foreground/70"
-  const current = onDark ? "font-medium text-white" : "font-medium text-foreground"
+  const isRoot = !folderId
+  const crumb = "truncate rounded-md px-1.5 py-0.5 transition-colors"
+  const link = `${crumb} text-muted-foreground hover:bg-muted hover:text-foreground`
+  const chevron = <ChevronRight className="size-5 shrink-0 text-muted-foreground/60" />
 
   return (
     <nav
-      className={`flex min-w-0 items-center gap-1 overflow-hidden text-sm ${onDark ? "text-slate-300" : "text-muted-foreground"}`}
+      className="-ml-1.5 flex min-w-0 items-center gap-0.5 text-xl font-semibold tracking-tight"
       data-testid="files-breadcrumb"
       aria-label="breadcrumb"
     >
-      <Link
-        href={rootHref}
-        data-testid="files-breadcrumb-root"
-        className={`shrink-0 ${linkHover}`}
-      >
-        {rootLabel}
-      </Link>
+      {isRoot ? (
+        <h1 className={`${crumb} text-foreground`} data-testid="files-breadcrumb-current">
+          {rootLabel}
+        </h1>
+      ) : (
+        <Link href={rootHref} data-testid="files-breadcrumb-root" className={`shrink-0 ${link}`}>
+          {rootLabel}
+        </Link>
+      )}
       {folderId && displayChain.length === 0 && (
         <>
-          <ChevronRight size={14} className={chevron} />
-          <span className={chevron}>...</span>
+          {chevron}
+          <span className="px-1.5 text-muted-foreground">...</span>
         </>
       )}
       {displayChain.map((node, i) => {
         const isLast = i === displayChain.length - 1
         return (
-          <span
-            key={node.id}
-            className={`flex items-center gap-1 ${isLast ? "min-w-0" : "shrink-0"}`}
-          >
-            <ChevronRight size={14} className={`shrink-0 ${chevron}`} />
+          <span key={node.id} className={`flex items-center gap-0.5 ${isLast ? "min-w-0" : "min-w-0 shrink"}`}>
+            {chevron}
             {isLast ? (
-              <span
-                className={`min-w-0 truncate ${current}`}
-                title={node.name}
-                data-testid={`files-breadcrumb-current`}
-              >
+              <h1 className={`min-w-0 ${crumb} text-foreground`} title={node.name} data-testid="files-breadcrumb-current">
                 {label(i, node.id, node.name)}
-              </span>
+              </h1>
             ) : (
               <Link
                 href={`/files?scope=${scope}&folder=${node.id}${ctx}`}
                 data-testid={`files-breadcrumb-ancestor-${node.id}`}
                 title={node.name}
-                className={`max-w-[10rem] truncate ${linkHover}`}
+                className={`max-w-[12rem] ${link}`}
               >
                 {label(i, node.id, node.name)}
               </Link>

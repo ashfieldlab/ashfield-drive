@@ -17,7 +17,11 @@ test.describe("file sharing", () => {
     await page.goto("/files")
     const name = `공유-${Date.now()}`
 
-    // 폴더 생성
+    // 폴더 생성: "새로 만들기" 메뉴 안에 있으면 메뉴부터 연다
+    const newMenu = page.getByTestId("files-new-button")
+    const newFolder = page.getByTestId("files-new-folder-button")
+    await expect(newMenu.or(newFolder).first()).toBeVisible()
+    if (await newMenu.isVisible()) await newMenu.click()
     await page.getByTestId("files-new-folder-button").click()
     await page.getByTestId("files-new-folder-input").fill(name)
     await page.getByTestId("files-new-folder-confirm").click()
@@ -32,11 +36,19 @@ test.describe("file sharing", () => {
       .getByTestId("share-grantee-input")
       .fill(E2E_USERS.member_a.email.split("@")[0])
     await page.getByTestId(`user-autocomplete-option-${memberSub}`).click()
+    await expect(page.getByTestId(`share-staged-${memberSub}`)).toBeVisible()
     await page.getByTestId("share-add-button").click()
-    // 공유 row 노출
-    await expect(
-      page.locator(`[data-testid^="share-row-"]`).first(),
-    ).toBeVisible()
+    // 공유 row 노출 (보기)
+    const shareRow = page.locator(`li[data-testid^="share-row-"]`).first()
+    await expect(shareRow).toBeVisible()
+    const shareRowId = (await shareRow.getAttribute("data-testid"))!
+    const permTrigger = page.getByTestId(`${shareRowId}-perm-trigger`)
+    await expect(permTrigger).toHaveText(/보기/)
+
+    // 권한 변경: 보기 → 편집 (upsert)
+    await permTrigger.click()
+    await page.getByTestId(`${shareRowId}-perm-write`).click()
+    await expect(permTrigger).toHaveText(/편집/)
     await page.getByTestId("share-modal-close").click()
 
     // member_a 로 전환 후 공유받음 확인

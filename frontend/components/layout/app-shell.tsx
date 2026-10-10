@@ -23,10 +23,12 @@ import { AppIcon } from "@/components/ui-custom/app-icon"
 import { UserMenu } from "@/components/ui-custom/user-menu"
 
 import { useAppContext } from "@/components/providers/app-context"
+import { UploadIndicator } from "@/components/files/upload-indicator"
 import { AppCrossLink } from "@/components/layout/app-cross-link"
 import { GlobalSearch } from "@/components/layout/global-search"
 import { NotificationBell } from "@/components/layout/notification-bell"
 import { signOutAction } from "@/lib/actions/auth"
+import { useUploads } from "@/lib/uploads/store"
 import { APP } from "@/lib/apps"
 import { env } from "@/lib/env"
 
@@ -36,6 +38,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? ""
   const sp = useSearchParams()
   const router = useRouter()
+  // 업로드 큐는 화면을 옮겨도 살아 있다: 업로드가 하나라도 있으면 어느 화면에서든 사이드바에 표시.
+  const hasUploads = useUploads().some((u) => u.state !== "canceled")
 
   // files 페이지의 sub-link 활성화: query string 기반.
   const filesActive = useMemo(() => {
@@ -132,6 +136,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       headerTrailing={headerTrailing}
       navItems={sidebarItems}
       renderNavLink={sidebarRenderLink}
+      sidebarExtra={hasUploads ? <UploadIndicator /> : undefined}
       // 뷰포트 높이로 고정: 페이지가 자체 h-full overflow-y-auto 로 내부 스크롤.
       // (프레임 기본은 min-h-screen 이라 안 잡으면 페이지 대신 창 전체가 스크롤됨)
       className="h-screen"

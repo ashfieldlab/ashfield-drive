@@ -135,3 +135,92 @@ export function relativeTime(iso: string): string {
     day: "numeric",
   })
 }
+
+// ---------------------------------------------------------------------------
+// 활동 내역 문장용 헬퍼 (조사, 날짜 묶음, 파일 종류)
+// ---------------------------------------------------------------------------
+
+/** 받침 여부. 영문은 철자 이름(엘, 엠, 엔, 알)으로 읽는다고 본다. 확장자 앞 이름이 아닌 마지막 글자 기준 */
+function batchim(word: string): { yes: boolean; rieul: boolean } {
+  const c = word.trim().slice(-1)
+  if (!c) return { yes: false, rieul: false }
+  const code = c.charCodeAt(0)
+  if (code >= 0xac00 && code <= 0xd7a3) {
+    const j = (code - 0xac00) % 28
+    return { yes: j !== 0, rieul: j === 8 }
+  }
+  if (/[0-9]/.test(c)) return { yes: "013678".includes(c), rieul: "178".includes(c) }
+  const l = c.toLowerCase()
+  return { yes: "lmnr".includes(l), rieul: "lr".includes(l) }
+}
+
+/** 을/를 */
+export const josaEul = (w: string): string => (batchim(w).yes ? "을" : "를")
+/** 으로/로 (ㄹ 받침은 로) */
+export const josaRo = (w: string): string => {
+  const b = batchim(w)
+  return b.yes && !b.rieul ? "으로" : "로"
+}
+/** 과/와 */
+export const josaGwa = (w: string): string => (batchim(w).yes ? "과" : "와")
+/** 이/가 */
+export const josaI = (w: string): string => (batchim(w).yes ? "이" : "가")
+
+export type DayBucket = "오늘" | "어제" | "이번 주" | "이전"
+export const DAY_BUCKETS: DayBucket[] = ["오늘", "어제", "이번 주", "이전"]
+
+/** 오늘 / 어제 / 이번 주(최근 7일) / 이전 */
+export function dayBucket(iso: string, now: Date = new Date()): DayBucket {
+  const start = new Date(now)
+  start.setHours(0, 0, 0, 0)
+  const t = new Date(iso).getTime()
+  const day = 86_400_000
+  if (t >= start.getTime()) return "오늘"
+  if (t >= start.getTime() - day) return "어제"
+  if (t >= start.getTime() - 6 * day) return "이번 주"
+  return "이전"
+}
+
+export type FileKind =
+  | "folder"
+  | "image"
+  | "pdf"
+  | "doc"
+  | "sheet"
+  | "slide"
+  | "video"
+  | "audio"
+  | "archive"
+  | "code"
+  | "text"
+
+const EXT_KIND: Record<string, FileKind> = {
+  png: "image", jpg: "image", jpeg: "image", gif: "image", webp: "image", svg: "image", heic: "image", bmp: "image", avif: "image",
+  pdf: "pdf",
+  doc: "doc", docx: "doc", hwp: "doc", hwpx: "doc", odt: "doc", rtf: "doc", pages: "doc",
+  xls: "sheet", xlsx: "sheet", csv: "sheet", ods: "sheet", numbers: "sheet",
+  ppt: "slide", pptx: "slide", key: "slide", odp: "slide",
+  mp4: "video", mov: "video", webm: "video", mkv: "video", avi: "video",
+  mp3: "audio", wav: "audio", m4a: "audio", flac: "audio", ogg: "audio",
+  zip: "archive", tar: "archive", gz: "archive", "7z": "archive", rar: "archive",
+  js: "code", ts: "code", tsx: "code", jsx: "code", py: "code", json: "code", html: "code", css: "code", sh: "code", go: "code", rs: "code", java: "code", xml: "code", yml: "code", yaml: "code",
+}
+
+/** 이름(확장자)과 MIME 으로 표시용 파일 종류 */
+export function fileKind(
+  name: string | null | undefined,
+  mime: string | null | undefined,
+  isFolder = false,
+): FileKind {
+  if (isFolder) return "folder"
+  const ext = name?.includes(".") ? name.split(".").pop()!.toLowerCase() : ""
+  if (ext && EXT_KIND[ext]) return EXT_KIND[ext]
+  if (mime) {
+    if (mime.startsWith("image/")) return "image"
+    if (mime.startsWith("video/")) return "video"
+    if (mime.startsWith("audio/")) return "audio"
+    if (mime === "application/pdf") return "pdf"
+    if (mime.includes("zip") || mime.includes("compressed")) return "archive"
+  }
+  return "text"
+}

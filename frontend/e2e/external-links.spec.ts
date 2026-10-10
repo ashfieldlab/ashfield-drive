@@ -19,16 +19,20 @@ test.describe("external links", () => {
     const row = page.locator(`tr[data-testid^="files-row-"]`, { hasText: name })
     await expect(row).toBeVisible({ timeout: 10_000 })
 
-    // 공유 모달 → 외부 링크 탭 → 생성
+    // 공유 모달 → 외부 링크 패널 → 링크 만들기
     await row.locator(`[data-testid$="-share"]`).click()
-    await page.getByTestId("share-tab-links").click()
+    await expect(page.getByTestId("share-modal")).toBeVisible()
     await page.getByTestId("link-create-button").click()
 
-    // 첫 활성 링크의 URL 텍스트: `/s/{token}` 형태 캡처
-    const linkRow = page.locator(`li[data-testid^="link-row-"]`).first()
-    await expect(linkRow).toBeVisible()
-    const tokenUrl = await linkRow.locator(`[data-testid$="-url"]`).innerText()
+    // 활성 링크 카드의 URL: `/s/{token}` 형태 캡처
+    await expect(page.getByTestId("share-link-card")).toBeVisible()
+    await expect(page.getByTestId("share-link-toggle")).toHaveAttribute("aria-checked", "true")
+    const tokenUrl = (await page.getByTestId("link-url").textContent()) ?? ""
     expect(tokenUrl).toMatch(/\/s\/[A-Za-z0-9_-]+$/)
+
+    // 복사 버튼 → 복사됨
+    await page.getByTestId("link-copy-button").click()
+    await expect(page.getByTestId("link-copy-button")).toHaveText(/복사됨/)
 
     // 새 컨텍스트(인증 없음)로 접근
     const anonCtx = await browser.newContext()

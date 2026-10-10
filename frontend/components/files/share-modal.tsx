@@ -1,24 +1,27 @@
 "use client"
 
-import { useState } from "react"
-import { Copy, Trash2, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { File, Folder, Loader2, Lock, X } from "lucide-react"
 
 import { api } from "@/lib/api-client"
 import { useApiGet, invalidateApi } from "@/lib/hooks/use-api"
+import { formatBytes } from "@/lib/utils/format"
+import { logger } from "@/lib/utils/logger"
+import { useAppContext } from "@/components/providers/app-context"
 import { useToast } from "@/components/ui-custom/use-toast"
-import { UserAutocomplete } from "@/components/ui-custom/user-autocomplete"
-import { formatDateTime } from "@/lib/utils/format"
+import { useConfirm } from "@/components/ui-custom/use-confirm"
 import * as e2e from "@/lib/e2e/session"
 import { useVaultContext } from "@/lib/e2e/use-vault-context"
 import { E2EUnlockModal } from "@/components/files/e2e-unlock-modal"
-import { useConfirm } from "@/components/ui-custom/use-confirm"
+import { ShareLinkPanel } from "@/components/files/share-link-panel"
+import { SharePersonInput } from "@/components/files/share-person-input"
+import { Avatar, PermMenu } from "@/components/files/share-parts"
 import type {
-  ExternalLinkList,
-  ExternalLinkResponse,
   FileShareList,
   FileShareResponse,
   NodeResponse,
   SharePermission,
+  WorkspaceMember,
 } from "@/lib/types/api"
 
 interface Props {
@@ -28,433 +31,326 @@ interface Props {
   onClose: () => void
 }
 
-type Tab = "users" | "links"
+// 백엔드 응답에는 그룹(부서) 공유 필드도 있다 (팀 폴더). 개인 공유면 grantee_sub, 그룹이면 grantee_group_id.
+type ShareRow = Omit<FileShareResponse, "grantee_sub"> & {
+  grantee_sub: string | null
+  grantee_group_id?: string | null
+  group_name?: string | null
+}
 
+const shareLabel = (s: ShareRow) =>
+  s.grantee_group_id
+    ? (s.group_name ?? "부서")
+    : (s.grantee_name ?? s.grantee_email ?? s.grantee_sub ?? "")
+
+/** 공유: 왼쪽 사람(사용자 공유), 오른쪽 외부 링크 */
 export function ShareModal({ node, displayName, onClose }: Props) {
-  const [tab, setTab] = useState<Tab>("users")
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-      onClick={onClose}
-    >
-      <div
-        className="w-[560px] max-w-[92vw] rounded-lg bg-card shadow-lg dark:ring-1 dark:ring-foreground/10"
-        onClick={(e) => e.stopPropagation()}
-        data-testid="share-modal"
-      >
-        <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h3 className="min-w-0 truncate text-base font-semibold text-foreground">
-            {displayName ?? node.name} 공유
-          </h3>
-          <button
-            onClick={onClose}
-            data-testid="share-modal-close"
-            className="rounded p-1 text-muted-foreground hover:bg-muted"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="border-b border-border px-5">
-          <nav className="-mb-px flex gap-4">
-            <TabButton
-              active={tab === "users"}
-              onClick={() => setTab("users")}
-              label="사용자"
-              testId="share-tab-users"
-            />
-            <TabButton
-              active={tab === "links"}
-              onClick={() => setTab("links")}
-              label="외부 링크"
-              testId="share-tab-links"
-            />
-          </nav>
-        </div>
-
-        <div className="p-5">
-          {tab === "users" ? (
-            <UsersTab node={node} />
-          ) : (
-            <LinksTab node={node} />
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TabButton({
-  active,
-  onClick,
-  label,
-  testId,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-  testId: string
-}) {
-  return (
-    <button
-      onClick={onClick}
-      data-testid={testId}
-      className={`border-b-2 px-1 py-2 text-sm font-medium ${
-        active
-          ? "border-foreground text-foreground"
-          : "border-transparent text-muted-foreground hover:text-foreground/80"
-      }`}
-    >
-      {label}
-    </button>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Users tab: FileShare CRUD
-// ---------------------------------------------------------------------------
-
-function UsersTab({ node }: { node: NodeResponse }) {
-  const { toast } = useToast()
-  const { data, isLoading, mutate } = useApiGet<FileShareList>(
-    `/api/v1/nodes/${node.id}/shares`,
-  )
-  const confirm = useConfirm()
-  // 이 노드가 속한 vault: 공유 시 vault_key 도 함께 전달해야 함.
-  const { vaultRootId } = useVaultContext(node.id)
-  const [granteeSub, setGranteeSub] = useState("")
-  const [permission, setPermission] = useState<SharePermission>("read")
-  const [busy, setBusy] = useState(false)
   const [showUnlock, setShowUnlock] = useState(false)
+  const [retry, setRetry] = useState(0)
 
-  async function addShare() {
-    const sub = granteeSub.trim()
-    if (!sub) return
-    setBusy(true)
-    try {
-      // 보안 폴더면 ACL 공유에 더해 vault 멤버십(상대 공개키로 vault_key wrap)도 등록.
-      // 키 전달이 실패하면 ACL 도 만들지 않음: "접근 권한 있는데 복호화 불가" 모순 방지.
-      if (vaultRootId) {
-        if (!e2e.isUnlocked()) {
-          // 잠금해제 모달을 띄우고, 풀리면 공유를 자동 재시도 (밖에서도 공유 가능).
-          setShowUnlock(true)
-          return
-        }
-        try {
-          await e2e.shareVault(vaultRootId, sub)
-        } catch (err) {
-          const status = (err as { status?: number }).status
-          if (status === 404) {
-            toast.error(
-              "상대가 아직 보안 폴더를 설정하지 않아 공유할 수 없습니다.",
-            )
-          } else {
-            toast.error(`보안 폴더 키 전달 실패: ${(err as Error).message}`)
-          }
-          return
-        }
-      }
-      await api(`/api/v1/nodes/${node.id}/shares`, {
-        method: "POST",
-        body: { grantee_sub: sub, permission },
-      })
-      toast.success("공유했습니다")
-      setGranteeSub("")
-      void mutate()
-      invalidateApi("/api/v1/nodes")
-    } catch (e) {
-      toast.error(`공유 실패: ${(e as Error).message}`)
-    } finally {
-      setBusy(false)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // 다른 레이어(확인창, 드롭다운, 잠금해제)가 열려 있으면 그쪽이 먼저 닫힌다.
+      if (e.key !== "Escape" || showUnlock) return
+      if (document.querySelector("[role=alertdialog], [role=menu]")) return
+      onClose()
     }
-  }
-
-  async function removeShare(s: FileShareResponse) {
-    const ok = await confirm({
-      title: "공유 해제",
-      description: `'${s.grantee_name ?? s.grantee_email ?? s.grantee_sub}' 의 공유를 해제하시겠습니까?`,
-      confirmText: "해제",
-      variant: "destructive",
-    })
-    if (!ok) return
-    try {
-      await api(`/api/v1/nodes/${node.id}/shares/${s.id}`, { method: "DELETE" })
-      // 보안 폴더면 vault 멤버십(키)도 회수: best-effort.
-      if (vaultRootId) {
-        try {
-          await e2e.unshareVault(vaultRootId, s.grantee_sub)
-        } catch (err) {
-          console.warn("[share] vault 멤버 제거 실패", err)
-        }
-      }
-      toast.success("공유를 해제했습니다")
-      void mutate()
-    } catch (e) {
-      toast.error(`해제 실패: ${(e as Error).message}`)
-    }
-  }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose, showUnlock])
 
   return (
-    <div className="space-y-3">
-      {vaultRootId && (
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+        onClick={onClose}
+      >
         <div
-          className="rounded-md border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
-          data-testid="share-vault-hint"
+          className="flex max-h-[92vh] w-[720px] max-w-full flex-col overflow-y-auto rounded-xl border bg-background shadow-2xl md:h-[480px] md:flex-row md:overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${displayName ?? node.name} 공유`}
+          data-testid="share-modal"
         >
-          🔒 상대가 <b>보안 폴더를 먼저 설정</b>해 두어야 공유됩니다.
-        </div>
-      )}
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">
-            사용자
-          </label>
-          <UserAutocomplete
-            value={granteeSub}
-            onChange={(sub) => setGranteeSub(sub)}
-            testId="share-grantee-input"
+          <PeoplePane
+            node={node}
+            displayName={displayName ?? node.name}
+            retry={retry}
+            onNeedUnlock={() => setShowUnlock(true)}
           />
+          <ShareLinkPanel node={node} onClose={onClose} />
         </div>
-        <select
-          value={permission}
-          onChange={(e) => setPermission(e.target.value as SharePermission)}
-          data-testid="share-permission-select"
-          className="rounded border border-input px-2 py-2 text-sm"
-        >
-          <option value="read">읽기</option>
-          <option value="write">쓰기</option>
-          <option value="manage">관리</option>
-        </select>
-        <button
-          onClick={addShare}
-          disabled={busy || !granteeSub.trim()}
-          data-testid="share-add-button"
-          className="rounded bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          공유
-        </button>
       </div>
-
-      {isLoading ? (
-        <div className="text-sm text-muted-foreground">불러오는 중…</div>
-      ) : (data?.shares ?? []).length === 0 ? (
-        <div className="rounded border border-dashed border-input p-4 text-center text-sm text-muted-foreground">
-          아직 공유된 사용자가 없습니다.
-        </div>
-      ) : (
-        <ul className="divide-y divide-border/60 rounded border border-border">
-          {data!.shares.map((s) => (
-            <li
-              key={s.id}
-              data-testid={`share-row-${s.id}`}
-              className="flex items-center justify-between px-3 py-2 text-sm"
-            >
-              <div className="min-w-0">
-                <div className="truncate font-medium text-foreground">
-                  {s.grantee_name ?? s.grantee_email ?? s.grantee_sub}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {s.permission}, {formatDateTime(s.granted_at)}
-                </div>
-              </div>
-              <button
-                onClick={() => removeShare(s)}
-                data-testid={`share-row-${s.id}-remove`}
-                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-rose-600 dark:hover:text-rose-400"
-                title="해제"
-              >
-                <Trash2 size={14} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
       {showUnlock && (
         <E2EUnlockModal
           onUnlocked={() => {
             setShowUnlock(false)
-            void addShare() // 잠금해제 완료 → 공유 자동 재시도
+            setRetry((n) => n + 1) // 잠금해제 완료 → 공유 자동 재시도
           }}
           onClose={() => setShowUnlock(false)}
         />
       )}
-    </div>
+    </>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Links tab: ExternalLink CRUD
-// ---------------------------------------------------------------------------
-
-function LinksTab({ node }: { node: NodeResponse }) {
+function PeoplePane({
+  node,
+  displayName,
+  retry,
+  onNeedUnlock,
+}: {
+  node: NodeResponse
+  displayName: string
+  retry: number
+  onNeedUnlock: () => void
+}) {
   const { toast } = useToast()
   const confirm = useConfirm()
-  const { data, isLoading, mutate } = useApiGet<ExternalLinkList>(
-    `/api/v1/nodes/${node.id}/external-links`,
-  )
-  const [password, setPassword] = useState("")
-  const [usePassword, setUsePassword] = useState(false)
-  const [permission, setPermission] = useState<"read" | "write">("read")
-  const [expiryDays, setExpiryDays] = useState("")
+  const { authUser } = useAppContext()
+  const { data, isLoading, mutate } = useApiGet<FileShareList>(`/api/v1/nodes/${node.id}/shares`)
+  // 이 노드가 속한 vault: 공유 시 vault_key 도 함께 전달해야 함.
+  const { vaultRootId } = useVaultContext(node.id)
+  const [staged, setStaged] = useState<WorkspaceMember[]>([])
+  const [permission, setPermission] = useState<SharePermission>("read")
   const [busy, setBusy] = useState(false)
+  const [rowBusy, setRowBusy] = useState<string | null>(null)
 
-  async function createLink() {
+  const shares = (data?.shares ?? []) as ShareRow[]
+  const isOwner = !!authUser && authUser.id === node.owner_id
+  const stack = [
+    ...(isOwner && authUser ? [{ key: authUser.id, label: authUser.name ?? authUser.email, group: false }] : []),
+    ...shares.map((s) => ({ key: s.grantee_group_id ?? s.grantee_sub ?? s.id, label: shareLabel(s), group: !!s.grantee_group_id })),
+  ]
+
+  async function addShares() {
+    if (staged.length === 0 || busy) return
     setBusy(true)
+    const done: string[] = []
     try {
-      await api(`/api/v1/nodes/${node.id}/external-links`, {
-        method: "POST",
-        body: {
-          permission,
-          password: usePassword && password ? password : null,
-          expires_at: expiryDays
-            ? new Date(Date.now() + Number(expiryDays) * 86400000).toISOString()
-            : null,
-        },
-      })
-      toast.success("링크를 만들었습니다")
-      setPassword("")
-      void mutate()
-    } catch (e) {
-      toast.error(`생성 실패: ${(e as Error).message}`)
+      for (const m of staged) {
+        // 보안 폴더면 ACL 공유에 더해 vault 멤버십(상대 공개키로 vault_key wrap)도 등록.
+        // 키 전달이 실패하면 ACL 도 만들지 않음: "접근 권한 있는데 복호화 불가" 모순 방지.
+        if (vaultRootId) {
+          if (!e2e.isUnlocked()) {
+            // 잠금해제 모달을 띄우고, 풀리면 공유를 자동 재시도.
+            onNeedUnlock()
+            return
+          }
+          try {
+            await e2e.shareVault(vaultRootId, m.sub)
+          } catch (err) {
+            const status = (err as { status?: number }).status
+            if (status === 404) {
+              toast.error(`${m.name ?? m.email}: 상대가 아직 보안 폴더를 설정하지 않아 공유할 수 없습니다.`)
+            } else {
+              toast.error(`보안 폴더 키 전달 실패: ${(err as Error).message}`)
+            }
+            continue
+          }
+        }
+        try {
+          await api(`/api/v1/nodes/${node.id}/shares`, {
+            method: "POST",
+            body: { grantee_sub: m.sub, permission },
+          })
+          done.push(m.sub)
+        } catch (e) {
+          toast.error(`공유 실패: ${(e as Error).message}`)
+        }
+      }
+      if (done.length > 0) {
+        toast.success("공유했습니다")
+        invalidateApi("/api/v1/nodes")
+      }
     } finally {
+      setStaged((prev) => prev.filter((m) => !done.includes(m.sub)))
       setBusy(false)
+      void mutate()
     }
   }
 
-  async function revoke(link: ExternalLinkResponse) {
-    if (!(await confirm({ title: "링크 철회", description: "이 외부 링크를 철회하시겠습니까? 기존 URL 이 즉시 무효화됩니다.", confirmText: "철회", variant: "destructive" }))) return
+  // 잠금해제 후 자동 재시도
+  useEffect(() => {
+    if (retry > 0) void addShares()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retry])
+
+  async function changePermission(s: ShareRow, p: SharePermission) {
+    if (p === s.permission) return
+    setRowBusy(s.id)
     try {
-      await api(`/api/v1/nodes/${node.id}/external-links/${link.id}`, {
-        method: "DELETE",
+      // 공유 생성은 upsert: 같은 대상에 다시 보내면 권한이 바뀐다.
+      await api(`/api/v1/nodes/${node.id}/shares`, {
+        method: "POST",
+        body: s.grantee_group_id
+          ? { grantee_group_id: s.grantee_group_id, permission: p, expires_at: s.expires_at }
+          : { grantee_sub: s.grantee_sub, permission: p, expires_at: s.expires_at },
       })
-      toast.success("철회했습니다")
       void mutate()
     } catch (e) {
-      toast.error(`실패: ${(e as Error).message}`)
+      toast.error(`권한 변경 실패: ${(e as Error).message}`)
+    } finally {
+      setRowBusy(null)
     }
   }
 
-  function urlFor(token: string): string {
-    if (typeof window === "undefined") return `/s/${token}`
-    return `${window.location.origin}/s/${token}`
+  async function removeShare(s: ShareRow) {
+    const ok = await confirm({
+      title: "공유 해제",
+      description: `'${shareLabel(s)}' 의 공유를 해제하시겠습니까?`,
+      confirmText: "해제",
+      variant: "destructive",
+    })
+    if (!ok) return
+    setRowBusy(s.id)
+    try {
+      await api(`/api/v1/nodes/${node.id}/shares/${s.id}`, { method: "DELETE" })
+      // 보안 폴더면 vault 멤버십(키)도 회수: best-effort.
+      if (vaultRootId && s.grantee_sub) {
+        try {
+          await e2e.unshareVault(vaultRootId, s.grantee_sub)
+        } catch (err) {
+          logger.warn("vault_unshare_failed", { category: "biz", vaultRootId, error: String(err) })
+        }
+      }
+      toast.success("공유를 해제했습니다")
+      void mutate()
+      invalidateApi("/api/v1/nodes")
+    } catch (e) {
+      toast.error(`해제 실패: ${(e as Error).message}`)
+    } finally {
+      setRowBusy(null)
+    }
   }
+
+  const meta =
+    node.kind === "folder" ? "폴더" : node.size_bytes != null ? formatBytes(node.size_bytes) : "파일"
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2 rounded border border-border p-3">
-        <div className="flex gap-2">
-          <label className="flex-1 text-xs text-muted-foreground">
-            권한
-            <select
-              value={permission}
-              onChange={(e) => setPermission(e.target.value as "read" | "write")}
-              data-testid="link-permission-select"
-              className="mt-1 w-full rounded border border-input px-2 py-1.5 text-sm"
-            >
-              <option value="read">읽기</option>
-              <option value="write">쓰기</option>
-            </select>
-          </label>
-          <label className="flex-1 text-xs text-muted-foreground">
-            만료
-            <select
-              value={expiryDays}
-              onChange={(e) => setExpiryDays(e.target.value)}
-              data-testid="link-expiry-select"
-              className="mt-1 w-full rounded border border-input px-2 py-1.5 text-sm"
-            >
-              <option value="">없음</option>
-              <option value="1">1일 후</option>
-              <option value="7">7일 후</option>
-              <option value="30">30일 후</option>
-              <option value="90">90일 후</option>
-            </select>
-          </label>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={usePassword}
-            onChange={(e) => setUsePassword(e.target.checked)}
-            data-testid="link-password-toggle"
-          />
-          비밀번호 보호
-        </label>
-        {usePassword && (
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="최소 4자"
-            minLength={4}
-            data-testid="link-password-input"
-            className="w-full rounded border border-input px-3 py-2 text-sm focus:border-ring focus:outline-none"
-          />
+    <section className="flex min-w-0 flex-1 flex-col">
+      <header className="flex items-center gap-2.5 px-5 pt-4 pb-3">
+        {node.kind === "folder" ? (
+          <Folder size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+        ) : (
+          <File size={18} className="shrink-0 text-muted-foreground" />
         )}
-        <button
-          onClick={createLink}
-          disabled={busy || (usePassword && password.length < 4)}
-          data-testid="link-create-button"
-          className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          새 링크
-        </button>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-[15px] leading-tight font-semibold" data-testid="share-modal-title">
+            {displayName}
+          </h2>
+          <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+            {vaultRootId && <Lock size={11} className="shrink-0 text-amber-600 dark:text-amber-400" />}
+            {vaultRootId ? `보안 폴더, ${meta}` : meta}
+          </p>
+        </div>
+        <div className="flex -space-x-1.5" data-testid="share-avatar-stack">
+          {stack.slice(0, 4).map((p) => (
+            <Avatar key={p.key} seed={p.key} label={p.label} group={p.group} size={24} className="ring-2 ring-background" />
+          ))}
+          {stack.length > 4 && (
+            <span className="grid size-6 place-items-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground ring-2 ring-background">
+              +{stack.length - 4}
+            </span>
+          )}
+        </div>
+      </header>
+
+      <div className="px-5">
+        <SharePersonInput
+          staged={staged}
+          exclude={[
+            ...(authUser ? [authUser.id] : []),
+            node.owner_id,
+            ...shares.map((s) => s.grantee_sub).filter((x): x is string => !!x),
+          ]}
+          onStage={(m) => setStaged((prev) => (prev.some((p) => p.sub === m.sub) ? prev : [...prev, m]))}
+          onUnstage={(sub) => setStaged((prev) => prev.filter((p) => p.sub !== sub))}
+          onSubmit={() => void addShares()}
+          disabled={busy}
+        />
+        <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+          추가 권한
+          <PermMenu
+            value={permission}
+            onChange={setPermission}
+            testId="share-permission"
+            align="start"
+            className="h-6 px-1.5 text-xs font-medium text-foreground"
+          />
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => void addShares()}
+            disabled={busy || staged.length === 0}
+            data-testid="share-add-button"
+            className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+          >
+            {busy && <Loader2 size={12} className="animate-spin" />}
+            공유
+          </button>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-sm text-muted-foreground">불러오는 중…</div>
-      ) : (data?.links ?? []).filter((l) => !l.revoked_at).length === 0 ? (
-        <div className="rounded border border-dashed border-input p-4 text-center text-sm text-muted-foreground">
-          아직 활성 링크가 없습니다.
-        </div>
-      ) : (
-        <ul className="divide-y divide-border/60 rounded border border-border">
-          {data!.links
-            .filter((l) => !l.revoked_at)
-            .map((l) => (
-              <li
-                key={l.id}
-                data-testid={`link-row-${l.id}`}
-                className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-              >
-                <div className="min-w-0 flex-1">
-                  <div
-                    className="truncate font-mono text-xs text-foreground/80"
-                    data-testid={`link-row-${l.id}-url`}
-                  >
-                    {urlFor(l.token)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {l.has_password ? "🔒 비밀번호 필요, " : ""}
-                    접근 {l.access_count}회
-                    {l.expires_at && `, 만료 ${formatDateTime(l.expires_at)}`}
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    void navigator.clipboard.writeText(urlFor(l.token))
-                    toast.success("복사했습니다")
-                  }}
-                  data-testid={`link-row-${l.id}-copy`}
-                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  title="URL 복사"
-                >
-                  <Copy size={14} />
-                </button>
-                <button
-                  onClick={() => revoke(l)}
-                  data-testid={`link-row-${l.id}-revoke`}
-                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-rose-600 dark:hover:text-rose-400"
-                  title="철회"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </li>
-            ))}
-        </ul>
-      )}
-    </div>
+      <ul className="mt-2 min-h-0 flex-1 overflow-y-auto px-3 pb-3" data-testid="share-list">
+        {isOwner && authUser && (
+          <li className="flex items-center gap-2.5 rounded-lg px-2 py-1.5" data-testid="share-owner-row">
+            <Avatar seed={authUser.id} label={authUser.name ?? authUser.email} size={28} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm">
+                {authUser.name ?? authUser.email} <span className="text-muted-foreground">(나)</span>
+              </div>
+              {authUser.name && <div className="truncate text-[11px] text-muted-foreground">{authUser.email}</div>}
+            </div>
+            <span className="px-2 text-xs text-muted-foreground">소유자</span>
+          </li>
+        )}
+        {isLoading && (
+          <li className="flex justify-center py-6 text-muted-foreground">
+            <Loader2 size={16} className="animate-spin" />
+          </li>
+        )}
+        {shares.map((s) => (
+          <li
+            key={s.id}
+            data-testid={`share-row-${s.id}`}
+            className="group flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-muted/60"
+          >
+            <Avatar
+              seed={s.grantee_group_id ?? s.grantee_sub ?? s.id}
+              label={shareLabel(s)}
+              group={!!s.grantee_group_id}
+              size={28}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm">{shareLabel(s)}</div>
+              <div className="truncate text-[11px] text-muted-foreground">
+                {s.grantee_group_id ? "부서" : s.grantee_name ? s.grantee_email : ""}
+              </div>
+            </div>
+            {rowBusy === s.id && <Loader2 size={13} className="animate-spin text-muted-foreground" />}
+            <PermMenu
+              value={s.permission}
+              onChange={(p) => void changePermission(s, p)}
+              disabled={rowBusy === s.id}
+              testId={`share-row-${s.id}-perm`}
+              className="h-7 text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => void removeShare(s)}
+              disabled={rowBusy === s.id}
+              data-testid={`share-row-${s.id}-remove`}
+              aria-label="해제"
+              title="해제"
+              className="grid size-7 place-items-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-background hover:text-rose-600 focus-visible:opacity-100 dark:hover:text-rose-400 [@media(hover:none)]:opacity-100"
+            >
+              <X size={14} />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

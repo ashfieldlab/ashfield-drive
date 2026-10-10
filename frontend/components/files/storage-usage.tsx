@@ -1,8 +1,7 @@
 "use client"
 
-import { HardDrive } from "lucide-react"
-
 import { useApiGet } from "@/lib/hooks/use-api"
+import { cn } from "@/lib/utils"
 import { formatBytes } from "@/lib/utils/format"
 
 interface MyStorage {
@@ -14,21 +13,21 @@ interface MyStorage {
   workspace_bytes_limit: number | null
 }
 
-// 파일앱 내 본인 저장 사용량: 개인 한도 있으면 바, 없으면 사용량만.
-export function StorageUsage() {
+// 툴바의 본인 저장 사용량: 개인 한도 있으면 바 + "사용 / 한도", 없으면 사용량만.
+export function StorageUsage({ className }: { className?: string }) {
   const { data } = useApiGet<MyStorage>("/api/v1/me/storage")
   if (!data) return null
 
   const { storage_bytes_used: used, storage_bytes_limit: limit, version_bytes_used: versions } = data
-  const versionNote = versions > 0 ? ` (버전 ${formatBytes(versions)})` : ""
+  const versionNote = versions > 0 ? `버전 ${formatBytes(versions)} 포함` : undefined
   if (limit == null) {
     return (
       <span
-        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+        className={cn("text-xs whitespace-nowrap text-muted-foreground tabular-nums", className)}
         data-testid="files-storage-usage"
+        title={versionNote}
       >
-        <HardDrive size={13} className="text-muted-foreground/70" />
-        {formatBytes(used)} 사용 중{versionNote}
+        {formatBytes(used)} 사용
       </span>
     )
   }
@@ -36,19 +35,21 @@ export function StorageUsage() {
   const over = used > limit
   return (
     <div
-      className="flex items-center gap-2"
+      className={cn("flex items-center gap-2.5 text-xs text-muted-foreground", className)}
       data-testid="files-storage-usage"
-      title={`${formatBytes(used)} / ${formatBytes(limit)}${versionNote}`}
+      title={versionNote}
     >
-      <HardDrive size={13} className="shrink-0 text-muted-foreground/70" />
       <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
         <div
-          className={`h-full ${over ? "bg-rose-500" : pct > 85 ? "bg-amber-500" : "bg-foreground/70"}`}
+          className={cn(
+            "h-full rounded-full",
+            over ? "bg-rose-500 dark:bg-rose-400" : pct > 85 ? "bg-amber-500 dark:bg-amber-400" : "bg-primary",
+          )}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="whitespace-nowrap text-xs text-muted-foreground">
-        {formatBytes(used)} / {formatBytes(limit)}{versionNote}
+      <span className="whitespace-nowrap tabular-nums">
+        {formatBytes(used)} / {formatBytes(limit)}
       </span>
     </div>
   )

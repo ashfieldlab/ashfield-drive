@@ -36,3 +36,13 @@ export async function loginAs(page: Page, key: E2EUserKey): Promise<void> {
 export async function confirmDialog(page: Page): Promise<void> {
   await page.getByTestId("confirm-dialog-confirm").click()
 }
+
+/**
+ * 파일 화면에서 "새로 만들기 > 새 폴더" 로 폴더를 만든다 (현재 폴더 아래).
+ */
+export async function createFolder(page: Page, name: string): Promise<void> {
+  await page.getByTestId("files-new-button").click()
+  await page.getByTestId("files-new-folder-button").click()
+  await page.getByTestId("files-new-folder-input").fill(name)
+  await page.getByTestId("files-new-folder-confirm").click()
+}

@@ -187,7 +187,7 @@ async def create_folder(
         action="create",
         entity_type="node",
         entity_id=node.id,
-        meta={"kind": "folder", "name": node.name, "scope": node.scope},
+        meta={"kind": "folder", "name": node.name, "scope": node.scope, "parent_id": node.parent_id},
     )
     await db.commit()
     await db.refresh(node)
@@ -915,6 +915,7 @@ async def complete_multipart(
             "name": node.name,
             "size": node.size_bytes,
             "multipart": True,
+            "parent_id": node.parent_id,
         },
     )
     stale_keys = await file_versions.reclaim_space(db, node, actor=user)
@@ -963,7 +964,7 @@ async def complete_upload(
         action="create",
         entity_type="node",
         entity_id=node.id,
-        meta={"kind": "file", "name": node.name, "size": node.size_bytes},
+        meta={"kind": "file", "name": node.name, "size": node.size_bytes, "parent_id": node.parent_id},
     )
     stale_keys = await file_versions.reclaim_space(db, node, actor=user)
     await db.commit()
