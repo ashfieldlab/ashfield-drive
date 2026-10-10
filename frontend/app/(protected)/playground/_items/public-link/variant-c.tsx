@@ -6,7 +6,7 @@ import { Check, Clock, Download, Eye, Loader2, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-import { formatBytes, LINK } from "../_mock"
+import { formatBytes } from "../_mock"
 import {
   Avatar,
   Brand,
@@ -51,7 +51,6 @@ function SidePanel({ state }: { state: PublicState }) {
         {SHARER.name}
       </span>
     )],
-    ["권한", LINK.permission === "read" ? "보기, 다운로드" : "편집"],
     ["만료", expired ? EXPIRED_AT : `${EXPIRES}, ${daysLeft()}일 남음`],
   ]
   return (
