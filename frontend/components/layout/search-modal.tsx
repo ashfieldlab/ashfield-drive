@@ -86,25 +86,25 @@ export function SearchModal({
       }}
     >
       <div
-        className="flex max-h-[80vh] w-[560px] flex-col overflow-hidden rounded-lg bg-white shadow-xl"
+        className="flex max-h-[80vh] w-[560px] flex-col overflow-hidden rounded-lg bg-card shadow-xl dark:ring-1 dark:ring-foreground/10"
         data-testid="search-modal"
       >
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <h3 className="text-sm font-semibold text-gray-900">상세 검색</h3>
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          <h3 className="text-sm font-semibold text-foreground">상세 검색</h3>
           <button
             onClick={onClose}
             data-testid="search-modal-close"
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            className="rounded p-1 text-muted-foreground/70 hover:bg-muted hover:text-foreground/80"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="space-y-2 border-b border-gray-100 p-4">
+        <div className="space-y-2 border-b border-border/60 p-4">
           <div className="relative">
             <Search
               size={14}
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70"
             />
             <input
               ref={inputRef}
@@ -114,7 +114,7 @@ export function SearchModal({
               onKeyDown={(e) => e.key === "Enter" && runSearch()}
               placeholder="검색어"
               data-testid="search-modal-input"
-              className="w-full rounded border border-gray-300 py-1.5 pl-8 pr-3 text-sm focus:border-gray-500 focus:outline-none"
+              className="w-full rounded border border-input py-1.5 pl-8 pr-3 text-sm focus:border-ring focus:outline-none"
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -122,7 +122,7 @@ export function SearchModal({
                   value={kind}
                   onChange={(e) => setKind(e.target.value)}
                   data-testid="search-modal-kind"
-                  className="rounded border border-gray-300 px-2 py-1.5 text-xs focus:border-gray-500 focus:outline-none"
+                  className="rounded border border-input px-2 py-1.5 text-xs focus:border-ring focus:outline-none"
                 >
                   {KIND_OPTIONS.map(([v, l]) => (
                     <option key={v} value={v}>
@@ -135,7 +135,7 @@ export function SearchModal({
                   onChange={(e) => setCategory(e.target.value)}
                   disabled={kind === "folder"}
                   data-testid="search-modal-category"
-                  className="rounded border border-gray-300 px-2 py-1.5 text-xs focus:border-gray-500 focus:outline-none disabled:opacity-50"
+                  className="rounded border border-input px-2 py-1.5 text-xs focus:border-ring focus:outline-none disabled:opacity-50"
                 >
                   {CATEGORY_OPTIONS.map(([v, l]) => (
                     <option key={v} value={v}>
@@ -148,22 +148,22 @@ export function SearchModal({
               value={from}
               onChange={(e) => setFrom(e.target.value)}
               data-testid="search-modal-from"
-              className="rounded border border-gray-300 px-2 py-1.5 text-xs focus:border-gray-500 focus:outline-none"
+              className="rounded border border-input px-2 py-1.5 text-xs focus:border-ring focus:outline-none"
               title="수정일 시작"
             />
-            <span className="text-gray-400">~</span>
+            <span className="text-muted-foreground/70">~</span>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
               data-testid="search-modal-to"
-              className="rounded border border-gray-300 px-2 py-1.5 text-xs focus:border-gray-500 focus:outline-none"
+              className="rounded border border-input px-2 py-1.5 text-xs focus:border-ring focus:outline-none"
             />
             <button
               onClick={runSearch}
               disabled={loading || !q.trim()}
               data-testid="search-modal-submit"
-              className="ml-auto rounded bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="ml-auto rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? "검색 중…" : "검색"}
             </button>
@@ -172,20 +172,20 @@ export function SearchModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {!searched ? (
-            <p className="p-8 text-center text-xs text-gray-400">
+            <p className="p-8 text-center text-xs text-muted-foreground/70">
               검색어와 필터를 정하고 검색하세요.
             </p>
           ) : loading ? (
-            <p className="p-8 text-center text-xs text-gray-500">검색 중…</p>
+            <p className="p-8 text-center text-xs text-muted-foreground">검색 중…</p>
           ) : results.length === 0 ? (
             <p
-              className="p-8 text-center text-xs text-gray-500"
+              className="p-8 text-center text-xs text-muted-foreground"
               data-testid="search-modal-empty"
             >
               결과가 없습니다.
             </p>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-border/60">
               {(data?.nodes ?? []).map((n) => (
                 <li key={n.id}>
                   <Link
@@ -196,15 +196,15 @@ export function SearchModal({
                     }
                     onClick={onClose}
                     data-testid={`search-modal-node-${n.id}`}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted/50"
                   >
                     {n.kind === "folder" ? (
-                      <Folder size={14} className="shrink-0 text-blue-600" />
+                      <Folder size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />
                     ) : (
-                      <File size={14} className="shrink-0 text-gray-500" />
+                      <File size={14} className="shrink-0 text-muted-foreground" />
                     )}
-                    <span className="flex-1 truncate text-gray-900">{n.name}</span>
-                    <span className="text-[11px] text-gray-400">
+                    <span className="flex-1 truncate text-foreground">{n.name}</span>
+                    <span className="text-[11px] text-muted-foreground/70">
                       {n.scope === "shared" ? "공유" : "내 파일"}
                     </span>
                   </Link>

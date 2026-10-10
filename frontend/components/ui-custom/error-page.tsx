@@ -74,15 +74,15 @@ export function ErrorPage({
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center space-y-5">
-        <Icon size={48} className="mx-auto text-gray-400" />
+        <Icon size={48} className="mx-auto text-muted-foreground/70" />
         <div className="space-y-2">
           <h1
-            className="text-2xl font-bold text-gray-900"
+            className="text-2xl font-bold text-foreground"
             data-testid="error-page-title"
           >
             {title ?? preset.title}
           </h1>
-          <p className="text-sm text-gray-600">{description ?? preset.description}</p>
+          <p className="text-sm text-muted-foreground">{description ?? preset.description}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 justify-center">
           {onClickPrimary && (
@@ -107,7 +107,7 @@ export function ErrorPage({
             <Link
               href="/"
               data-testid="error-page-home-link"
-              className="inline-flex items-center justify-center h-9 px-4 py-2 rounded-md border border-gray-200 bg-white text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center justify-center h-9 px-4 py-2 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/50 transition-colors"
             >
               {secondaryLabel}
             </Link>

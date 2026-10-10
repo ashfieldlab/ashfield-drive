@@ -80,13 +80,13 @@ export function FilesBreadcrumb({
     return decNames[id] ?? "🔒 …"
   }
 
-  const linkHover = onDark ? "hover:text-white hover:underline" : "hover:text-gray-900 hover:underline"
-  const chevron = onDark ? "text-slate-500" : "text-gray-400"
-  const current = onDark ? "font-medium text-white" : "font-medium text-gray-900"
+  const linkHover = onDark ? "hover:text-white hover:underline" : "hover:text-foreground hover:underline"
+  const chevron = onDark ? "text-slate-500" : "text-muted-foreground/70"
+  const current = onDark ? "font-medium text-white" : "font-medium text-foreground"
 
   return (
     <nav
-      className={`flex min-w-0 items-center gap-1 overflow-hidden text-sm ${onDark ? "text-slate-300" : "text-gray-600"}`}
+      className={`flex min-w-0 items-center gap-1 overflow-hidden text-sm ${onDark ? "text-slate-300" : "text-muted-foreground"}`}
       data-testid="files-breadcrumb"
       aria-label="breadcrumb"
     >

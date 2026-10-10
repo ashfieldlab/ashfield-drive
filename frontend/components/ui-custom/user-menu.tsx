@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ThemeSubmenu } from "@/components/ui-custom/theme-menu"
 
 interface UserMenuProps {
   user: { name?: string }
@@ -20,7 +21,7 @@ interface UserMenuProps {
   onServiceSettings?: () => void
 }
 
-/** 헤더 우측 사용자 메뉴: 이니셜 아바타 + 설정·로그아웃 드롭다운. */
+/** 헤더 우측 사용자 메뉴: 이니셜 아바타 + 설정·테마·로그아웃 드롭다운. */
 export function UserMenu({
   user,
   isServiceAdmin = false,
@@ -61,9 +62,8 @@ export function UserMenu({
             서비스 설정
           </DropdownMenuItem>
         )}
-        {(onBasicSettings || (isServiceAdmin && onServiceSettings)) && (
-          <DropdownMenuSeparator />
-        )}
+        <ThemeSubmenu />
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
           onSelect={() => void onLogout()}

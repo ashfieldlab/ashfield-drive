@@ -121,14 +121,14 @@ export default function NotificationsPage() {
     >
       <header className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Bell size={20} className="text-gray-600" />
-          <h1 className="text-2xl font-bold text-gray-900">알림</h1>
+          <Bell size={20} className="text-muted-foreground" />
+          <h1 className="text-2xl font-bold text-foreground">알림</h1>
         </div>
         {unread > 0 && (
           <button
             onClick={markAll}
             data-testid="notifications-mark-all-read"
-            className="text-sm text-gray-500 hover:text-gray-900"
+            className="text-sm text-muted-foreground hover:text-foreground"
           >
             모두 읽음
           </button>
@@ -136,21 +136,21 @@ export default function NotificationsPage() {
       </header>
 
       {error ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <div className="rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 p-4 text-sm text-rose-700 dark:text-rose-300">
           불러오지 못했습니다. 잠시 후 다시 시도해주세요.
         </div>
       ) : loading ? (
-        <p className="text-sm text-gray-500">불러오는 중…</p>
+        <p className="text-sm text-muted-foreground">불러오는 중…</p>
       ) : items.length === 0 ? (
         <div
-          className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500"
+          className="rounded-lg border border-dashed border-input p-8 text-center text-sm text-muted-foreground"
           data-testid="notifications-empty"
         >
           알림이 없습니다.
         </div>
       ) : (
         <>
-          <ul className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <ul className="overflow-hidden rounded-lg border border-border bg-card">
             {items.map((n) => {
               const isUnread = !n.read_at
               const r = renderNotification(n)
@@ -158,27 +158,27 @@ export default function NotificationsPage() {
                 <li
                   key={n.id}
                   data-testid={`notifications-row-${n.id}`}
-                  className={`border-b border-gray-100 last:border-b-0 ${
-                    isUnread ? "bg-blue-50/50" : ""
+                  className={`border-b border-border/60 last:border-b-0 ${
+                    isUnread ? "bg-blue-50/50 dark:bg-blue-950/30" : ""
                   }`}
                 >
                   <Link
                     href={r.href}
                     onClick={() => isUnread && void markOne(n.id)}
                     data-testid={`notifications-row-${n.id}-link`}
-                    className="flex items-start justify-between gap-3 px-4 py-3 text-sm hover:bg-gray-50"
+                    className="flex items-start justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/50"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-gray-900">
+                      <p className="truncate font-medium text-foreground">
                         {r.title}
                       </p>
                       {r.subtitle && (
-                        <p className="mt-0.5 truncate text-xs text-gray-600">
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {r.subtitle}
                         </p>
                       )}
                       <p
-                        className="mt-1 text-[11px] text-gray-400"
+                        className="mt-1 text-[11px] text-muted-foreground/70"
                         title={formatDateTime(n.created_at)}
                       >
                         {relativeTime(n.created_at)}
@@ -190,7 +190,7 @@ export default function NotificationsPage() {
                         aria-label="안 읽음"
                       />
                     ) : (
-                      <Check size={14} className="mt-0.5 shrink-0 text-gray-300" />
+                      <Check size={14} className="mt-0.5 shrink-0 text-muted-foreground/50" />
                     )}
                   </Link>
                 </li>
@@ -204,7 +204,7 @@ export default function NotificationsPage() {
                 onClick={loadMore}
                 disabled={loadingMore}
                 data-testid="notifications-load-more"
-                className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded border border-input px-4 py-2 text-sm text-foreground/80 hover:bg-muted/50 disabled:opacity-50"
               >
                 {loadingMore ? "불러오는 중…" : "더 보기"}
               </button>

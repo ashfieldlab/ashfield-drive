@@ -24,10 +24,10 @@ export function StorageUsage() {
   if (limit == null) {
     return (
       <span
-        className="inline-flex items-center gap-1.5 text-xs text-gray-500"
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
         data-testid="files-storage-usage"
       >
-        <HardDrive size={13} className="text-gray-400" />
+        <HardDrive size={13} className="text-muted-foreground/70" />
         {formatBytes(used)} 사용 중{versionNote}
       </span>
     )
@@ -40,14 +40,14 @@ export function StorageUsage() {
       data-testid="files-storage-usage"
       title={`${formatBytes(used)} / ${formatBytes(limit)}${versionNote}`}
     >
-      <HardDrive size={13} className="shrink-0 text-gray-400" />
-      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100">
+      <HardDrive size={13} className="shrink-0 text-muted-foreground/70" />
+      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
         <div
-          className={`h-full ${over ? "bg-rose-500" : pct > 85 ? "bg-amber-500" : "bg-gray-700"}`}
+          className={`h-full ${over ? "bg-rose-500" : pct > 85 ? "bg-amber-500" : "bg-foreground/70"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="whitespace-nowrap text-xs text-gray-500">
+      <span className="whitespace-nowrap text-xs text-muted-foreground">
         {formatBytes(used)} / {formatBytes(limit)}{versionNote}
       </span>
     </div>

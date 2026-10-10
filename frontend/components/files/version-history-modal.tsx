@@ -112,34 +112,34 @@ export function VersionHistoryModal({
       onClick={() => !busy && onClose()}
     >
       <div
-        className="flex max-h-[80vh] w-[32rem] max-w-[92vw] flex-col overflow-hidden rounded-lg bg-white shadow-lg"
+        className="flex max-h-[80vh] w-[32rem] max-w-[92vw] flex-col overflow-hidden rounded-lg bg-card shadow-lg dark:ring-1 dark:ring-foreground/10"
         onClick={(e) => e.stopPropagation()}
         data-testid="files-versions-modal"
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-          <h3 className="min-w-0 truncate text-base font-semibold text-gray-900">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h3 className="min-w-0 truncate text-base font-semibold text-foreground">
             {displayName} 버전 기록
           </h3>
           <button
             onClick={onClose}
             data-testid="files-versions-close"
-            className="shrink-0 rounded p-1 text-gray-500 hover:bg-gray-100"
+            className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
           >
             <X size={16} />
           </button>
         </div>
-        <p className="border-b border-gray-100 px-5 py-2 text-xs text-gray-500">
+        <p className="border-b border-border/60 px-5 py-2 text-xs text-muted-foreground">
           30일간 보관
         </p>
         <div className="overflow-y-auto">
           {isLoading ? (
-            <p className="px-5 py-6 text-center text-xs text-gray-500">불러오는 중…</p>
+            <p className="px-5 py-6 text-center text-xs text-muted-foreground">불러오는 중…</p>
           ) : versions.length === 0 ? (
-            <p className="px-5 py-6 text-center text-xs text-gray-500" data-testid="files-versions-empty">
+            <p className="px-5 py-6 text-center text-xs text-muted-foreground" data-testid="files-versions-empty">
               이전 버전이 없습니다.
             </p>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-border/60">
               {versions.map((v) => (
                 <li
                   key={v.id}
@@ -147,8 +147,8 @@ export function VersionHistoryModal({
                   data-testid={`files-version-${v.id}`}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm text-gray-900">{formatDateTime(v.saved_at)}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-sm text-foreground">{formatDateTime(v.saved_at)}</div>
+                    <div className="text-xs text-muted-foreground">
                       {v.saved_by_name ?? v.saved_by} · {formatBytes(v.size_bytes)}
                     </div>
                   </div>
@@ -156,7 +156,7 @@ export function VersionHistoryModal({
                     onClick={() => download(v)}
                     disabled={busy}
                     data-testid={`files-version-${v.id}-download`}
-                    className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 disabled:opacity-40"
+                    className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
                     title="다운로드"
                   >
                     <Download size={14} />
@@ -165,7 +165,7 @@ export function VersionHistoryModal({
                     onClick={() => restore(v)}
                     disabled={busy}
                     data-testid={`files-version-${v.id}-restore`}
-                    className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 disabled:opacity-40"
+                    className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
                     title="이 버전으로 복원"
                   >
                     <RotateCcw size={14} />
@@ -175,7 +175,7 @@ export function VersionHistoryModal({
                       onClick={() => remove(v)}
                       disabled={busy}
                       data-testid={`files-version-${v.id}-delete`}
-                      className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-rose-600 disabled:opacity-40"
+                      className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40"
                       title="버전 삭제"
                     >
                       <Trash2 size={14} />

@@ -42,12 +42,12 @@ export function QuotaCard({ workspaceId, mode }: Props) {
 
   if (error)
     return (
-      <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+      <div className="rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 p-4 text-sm text-rose-700 dark:text-rose-300">
         저장소 사용량을 불러오지 못했습니다.
       </div>
     )
   if (isLoading || !data)
-    return <div className="text-sm text-gray-500">불러오는 중…</div>
+    return <div className="text-sm text-muted-foreground">불러오는 중…</div>
 
   const used = data.storage_bytes_used
   const limit = data.storage_bytes_limit
@@ -73,17 +73,17 @@ export function QuotaCard({ workspaceId, mode }: Props) {
 
   return (
     <div
-      className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
+      className="space-y-3 rounded-lg border border-border bg-card p-4"
       data-testid={`quota-card-${workspaceId}`}
     >
       <div className="flex items-center gap-2">
-        <Database size={16} className="text-gray-600" />
-        <h3 className="text-sm font-semibold text-gray-900">스토리지 사용량</h3>
+        <Database size={16} className="text-muted-foreground" />
+        <h3 className="text-sm font-semibold text-foreground">스토리지 사용량</h3>
       </div>
 
       <div>
         <div className="mb-1 flex items-baseline justify-between text-xs">
-          <span className="text-gray-600">
+          <span className="text-muted-foreground">
             {formatBytes(used)} /{" "}
             {limit === null ? "무제한" : formatBytes(limit)}
           </span>
@@ -91,17 +91,17 @@ export function QuotaCard({ workspaceId, mode }: Props) {
             <span
               className={
                 isOverflow
-                  ? "font-medium text-rose-700"
+                  ? "font-medium text-rose-700 dark:text-rose-300"
                   : isHigh
-                    ? "font-medium text-amber-700"
-                    : "text-gray-500"
+                    ? "font-medium text-amber-700 dark:text-amber-200"
+                    : "text-muted-foreground"
               }
             >
               {pctDisplay}%
             </span>
           )}
         </div>
-        <div className="h-2 overflow-hidden rounded bg-gray-100">
+        <div className="h-2 overflow-hidden rounded bg-muted">
           <div
             className={`h-full transition-all ${
               isOverflow
@@ -114,15 +114,15 @@ export function QuotaCard({ workspaceId, mode }: Props) {
           />
         </div>
         {isOverflow && (
-          <p className="mt-1 text-xs text-rose-700">
+          <p className="mt-1 text-xs text-rose-700 dark:text-rose-300">
             저장소 한도 초과. 새 업로드가 차단됩니다.
           </p>
         )}
       </div>
 
       {mode === "admin" && (
-        <div className="space-y-2 border-t border-gray-100 pt-3">
-          <label className="block text-xs font-medium text-gray-600">
+        <div className="space-y-2 border-t border-border/60 pt-3">
+          <label className="block text-xs font-medium text-muted-foreground">
             한도 (MB). 빈 값 = 무제한, 0 = 새 업로드 차단
           </label>
           <div className="flex gap-2">
@@ -132,14 +132,14 @@ export function QuotaCard({ workspaceId, mode }: Props) {
               onChange={(e) => setLimitMb(e.target.value)}
               placeholder="무제한"
               data-testid="quota-card-limit-input"
-              className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+              className="flex-1 rounded border border-input px-3 py-2 text-sm"
               min={0}
             />
             <button
               onClick={save}
               disabled={busy}
               data-testid="quota-card-save-button"
-              className="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="rounded bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               저장
             </button>

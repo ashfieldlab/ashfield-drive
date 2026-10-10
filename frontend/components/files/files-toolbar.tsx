@@ -592,7 +592,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
             data-testid="files-make-vault-button"
             disabled={busy}
             onClick={onMakeVault}
-            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50"
           >
             🔒 보안 폴더로 전환
           </button>
@@ -602,7 +602,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
           data-testid="files-upload-button"
           disabled={busy}
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground/80 hover:bg-muted/50 disabled:opacity-50"
         >
           <Upload size={14} />
           업로드
@@ -625,7 +625,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
           data-testid="files-upload-folder-button"
           disabled={busy}
           onClick={() => folderInputRef.current?.click()}
-          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground/80 hover:bg-muted/50 disabled:opacity-50"
         >
           <FolderUp size={14} />
           폴더 업로드
@@ -650,7 +650,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
           data-testid="files-new-folder-button"
           disabled={busy}
           onClick={() => setNewFolderOpen(true)}
-          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground/80 hover:bg-muted/50 disabled:opacity-50"
         >
           <FolderPlus size={14} />새 폴더
         </button>
@@ -661,11 +661,11 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
             onClick={() => setNewFolderOpen(false)}
           >
             <div
-              className="w-80 rounded-lg bg-white p-5 shadow-lg"
+              className="w-80 rounded-lg bg-card p-5 shadow-lg dark:ring-1 dark:ring-foreground/10"
               onClick={(e) => e.stopPropagation()}
               data-testid="files-new-folder-modal"
             >
-              <h3 className="text-base font-semibold text-gray-900">새 폴더</h3>
+              <h3 className="text-base font-semibold text-foreground">새 폴더</h3>
               <input
                 autoFocus
                 type="text"
@@ -677,13 +677,13 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
                 }}
                 placeholder="폴더 이름"
                 data-testid="files-new-folder-input"
-                className="mt-3 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+                className="mt-3 w-full rounded border border-input px-3 py-2 text-sm focus:border-ring focus:outline-none"
               />
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   onClick={() => setNewFolderOpen(false)}
                   data-testid="files-new-folder-cancel"
-                  className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+                  className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
                 >
                   취소
                 </button>
@@ -691,7 +691,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
                   onClick={createFolder}
                   disabled={busy || !folderName.trim()}
                   data-testid="files-new-folder-confirm"
-                  className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                  className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
                   만들기
                 </button>
@@ -704,10 +704,10 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
           <div
             className={`fixed bottom-6 right-6 z-50 w-80 rounded-lg border p-4 shadow-lg ${
               progress.state === "failed"
-                ? "border-rose-200 bg-rose-50"
+                ? "border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40"
                 : progress.state === "success"
-                  ? "border-emerald-200 bg-emerald-50"
-                  : "border-gray-200 bg-white"
+                  ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40"
+                  : "border-border bg-card"
             }`}
             data-testid="files-upload-progress"
             data-state={progress.state}
@@ -716,10 +716,10 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
               <span
                 className={`font-medium ${
                   progress.state === "failed"
-                    ? "text-rose-800"
+                    ? "text-rose-800 dark:text-rose-300"
                     : progress.state === "success"
-                      ? "text-emerald-800"
-                      : "text-gray-900"
+                      ? "text-emerald-800 dark:text-emerald-300"
+                      : "text-foreground"
                 }`}
               >
                 {progress.state === "failed"
@@ -729,7 +729,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
                     : "업로드 중"}
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {progress.state === "uploading" ? `${elapsedSec}s · ` : ""}
                   {progress.current} / {progress.total}
                   {progress.state === "uploading" &&
@@ -742,7 +742,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
                   onClick={dismissProgress}
                   title="닫기"
                   data-testid="files-upload-progress-dismiss"
-                  className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  className="rounded p-0.5 text-muted-foreground/70 hover:bg-muted hover:text-foreground/80"
                 >
                   <X size={14} />
                 </button>
@@ -750,21 +750,21 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
             </div>
             <p
               className={`mt-1 truncate text-xs ${
-                progress.state === "failed" ? "text-rose-700" : "text-gray-600"
+                progress.state === "failed" ? "text-rose-700 dark:text-rose-300" : "text-muted-foreground"
               }`}
               title={progress.label}
             >
               {progress.label}
             </p>
             {progress.state === "failed" && progress.errorMessage && (
-              <p className="mt-0.5 truncate text-xs text-rose-600" title={progress.errorMessage}>
+              <p className="mt-0.5 truncate text-xs text-rose-600 dark:text-rose-400" title={progress.errorMessage}>
                 {progress.errorMessage}
               </p>
             )}
             {progress.state === "uploading" && (
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full bg-gray-900 transition-all"
+                  className="h-full bg-primary transition-all"
                   style={{
                     // 단일 파일: byte 진행률. 다파일/폴더: 파일-개수 진행률 (bytesPct 무시).
                     width:
@@ -781,7 +781,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
                   type="button"
                   onClick={dismissProgress}
                   data-testid="files-upload-progress-cancel"
-                  className="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                  className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
                 >
                   닫기
                 </button>
@@ -789,7 +789,7 @@ export const FilesToolbar = forwardRef<FilesToolbarHandle, Props>(
                   type="button"
                   onClick={handleRetry}
                   data-testid="files-upload-progress-retry"
-                  className="inline-flex items-center gap-1 rounded bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800"
+                  className="inline-flex items-center gap-1 rounded bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   <RotateCw size={12} />
                   재시도

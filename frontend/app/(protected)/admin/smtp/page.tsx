@@ -66,7 +66,7 @@ export default function AdminSmtpPage() {
   if (!isSystemAdmin) {
     return (
       <div
-        className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
+        className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 p-6 text-sm text-amber-800 dark:text-amber-200"
         data-testid="admin-smtp-no-permission"
       >
         시스템 관리자만 접근할 수 있습니다.
@@ -143,31 +143,31 @@ export default function AdminSmtpPage() {
       data-testid="admin-smtp-page"
     >
       <header className="mb-4 flex items-center gap-2">
-        <Mail size={20} className="text-gray-600" />
-        <h1 className="text-2xl font-bold text-gray-900">전역 SMTP 설정</h1>
+        <Mail size={20} className="text-muted-foreground" />
+        <h1 className="text-2xl font-bold text-foreground">전역 SMTP 설정</h1>
       </header>
 
       {data && data.source !== "system" && (
-        <p className="mb-4 text-xs text-amber-700">
+        <p className="mb-4 text-xs text-amber-700 dark:text-amber-200">
           아직 저장된 설정이 없습니다.
         </p>
       )}
 
       {error ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <div className="rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 p-4 text-sm text-rose-700 dark:text-rose-300">
           불러오지 못했습니다. 잠시 후 다시 시도해주세요.
         </div>
       ) : isLoading ? (
-        <div className="text-sm text-gray-500">불러오는 중…</div>
+        <div className="text-sm text-muted-foreground">불러오는 중…</div>
       ) : (
-        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6">
+        <div className="space-y-4 rounded-lg border border-border bg-card p-6">
           <Row label="Host">
             <input
               type="text"
               value={host}
               onChange={(e) => setHost(e.target.value)}
               data-testid="admin-smtp-host-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
               placeholder="smtp.example.com"
             />
           </Row>
@@ -177,7 +177,7 @@ export default function AdminSmtpPage() {
               value={port}
               onChange={(e) => setPort(Number(e.target.value))}
               data-testid="admin-smtp-port-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
             />
           </Row>
           <Row label="User">
@@ -186,7 +186,7 @@ export default function AdminSmtpPage() {
               value={smtpUser}
               onChange={(e) => setSmtpUser(e.target.value)}
               data-testid="admin-smtp-user-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
               autoComplete="off"
             />
           </Row>
@@ -196,7 +196,7 @@ export default function AdminSmtpPage() {
               value={smtpPassword}
               onChange={(e) => setSmtpPassword(e.target.value)}
               data-testid="admin-smtp-password-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
               autoComplete="new-password"
             />
           </Row>
@@ -205,7 +205,7 @@ export default function AdminSmtpPage() {
               value={tlsMode}
               onChange={(e) => setTlsMode(e.target.value as TlsMode)}
               data-testid="admin-smtp-tls-mode-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
             >
               <option value="starttls">STARTTLS (587)</option>
               <option value="ssl">SSL/TLS (465)</option>
@@ -218,7 +218,7 @@ export default function AdminSmtpPage() {
               value={fromAddr}
               onChange={(e) => setFromAddr(e.target.value)}
               data-testid="admin-smtp-from-addr-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
               placeholder="noreply@example.com"
             />
           </Row>
@@ -228,17 +228,17 @@ export default function AdminSmtpPage() {
               value={fromName}
               onChange={(e) => setFromName(e.target.value)}
               data-testid="admin-smtp-from-name-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
               placeholder="Ashfield"
             />
           </Row>
 
-          <div className="flex justify-end gap-2 border-t border-gray-200 pt-4">
+          <div className="flex justify-end gap-2 border-t border-border pt-4">
             <button
               onClick={checkConnection}
               disabled={busy || !host || !port}
               data-testid="admin-smtp-connection-test-button"
-              className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+              className="rounded border border-input bg-card px-4 py-2 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
               title="발송 없이 서버 연결·인증만 확인"
             >
               연결 확인
@@ -247,13 +247,13 @@ export default function AdminSmtpPage() {
               onClick={save}
               disabled={busy || !host || !fromAddr}
               data-testid="admin-smtp-save-button"
-              className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               저장
             </button>
           </div>
 
-          <div className="mt-6 space-y-3 rounded border border-dashed border-gray-300 bg-gray-50 p-4">
+          <div className="mt-6 space-y-3 rounded border border-dashed border-input bg-muted/50 p-4">
             <div className="flex gap-2">
               <input
                 type="email"
@@ -261,13 +261,13 @@ export default function AdminSmtpPage() {
                 onChange={(e) => setTestTo(e.target.value)}
                 placeholder="받는 주소"
                 data-testid="admin-smtp-test-to-input"
-                className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                className="flex-1 rounded border border-input px-3 py-2 text-sm"
               />
               <button
                 onClick={sendTest}
                 disabled={busy || !testTo}
                 data-testid="admin-smtp-test-send-button"
-                className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded border border-input bg-card px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
               >
                 <Send size={12} /> 테스트 발송
               </button>
@@ -290,9 +290,9 @@ function Row({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">
         {label}
-        {hint && <span className="ml-2 text-gray-400">{hint}</span>}
+        {hint && <span className="ml-2 text-muted-foreground/70">{hint}</span>}
       </label>
       {children}
     </div>

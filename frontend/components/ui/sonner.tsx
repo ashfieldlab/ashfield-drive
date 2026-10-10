@@ -1,25 +1,27 @@
 "use client"
 
+import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
-// 앱에 테마 토글이 없으므로 next-themes 없이 light 고정 (필요 시 theme prop 으로 덮어쓰기).
 const Toaster = ({ ...props }: ToasterProps) => {
+  const { theme = "system" } = useTheme()
+
   return (
     <Sonner
-      theme="light"
+      theme={theme as ToasterProps["theme"]}
       position="bottom-right"
       closeButton
       className="toaster group"
       icons={{
         success: (
-          <CircleCheckIcon className="size-4 text-emerald-600" />
+          <CircleCheckIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
         ),
         info: (
           <InfoIcon className="size-4" />
         ),
         warning: (
-          <TriangleAlertIcon className="size-4 text-amber-600" />
+          <TriangleAlertIcon className="size-4 text-amber-600 dark:text-amber-400" />
         ),
         error: (
           <OctagonXIcon className="size-4 text-destructive" />

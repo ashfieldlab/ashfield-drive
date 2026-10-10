@@ -19,7 +19,7 @@ export function ActiveWorkspaceGate({ children }: { children: React.ReactNode })
   if (!bootstrapped) {
     return (
       <div
-        className="flex h-screen items-center justify-center text-sm text-gray-500"
+        className="flex h-screen items-center justify-center text-sm text-muted-foreground"
         data-testid="active-workspace-gate-loading"
       >
         준비 중…

@@ -65,7 +65,7 @@ export function GlobalSearch() {
       <div className="relative">
         <Search
           size={14}
-          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70"
         />
         <input
           type="search"
@@ -74,18 +74,18 @@ export function GlobalSearch() {
           onFocus={() => setOpen(true)}
           placeholder={`${APP.title} 검색`}
           data-testid="global-search-input"
-          className="w-full rounded border border-gray-300 bg-white py-1.5 pl-8 pr-3 text-sm focus:border-gray-500 focus:outline-none"
+          className="w-full rounded border border-input bg-card py-1.5 pl-8 pr-3 text-sm focus:border-ring focus:outline-none"
         />
       </div>
       {open && q.trim().length > 0 && (
         <div
           data-testid="global-search-results"
-          className="absolute right-0 z-50 mt-1 w-[360px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
+          className="absolute right-0 z-50 mt-1 w-[360px] overflow-hidden rounded-lg border border-border bg-card shadow-lg"
         >
           {loading ? (
-            <div className="p-4 text-center text-xs text-gray-500">검색 중…</div>
+            <div className="p-4 text-center text-xs text-muted-foreground">검색 중…</div>
           ) : !hasResults ? (
-            <div className="p-4 text-center text-xs text-gray-500">
+            <div className="p-4 text-center text-xs text-muted-foreground">
               결과가 없습니다.
             </div>
           ) : (
@@ -102,15 +102,15 @@ export function GlobalSearch() {
                       }
                       onClick={() => setOpen(false)}
                       data-testid={`global-search-node-${n.id}`}
-                      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
+                      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50"
                     >
                       {n.kind === "folder" ? (
-                        <Folder size={14} className="text-blue-600" />
+                        <Folder size={14} className="text-blue-600 dark:text-blue-400" />
                       ) : (
-                        <File size={14} className="text-gray-500" />
+                        <File size={14} className="text-muted-foreground" />
                       )}
-                      <span className="flex-1 truncate text-gray-900">{n.name}</span>
-                      <span className="text-[11px] text-gray-400">
+                      <span className="flex-1 truncate text-foreground">{n.name}</span>
+                      <span className="text-[11px] text-muted-foreground/70">
                         {n.scope === "shared" ? "공유" : "내 파일"}
                       </span>
                     </Link>
@@ -125,7 +125,7 @@ export function GlobalSearch() {
               setOpen(false)
             }}
             data-testid="global-search-advanced"
-            className="block w-full border-t border-gray-100 px-3 py-2 text-center text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+            className="block w-full border-t border-border/60 px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
             상세 검색
           </button>
@@ -150,7 +150,7 @@ function Section({
 }) {
   return (
     <div>
-      <p className="border-b border-gray-100 bg-gray-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+      <p className="border-b border-border/60 bg-muted/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
       {children}

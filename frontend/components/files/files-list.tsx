@@ -393,7 +393,7 @@ export function FilesList({
         className={`rounded-lg border border-dashed p-12 text-center text-sm ${
           vaultRootId
             ? "border-gray-700 bg-gray-800 text-gray-400"
-            : "border-gray-300 text-gray-500"
+            : "border-input text-muted-foreground"
         }`}
         data-testid="files-empty"
       >
@@ -421,12 +421,12 @@ export function FilesList({
               data-testid={`files-filter-${k}`}
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 filter === k
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted"
               }`}
             >
               {FILTER_LABELS[k]}
-              <span className={filter === k ? "opacity-70" : "text-gray-400"}>
+              <span className={filter === k ? "opacity-70" : "text-muted-foreground/70"}>
                 {" "}
                 {catCounts[k]}
               </span>
@@ -437,17 +437,17 @@ export function FilesList({
 
       {validSelection.size > 0 && (
         <div
-          className="flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm"
+          className="flex items-center justify-between rounded-lg border border-input bg-muted/50 px-4 py-2 text-sm"
           data-testid="files-bulk-bar"
         >
-          <span className="text-gray-700">
+          <span className="text-foreground/80">
             <strong>{validSelection.size}개</strong> 선택됨
           </span>
           <div className="flex gap-2">
             <button
               onClick={() => setSelected(new Set())}
               data-testid="files-bulk-clear"
-              className="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+              className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
             >
               선택 해제
             </button>
@@ -455,7 +455,7 @@ export function FilesList({
               <button
                 onClick={bulkRestore}
                 data-testid="files-bulk-restore"
-                className="rounded border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                className="rounded border border-input bg-card px-3 py-1 text-xs font-medium text-foreground/80 hover:bg-muted"
               >
                 선택 복원
               </button>
@@ -474,11 +474,11 @@ export function FilesList({
 
       <div
         className={`overflow-x-auto rounded-lg border ${
-          vaultRootId ? "files-table-dark" : "border-gray-200 bg-white"
+          vaultRootId ? "files-table-dark" : "border-border bg-card"
         }`}
       >
         <table className="w-full text-sm" data-testid="files-tree">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
             <tr>
               <th className="w-10 px-4 py-2">
                 <input
@@ -497,7 +497,7 @@ export function FilesList({
                   type="button"
                   onClick={() => toggleSort("name")}
                   data-testid="files-sort-name"
-                  className="inline-flex items-center gap-1 font-medium hover:text-gray-800"
+                  className="inline-flex items-center gap-1 font-medium hover:text-foreground"
                 >
                   이름 {sortIcon("name")}
                 </button>
@@ -507,7 +507,7 @@ export function FilesList({
                   type="button"
                   onClick={() => toggleSort("size")}
                   data-testid="files-sort-size"
-                  className="inline-flex items-center gap-1 font-medium hover:text-gray-800"
+                  className="inline-flex items-center gap-1 font-medium hover:text-foreground"
                 >
                   크기 {sortIcon("size")}
                 </button>
@@ -517,7 +517,7 @@ export function FilesList({
                   type="button"
                   onClick={() => toggleSort("updated")}
                   data-testid="files-sort-updated"
-                  className="inline-flex items-center gap-1 font-medium hover:text-gray-800"
+                  className="inline-flex items-center gap-1 font-medium hover:text-foreground"
                 >
                   수정 {sortIcon("updated")}
                 </button>
@@ -525,7 +525,7 @@ export function FilesList({
               <th className="w-28 px-4 py-2 text-right font-medium">작업</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border/60">
             {displayNodes.map((n) => {
               const Icon = n.kind === "folder" ? Folder : File
               const folderHref =
@@ -537,7 +537,7 @@ export function FilesList({
                 <tr
                   key={n.id}
                   data-testid={`files-row-${n.id}`}
-                  className={`hover:bg-gray-50 ${checked ? "bg-blue-50/50" : ""}`}
+                  className={`hover:bg-muted/50 ${checked ? "bg-blue-50/50 dark:bg-blue-950/30" : ""}`}
                 >
                   <td className="px-4 py-2">
                     <input
@@ -552,14 +552,14 @@ export function FilesList({
                     <div className="flex min-w-0 items-center gap-2">
                       <Icon
                         size={16}
-                        className={`shrink-0 ${n.kind === "folder" ? "text-blue-600" : "text-gray-500"}`}
+                        className={`shrink-0 ${n.kind === "folder" ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}
                       />
                       {folderHref ? (
                         <Link
                           href={folderHref}
                           data-testid={`files-row-${n.id}-open`}
                           title={displayName(n)}
-                          className="min-w-0 truncate text-left text-gray-900 hover:underline"
+                          className="min-w-0 truncate text-left text-foreground hover:underline"
                         >
                           {displayName(n)}
                         </Link>
@@ -584,30 +584,30 @@ export function FilesList({
                               void download(n)
                             }
                           }}
-                          className="min-w-0 truncate text-left text-gray-900 hover:underline"
+                          className="min-w-0 truncate text-left text-foreground hover:underline"
                           data-testid={`files-row-${n.id}-open`}
                           title={displayName(n)}
                         >
                           {displayName(n)}
                         </button>
                       ) : (
-                        <span className="min-w-0 truncate text-gray-700" title={displayName(n)}>
+                        <span className="min-w-0 truncate text-foreground/80" title={displayName(n)}>
                           {displayName(n)}
                         </span>
                       )}
                       {n.status === "pending" &&
                         (isStalePending(n) ? (
-                          <span className="rounded bg-rose-100 px-1.5 py-0.5 text-xs text-rose-700">
+                          <span className="rounded bg-rose-100 dark:bg-rose-900/40 px-1.5 py-0.5 text-xs text-rose-700 dark:text-rose-300">
                             업로드 실패
                           </span>
                         ) : (
-                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700">
+                          <span className="rounded bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 text-xs text-amber-700 dark:text-amber-200">
                             업로드 중
                           </span>
                         ))}
                     </div>
                   </td>
-                  <td className="hidden px-4 py-2 text-gray-600 sm:table-cell">
+                  <td className="hidden px-4 py-2 text-muted-foreground sm:table-cell">
                     {n.kind === "file"
                       ? formatBytes(
                           // 암호화 파일(wrapped_dek)은 평문 크기 = 저장 크기 − 28(iv12+tag16)
@@ -617,7 +617,7 @@ export function FilesList({
                         )
                       : "-"}
                   </td>
-                  <td className="hidden px-4 py-2 text-gray-600 sm:table-cell">
+                  <td className="hidden px-4 py-2 text-muted-foreground sm:table-cell">
                     {formatDateTime(n.updated_at)}
                   </td>
                   <td className="px-4 py-2">
@@ -626,7 +626,7 @@ export function FilesList({
                         <button
                           onClick={() => restore(n)}
                           data-testid={`files-row-${n.id}-restore`}
-                          className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                          className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                           title="복원"
                         >
                           <RotateCcw size={14} />
@@ -646,7 +646,7 @@ export function FilesList({
                                 }
                               }}
                               data-testid={`files-row-${n.id}-zip`}
-                              className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               title="폴더를 zip 으로 다운로드"
                             >
                               <Download size={14} />
@@ -656,7 +656,7 @@ export function FilesList({
                               <button
                                 onClick={() => download(n)}
                                 data-testid={`files-row-${n.id}-download`}
-                                className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 title="다운로드"
                               >
                                 <Download size={14} />
@@ -672,7 +672,7 @@ export function FilesList({
                                     setRenameValue(displayName(n))
                                   }}
                                   data-testid={`files-row-${n.id}-rename`}
-                                  className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                   title="이름 변경"
                                 >
                                   <Pencil size={14} />
@@ -682,7 +682,7 @@ export function FilesList({
                                 <button
                                   onClick={() => setVersioning(n)}
                                   data-testid={`files-row-${n.id}-versions`}
-                                  className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                   title="버전 기록"
                                 >
                                   <History size={14} />
@@ -692,7 +692,7 @@ export function FilesList({
                                 <button
                                   onClick={() => setMoving(n)}
                                   data-testid={`files-row-${n.id}-move`}
-                                  className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                   title="이동"
                                 >
                                   <FolderInput size={14} />
@@ -704,7 +704,7 @@ export function FilesList({
                                 <button
                                   onClick={() => setSharing(n)}
                                   data-testid={`files-row-${n.id}-share`}
-                                  className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                   title="공유"
                                 >
                                   <Share2 size={14} />
@@ -713,7 +713,7 @@ export function FilesList({
                               <button
                                 onClick={() => softDelete(n)}
                                 data-testid={`files-row-${n.id}-delete`}
-                                className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-rose-600"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-rose-600 dark:hover:text-rose-400"
                                 title="삭제"
                               >
                                 <Trash2 size={14} />
@@ -763,10 +763,10 @@ export function FilesList({
               e.preventDefault()
               void doRename()
             }}
-            className="w-80 space-y-3 rounded-lg bg-white p-5 shadow-lg"
+            className="w-80 space-y-3 rounded-lg bg-card p-5 shadow-lg dark:ring-1 dark:ring-foreground/10"
             data-testid="files-rename-modal"
           >
-            <h3 className="text-base font-semibold text-gray-900">이름 변경</h3>
+            <h3 className="text-base font-semibold text-foreground">이름 변경</h3>
             <input
               autoFocus
               type="text"
@@ -774,14 +774,14 @@ export function FilesList({
               onChange={(e) => setRenameValue(e.target.value)}
               onFocus={(e) => e.target.select()}
               data-testid="files-rename-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+              className="w-full rounded border border-input px-3 py-2 text-sm focus:border-ring focus:outline-none"
             />
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setRenaming(null)}
                 data-testid="files-rename-cancel"
-                className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+                className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
               >
                 취소
               </button>
@@ -789,7 +789,7 @@ export function FilesList({
                 type="submit"
                 disabled={renameBusy || !renameValue.trim()}
                 data-testid="files-rename-save"
-                className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 저장
               </button>

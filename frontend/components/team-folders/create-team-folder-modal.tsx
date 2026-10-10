@@ -69,16 +69,16 @@ export function CreateTeamFolderModal({ onClose, onCreated }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-[460px] max-w-[92vw] rounded-lg bg-white shadow-lg"
+        className="w-[460px] max-w-[92vw] rounded-lg bg-card shadow-lg dark:ring-1 dark:ring-foreground/10"
         onClick={(e) => e.stopPropagation()}
         data-testid="team-folder-create-modal"
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-          <h2 className="text-sm font-semibold text-gray-900">부서 폴더 만들기</h2>
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h2 className="text-sm font-semibold text-foreground">부서 폴더 만들기</h2>
           <button
             onClick={onClose}
             data-testid="team-folder-create-close"
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            className="rounded p-1 text-muted-foreground/70 hover:bg-muted hover:text-foreground/80"
             aria-label="닫기"
           >
             <X size={16} />
@@ -87,12 +87,12 @@ export function CreateTeamFolderModal({ onClose, onCreated }: Props) {
 
         <div className="space-y-4 px-5 py-4">
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">부서</label>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">부서</label>
             <select
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
               data-testid="team-folder-create-department"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
             >
               <option value="">부서 선택…</option>
               {options.map((d) => (
@@ -102,28 +102,28 @@ export function CreateTeamFolderModal({ onClose, onCreated }: Props) {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-muted-foreground/70">
               선택한 부서와 그 하위 부서 인원이 접근합니다.
             </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">폴더 이름</label>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">폴더 이름</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="예: 플랫폼개발팀 공용"
               data-testid="team-folder-create-name"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-input px-3 py-2 text-sm"
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-3">
+        <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
           <button
             onClick={onClose}
             data-testid="team-folder-create-cancel"
-            className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
           >
             취소
           </button>
@@ -131,7 +131,7 @@ export function CreateTeamFolderModal({ onClose, onCreated }: Props) {
             onClick={submit}
             disabled={busy || !departmentId || !name.trim()}
             data-testid="team-folder-create-submit"
-            className="rounded bg-gray-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            className="rounded bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             {busy ? "생성 중…" : "만들기"}
           </button>

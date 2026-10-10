@@ -48,15 +48,15 @@ export default function ExternalLinkPage({
   }, [token])
 
   if (loading) {
-    return <Shell><p className="text-sm text-gray-500">불러오는 중…</p></Shell>
+    return <Shell><p className="text-sm text-muted-foreground">불러오는 중…</p></Shell>
   }
   if (notFound || !data) {
     return (
       <Shell>
-        <h1 className="text-lg font-semibold text-gray-900">
+        <h1 className="text-lg font-semibold text-foreground">
           링크를 찾을 수 없습니다
         </h1>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           만료되었거나 철회된 링크일 수 있습니다.
         </p>
       </Shell>
@@ -99,15 +99,15 @@ function Body({ token, meta }: { token: string; meta: PublicNodeMeta }) {
   return (
     <Shell>
       <div className="text-center" data-testid="external-link-page">
-        <h1 className="break-all text-lg font-semibold text-gray-900">{meta.name}</h1>
-        <p className="mt-1 text-xs text-gray-500">
+        <h1 className="break-all text-lg font-semibold text-foreground">{meta.name}</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
           {meta.kind === "file" ? formatBytes(meta.size_bytes) : "폴더"}
           {meta.mime && ` · ${meta.mime}`}
         </p>
 
         {meta.requires_password && (
-          <div className="mt-5 space-y-2 rounded border border-gray-200 bg-gray-50 p-4 text-left">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <div className="mt-5 space-y-2 rounded border border-border bg-muted/50 p-4 text-left">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground/80">
               <Lock size={14} />
               비밀번호로 보호된 링크
             </label>
@@ -117,13 +117,13 @@ function Body({ token, meta }: { token: string; meta: PublicNodeMeta }) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호"
               data-testid="external-link-password-input"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+              className="w-full rounded border border-input px-3 py-2 text-sm focus:border-ring focus:outline-none"
             />
           </div>
         )}
 
         {err && (
-          <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="mt-3 rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">
             {err}
           </div>
         )}
@@ -132,7 +132,7 @@ function Body({ token, meta }: { token: string; meta: PublicNodeMeta }) {
           onClick={download}
           disabled={busy || meta.kind !== "file"}
           data-testid="external-link-download-button"
-          className="mt-5 inline-flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="mt-5 inline-flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           <Download size={14} />
           {busy ? "준비 중…" : "다운로드"}
@@ -144,8 +144,8 @@ function Body({ token, meta }: { token: string; meta: PublicNodeMeta }) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-[420px] max-w-full rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4 dark:bg-background">
+      <div className="w-[420px] max-w-full rounded-lg border border-border bg-card p-8 shadow-sm">
         {children}
       </div>
     </div>

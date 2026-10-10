@@ -83,6 +83,7 @@ components/
 ## 상태 관리
 
 - **전역 상태는 `AppContext`만.** 새 Context provider 추가는 ADR 필요.
+  - 예외: `components/providers/theme-provider.tsx` (next-themes 라이브러리 provider, 테마 선택만 다룸, 값은 localStorage `theme`). 읽기·변경은 `useTheme()`, UI 는 사용자 메뉴의 `ThemeSubmenu`.
 - 페이지 간 공유 안 되는 상태는 `useState` / `useReducer` (URL/쿠키도 OK).
 - 폼 상태는 일단 native React state. 폼 복잡도 증가하면 react-hook-form 검토 (지금은 미도입).
 
@@ -92,7 +93,7 @@ components/
 - 구현은 sonner (shadcn `components/ui/sonner.tsx` 의 `<Toaster />` 를 root layout 에 1회 마운트).
 - 성공/실패 즉시 피드백에만. 영구 메시지는 SystemErrorBanner (자동 처리).
 - 확인창은 `useConfirm()` (`components/ui-custom/use-confirm.tsx`, shadcn AlertDialog).
-- 테마 토큰(브랜드 primary `#3f4a3c`)은 `app/theme.css`. shadcn 컴포넌트 추가는 `npx shadcn@latest add <name>` (style `radix-nova`).
+- 테마 토큰(브랜드 primary `#3f4a3c`, 다크 `.dark`)은 `app/theme.css`. 색은 토큰(`bg-card`, `text-muted-foreground`, `border-input` 등)으로: `bg-white`·`text-gray-*` 같은 고정색 금지, 상태색(rose·amber 등)은 `dark:` 짝을 같이. shadcn 컴포넌트 추가는 `npx shadcn@latest add <name>` (style `radix-nova`).
 
 ## 환경 변수
 

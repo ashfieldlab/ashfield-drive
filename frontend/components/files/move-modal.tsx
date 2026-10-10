@@ -91,18 +91,18 @@ export function MoveModal({
       onClick={() => !busy && onClose()}
     >
       <div
-        className="flex max-h-[80vh] w-96 max-w-[92vw] flex-col overflow-hidden rounded-lg bg-white shadow-lg"
+        className="flex max-h-[80vh] w-96 max-w-[92vw] flex-col overflow-hidden rounded-lg bg-card shadow-lg dark:ring-1 dark:ring-foreground/10"
         onClick={(e) => e.stopPropagation()}
         data-testid="files-move-modal"
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-          <h3 className="min-w-0 truncate text-base font-semibold text-gray-900">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h3 className="min-w-0 truncate text-base font-semibold text-foreground">
             {node.name} 이동
           </h3>
           <button
             onClick={onClose}
             data-testid="files-move-close"
-            className="shrink-0 rounded p-1 text-gray-500 hover:bg-gray-100"
+            className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
           >
             <X size={16} />
           </button>
@@ -112,12 +112,12 @@ export function MoveModal({
             onClick={() => move(null)}
             disabled={busy || node.parent_id === null}
             data-testid="files-move-root"
-            className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-40"
+            className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm hover:bg-muted/50 disabled:opacity-40"
           >
-            <FolderUp size={14} className="shrink-0 text-gray-500" /> (최상위)
+            <FolderUp size={14} className="shrink-0 text-muted-foreground" /> (최상위)
           </button>
           {isLoading ? (
-            <p className="px-3 py-6 text-center text-xs text-gray-500">불러오는 중…</p>
+            <p className="px-3 py-6 text-center text-xs text-muted-foreground">불러오는 중…</p>
           ) : (
             ordered.map(({ node: f, depth }) => (
               <button
@@ -126,15 +126,15 @@ export function MoveModal({
                 disabled={busy || f.id === node.parent_id}
                 data-testid={`files-move-target-${f.id}`}
                 style={{ paddingLeft: `${0.75 + depth}rem` }}
-                className="flex w-full items-center gap-2 rounded py-2 pr-3 text-left text-sm hover:bg-gray-50 disabled:opacity-40"
+                className="flex w-full items-center gap-2 rounded py-2 pr-3 text-left text-sm hover:bg-muted/50 disabled:opacity-40"
               >
-                <Folder size={14} className="shrink-0 text-blue-600" />
+                <Folder size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />
                 <span className="truncate">{f.name}</span>
               </button>
             ))
           )}
           {!isLoading && ordered.length === 0 && (
-            <p className="px-3 py-6 text-center text-xs text-gray-500">
+            <p className="px-3 py-6 text-center text-xs text-muted-foreground">
               이동할 다른 폴더가 없습니다.
             </p>
           )}

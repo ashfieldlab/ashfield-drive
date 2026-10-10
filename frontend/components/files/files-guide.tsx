@@ -89,7 +89,7 @@ export function FilesGuideButton() {
       onClick={start}
       data-testid="files-guide-button"
       title="사용법 안내"
-      className="inline-flex flex-shrink-0 items-center gap-1 rounded border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+      className="inline-flex flex-shrink-0 items-center gap-1 rounded border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground"
     >
       <HelpCircle size={14} />
       사용법

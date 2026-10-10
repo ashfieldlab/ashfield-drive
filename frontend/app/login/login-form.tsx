@@ -51,9 +51,9 @@ export default function LoginForm({ callbackUrl, error, accountReady }: Props) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 dark:bg-background">
       <div
-        className="w-full max-w-sm space-y-7 rounded-2xl border bg-background p-8 shadow-sm"
+        className="w-full max-w-sm space-y-7 rounded-2xl border bg-card p-8 shadow-sm"
         data-testid="login-page"
       >
         <div className="flex flex-col items-center gap-3 text-center">
@@ -86,7 +86,7 @@ export default function LoginForm({ callbackUrl, error, accountReady }: Props) {
           </Button>
         ) : (
           <div
-            className="rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+            className="rounded-lg border border-amber-300/60 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
             data-testid="login-account-unavailable"
             role="alert"
           >

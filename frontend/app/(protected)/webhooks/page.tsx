@@ -55,7 +55,7 @@ export default function WebhooksPage() {
   if (!isSystemAdmin) {
     return (
       <div
-        className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
+        className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 p-6 text-sm text-amber-800 dark:text-amber-200"
         data-testid="webhooks-no-permission"
       >
         Webhooks 설정은 관리자만 접근할 수 있습니다.
@@ -118,20 +118,20 @@ export default function WebhooksPage() {
 
   return (
     <div className="h-full overflow-y-auto space-y-6 px-4 py-8 sm:px-6 lg:px-8" data-testid="webhooks-page">
-      <h1 className="text-2xl font-bold text-gray-900">Webhooks</h1>
+      <h1 className="text-2xl font-bold text-foreground">Webhooks</h1>
 
-      <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-gray-900">새 엔드포인트</h2>
+      <section className="space-y-3 rounded-lg border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold text-foreground">새 엔드포인트</h2>
         <input
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://your-service/webhook"
           data-testid="webhook-url-input"
-          className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+          className="w-full rounded border border-input px-3 py-2 text-sm focus:border-ring focus:outline-none"
         />
         <div className="space-y-1">
-          <p className="text-xs font-medium text-gray-600">구독할 이벤트</p>
+          <p className="text-xs font-medium text-muted-foreground">구독할 이벤트</p>
           <div className="flex flex-wrap gap-2">
             <label className="flex items-center gap-1.5 text-sm">
               <input
@@ -160,7 +160,7 @@ export default function WebhooksPage() {
           onClick={create}
           disabled={busy || !url.trim() || events.length === 0}
           data-testid="webhook-create-button"
-          className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           생성
         </button>
@@ -168,14 +168,14 @@ export default function WebhooksPage() {
 
       {showSecret && (
         <div
-          className="rounded-lg border border-amber-300 bg-amber-50 p-4"
+          className="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4"
           data-testid="webhook-secret-banner"
         >
-          <p className="mb-2 text-sm font-semibold text-amber-900">
+          <p className="mb-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
             Secret (다시 볼 수 없습니다). 지금 복사하세요.
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 truncate rounded border border-amber-200 bg-white px-2 py-1 font-mono text-xs">
+            <code className="flex-1 truncate rounded border border-amber-200 dark:border-amber-900/60 bg-card px-2 py-1 font-mono text-xs">
               {showSecret.secret}
             </code>
             <button
@@ -184,7 +184,7 @@ export default function WebhooksPage() {
                 toast.success("복사했습니다")
               }}
               data-testid="webhook-secret-copy"
-              className="rounded p-1.5 text-amber-700 hover:bg-amber-100"
+              className="rounded p-1.5 text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40"
               title="복사"
             >
               <Copy size={14} />
@@ -192,7 +192,7 @@ export default function WebhooksPage() {
             <button
               onClick={() => setShowSecret(null)}
               data-testid="webhook-secret-dismiss"
-              className="rounded px-2 py-1 text-xs text-amber-700 hover:bg-amber-100"
+              className="rounded px-2 py-1 text-xs text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40"
             >
               닫기
             </button>
@@ -201,9 +201,9 @@ export default function WebhooksPage() {
       )}
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-gray-900">등록된 엔드포인트</h2>
+        <h2 className="mb-2 text-sm font-semibold text-foreground">등록된 엔드포인트</h2>
         {(data?.endpoints ?? []).length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+          <div className="rounded-lg border border-dashed border-input p-8 text-center text-sm text-muted-foreground">
             등록된 webhook 이 없습니다.
           </div>
         ) : (
@@ -212,16 +212,16 @@ export default function WebhooksPage() {
               <li
                 key={ep.id}
                 data-testid={`webhook-row-${ep.id}`}
-                className="rounded-lg border border-gray-200 bg-white"
+                className="rounded-lg border border-border bg-card"
               >
                 <div className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-mono text-sm">{ep.url}</p>
-                    <p className="mt-0.5 text-xs text-gray-500">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {ep.events.join(", ")} · {formatDateTime(ep.created_at)}
                     </p>
                   </div>
-                  <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <input
                       type="checkbox"
                       checked={ep.active}
@@ -235,14 +235,14 @@ export default function WebhooksPage() {
                       setOpenDeliveries((curr) => (curr === ep.id ? null : ep.id))
                     }
                     data-testid={`webhook-row-${ep.id}-deliveries`}
-                    className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                    className="rounded border border-input px-2 py-1 text-xs text-foreground/80 hover:bg-muted/50"
                   >
                     {openDeliveries === ep.id ? "닫기" : "최근 전송"}
                   </button>
                   <button
                     onClick={() => remove(ep)}
                     data-testid={`webhook-row-${ep.id}-delete`}
-                    className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-rose-600"
+                    className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-rose-600 dark:hover:text-rose-400"
                     title="삭제"
                   >
                     <Trash2 size={14} />
@@ -263,20 +263,20 @@ function Deliveries({ endpointId }: { endpointId: string }) {
     `/api/v1/webhooks/${endpointId}/deliveries`,
   )
   if (isLoading) {
-    return <div className="px-4 py-3 text-xs text-gray-500">불러오는 중…</div>
+    return <div className="px-4 py-3 text-xs text-muted-foreground">불러오는 중…</div>
   }
   const rows = data?.deliveries ?? []
   if (rows.length === 0) {
     return (
-      <div className="border-t border-gray-100 px-4 py-3 text-xs text-gray-500">
+      <div className="border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
         아직 전송 기록이 없습니다.
       </div>
     )
   }
   return (
     <div className="overflow-x-auto">
-    <table className="w-full border-t border-gray-100 text-xs">
-      <thead className="bg-gray-50 text-left text-gray-500">
+    <table className="w-full border-t border-border/60 text-xs">
+      <thead className="bg-muted/50 text-left text-muted-foreground">
         <tr>
           <th className="px-4 py-1.5 font-medium">시각</th>
           <th className="px-4 py-1.5 font-medium">이벤트</th>
@@ -284,25 +284,25 @@ function Deliveries({ endpointId }: { endpointId: string }) {
           <th className="px-4 py-1.5 font-medium">응답</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-100">
+      <tbody className="divide-y divide-border/60">
         {rows.map((d) => (
           <tr key={d.id}>
-            <td className="px-4 py-1 text-gray-600">{formatDateTime(d.created_at)}</td>
+            <td className="px-4 py-1 text-muted-foreground">{formatDateTime(d.created_at)}</td>
             <td className="px-4 py-1 font-mono">{d.event_type}</td>
             <td className="px-4 py-1">
               <span
                 className={
                   d.status === "success"
-                    ? "text-emerald-700"
+                    ? "text-emerald-700 dark:text-emerald-300"
                     : d.status === "failed"
-                      ? "text-rose-700"
-                      : "text-gray-700"
+                      ? "text-rose-700 dark:text-rose-300"
+                      : "text-foreground/80"
                 }
               >
                 {d.status}
               </span>
             </td>
-            <td className="px-4 py-1 text-gray-600">
+            <td className="px-4 py-1 text-muted-foreground">
               {d.response_status ?? d.error ?? "-"}
             </td>
           </tr>

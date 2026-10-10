@@ -17,7 +17,7 @@ export default function AdminIndexPage() {
   if (!isSystemAdmin) {
     return (
       <div
-        className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
+        className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 p-6 text-sm text-amber-800 dark:text-amber-200"
         data-testid="admin-index-no-permission"
       >
         시스템 관리자만 접근할 수 있습니다.
@@ -27,17 +27,17 @@ export default function AdminIndexPage() {
 
   return (
     <div className="h-full overflow-y-auto px-4 py-8 sm:px-6 lg:px-8" data-testid="admin-index-page">
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">시스템 관리</h1>
+      <h1 className="mb-4 text-2xl font-bold text-foreground">시스템 관리</h1>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {SECTIONS.map((s) => (
           <Link
             key={s.href}
             href={s.href}
             data-testid={`admin-index-link-${s.href.split("/").pop()}`}
-            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-300 hover:bg-gray-50"
+            className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 hover:border-input hover:bg-muted/50"
           >
-            <s.icon size={18} className="shrink-0 text-gray-500" />
-            <p className="font-medium text-gray-900">{s.title}</p>
+            <s.icon size={18} className="shrink-0 text-muted-foreground" />
+            <p className="font-medium text-foreground">{s.title}</p>
           </Link>
         ))}
       </div>

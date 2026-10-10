@@ -137,14 +137,14 @@ export default function FilesPage() {
     >
       {dragging && (
         <div
-          className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 bg-gray-900/5 backdrop-blur-[1px]"
+          className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-input bg-foreground/5 backdrop-blur-[1px]"
           data-testid="files-drop-overlay"
         >
-          <UploadCloud size={40} className="text-gray-700" />
-          <p className="text-sm font-semibold text-gray-800">
+          <UploadCloud size={40} className="text-foreground/80" />
+          <p className="text-sm font-semibold text-foreground">
             여기에 놓아 업로드
           </p>
-          <p className="text-xs text-gray-500">파일 · 폴더 모두 가능</p>
+          <p className="text-xs text-muted-foreground">파일 · 폴더 모두 가능</p>
         </div>
       )}
       {/* 스크롤은 이 안에서만: overlay(위 absolute)는 바깥 anchor 에 붙어 항상 보이는 영역을 덮음 */}
@@ -152,12 +152,12 @@ export default function FilesPage() {
       <section className="min-w-0 flex-1 space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           {trash ? (
-            <h1 className="text-2xl font-bold text-gray-900">휴지통</h1>
+            <h1 className="text-2xl font-bold text-foreground">휴지통</h1>
           ) : sharedWithMe ? (
-            <h1 className="text-2xl font-bold text-gray-900">공유받은 항목</h1>
+            <h1 className="text-2xl font-bold text-foreground">공유받은 항목</h1>
           ) : (
             <div className="min-w-0 space-y-1">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-foreground">
                 {fromTeam ? "부서 폴더" : scope === "personal" ? "내 파일" : "워크스페이스"}
               </h1>
               {folderId && (
@@ -197,7 +197,7 @@ export default function FilesPage() {
               {/* 보안 폴더 배지: 권한과 무관하게 항상 표시 (읽기전용도) */}
               {vaultCtx.vaultRootId && !vaultNoAccess && (
                 <span
-                  className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700"
+                  className="inline-flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300"
                   data-testid="files-vault-badge"
                   title="이 폴더는 종단간 암호화됩니다"
                 >
@@ -206,7 +206,7 @@ export default function FilesPage() {
               )}
               {isTeamFolder && (
                 <span
-                  className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700"
+                  className="inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/40 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300"
                   data-testid="files-team-folder-badge"
                   title="부서 폴더"
                 >
@@ -237,23 +237,23 @@ export default function FilesPage() {
 
         {error ? (
           <div
-            className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+            className="rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 p-4 text-sm text-rose-700 dark:text-rose-300"
             data-testid="files-error"
           >
             불러오지 못했습니다. 잠시 후 다시 시도해주세요.
           </div>
         ) : isLoading ? (
-          <div className="text-sm text-gray-500">불러오는 중…</div>
+          <div className="text-sm text-muted-foreground">불러오는 중…</div>
         ) : vaultNoAccess ? (
           <div
-            className="rounded-lg border border-amber-200 bg-amber-50 p-8 text-center"
+            className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 p-8 text-center"
             data-testid="files-vault-no-access"
           >
             <div className="text-3xl">🔒</div>
-            <p className="mt-3 text-sm font-semibold text-amber-900">
+            <p className="mt-3 text-sm font-semibold text-amber-900 dark:text-amber-200">
               이 보안 폴더에 접근 권한이 없습니다
             </p>
-            <p className="mt-1 text-xs text-amber-700">
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-200">
               내용을 보거나 파일을 올리려면 폴더 소유자에게 공유를 요청하세요.
             </p>
           </div>

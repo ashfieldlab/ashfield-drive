@@ -57,13 +57,13 @@ interface AuditLogListResponse {
 }
 
 const ACTION_COLOR: Record<string, string> = {
-  create: "bg-emerald-100 text-emerald-800",
-  update: "bg-blue-100 text-blue-800",
-  delete: "bg-rose-100 text-rose-800",
-  restore: "bg-amber-100 text-amber-800",
-  share: "bg-violet-100 text-violet-800",
-  unshare: "bg-gray-100 text-gray-700",
-  empty_trash: "bg-rose-100 text-rose-800",
+  create: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300",
+  update: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300",
+  delete: "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300",
+  restore: "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200",
+  share: "bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-300",
+  unshare: "bg-muted text-foreground/80",
+  empty_trash: "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300",
 }
 
 type Scope = "workspace" | "system"
@@ -113,7 +113,7 @@ export default function AuditPage() {
   if (!canView) {
     return (
       <div
-        className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
+        className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 p-6 text-sm text-amber-800 dark:text-amber-200"
         data-testid="audit-no-permission"
       >
         감사 로그는 관리자만 조회할 수 있습니다.
@@ -127,11 +127,11 @@ export default function AuditPage() {
       data-testid="audit-page"
     >
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">감사 로그</h1>
+        <h1 className="text-2xl font-bold text-foreground">감사 로그</h1>
         <div className="flex items-center gap-2">
           {isSystemAdmin && (
             <div
-              className="inline-flex overflow-hidden rounded-md border border-gray-300 text-xs"
+              className="inline-flex overflow-hidden rounded-md border border-input text-xs"
               data-testid="audit-scope-toggle"
             >
               <button
@@ -139,8 +139,8 @@ export default function AuditPage() {
                 data-testid="audit-scope-workspace"
                 className={`px-3 py-1.5 ${
                   scope === "workspace"
-                    ? "bg-gray-900 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-50"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground/80 hover:bg-muted/50"
                 }`}
               >
                 워크스페이스
@@ -148,10 +148,10 @@ export default function AuditPage() {
               <button
                 onClick={() => setScope("system")}
                 data-testid="audit-scope-system"
-                className={`border-l border-gray-300 px-3 py-1.5 ${
+                className={`border-l border-input px-3 py-1.5 ${
                   scope === "system"
-                    ? "bg-gray-900 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-50"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground/80 hover:bg-muted/50"
                 }`}
               >
                 시스템
@@ -162,7 +162,7 @@ export default function AuditPage() {
             onClick={exportCsv}
             disabled={exporting}
             data-testid="audit-export-csv"
-            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted/50 disabled:opacity-50"
           >
             <Download size={13} />
             {exporting ? "내보내는 중…" : "CSV 내보내기"}
@@ -178,7 +178,7 @@ export default function AuditPage() {
           value={entityType}
           onChange={(e) => setEntityType(e.target.value)}
           data-testid="audit-filter-entity"
-          className="rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-gray-500 focus:outline-none"
+          className="rounded border border-input px-2 py-1.5 text-sm focus:border-ring focus:outline-none"
         >
           {ENTITY_OPTIONS.map(([v, l]) => (
             <option key={v} value={v}>
@@ -190,7 +190,7 @@ export default function AuditPage() {
           value={action}
           onChange={(e) => setAction(e.target.value)}
           data-testid="audit-filter-action"
-          className="rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-gray-500 focus:outline-none"
+          className="rounded border border-input px-2 py-1.5 text-sm focus:border-ring focus:outline-none"
         >
           {ACTION_OPTIONS.map(([v, l]) => (
             <option key={v} value={v}>
@@ -203,15 +203,15 @@ export default function AuditPage() {
           value={fromDate}
           onChange={(e) => setFromDate(e.target.value)}
           data-testid="audit-filter-from"
-          className="rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-gray-500 focus:outline-none"
+          className="rounded border border-input px-2 py-1.5 text-sm focus:border-ring focus:outline-none"
         />
-        <span className="text-gray-400">~</span>
+        <span className="text-muted-foreground/70">~</span>
         <input
           type="date"
           value={toDate}
           onChange={(e) => setToDate(e.target.value)}
           data-testid="audit-filter-to"
-          className="rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-gray-500 focus:outline-none"
+          className="rounded border border-input px-2 py-1.5 text-sm focus:border-ring focus:outline-none"
         />
         {(entityType || action || fromDate || toDate) && (
           <button
@@ -222,7 +222,7 @@ export default function AuditPage() {
               setToDate("")
             }}
             data-testid="audit-filter-clear"
-            className="rounded px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100"
+            className="rounded px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted"
           >
             초기화
           </button>
@@ -230,15 +230,15 @@ export default function AuditPage() {
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <div className="rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 p-4 text-sm text-rose-700 dark:text-rose-300">
           불러오지 못했습니다. 잠시 후 다시 시도해주세요.
         </div>
       ) : isLoading ? (
-        <div className="text-sm text-gray-500">불러오는 중…</div>
+        <div className="text-sm text-muted-foreground">불러오는 중…</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs text-gray-500">
+            <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
               <tr>
                 <th className="w-44 px-4 py-2 font-medium">시각</th>
                 <th className="w-40 px-4 py-2 font-medium">행위자</th>
@@ -247,20 +247,20 @@ export default function AuditPage() {
                 <th className="px-4 py-2 font-medium">상세</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border/60">
               {(data?.logs ?? []).map((log) => {
                 const actionColor =
-                  ACTION_COLOR[log.action] ?? "bg-gray-100 text-gray-700"
+                  ACTION_COLOR[log.action] ?? "bg-muted text-foreground/80"
                 return (
                   <tr
                     key={log.id}
                     data-testid={`audit-row-${log.id}`}
-                    className="hover:bg-gray-50"
+                    className="hover:bg-muted/50"
                   >
-                    <td className="px-4 py-2 text-gray-600">
+                    <td className="px-4 py-2 text-muted-foreground">
                       {formatDateTime(log.created_at)}
                     </td>
-                    <td className="px-4 py-2 text-gray-700">
+                    <td className="px-4 py-2 text-foreground/80">
                       {actorDisplay(log)}
                     </td>
                     <td className="px-4 py-2">
@@ -270,10 +270,10 @@ export default function AuditPage() {
                         {actionLabel(log.action)}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-gray-700">
+                    <td className="px-4 py-2 text-foreground/80">
                       {entityLabel(log.entity_type)}
                     </td>
-                    <td className="px-4 py-2 text-gray-600">
+                    <td className="px-4 py-2 text-muted-foreground">
                       {metaSummary(log) || "-"}
                     </td>
                   </tr>
@@ -283,7 +283,7 @@ export default function AuditPage() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-sm text-gray-500"
+                    className="px-4 py-8 text-center text-sm text-muted-foreground"
                     data-testid="audit-empty"
                   >
                     기록된 활동이 없습니다.

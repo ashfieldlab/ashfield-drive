@@ -39,24 +39,24 @@ export function ShareModal({ node, displayName, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-[560px] max-w-[92vw] rounded-lg bg-white shadow-lg"
+        className="w-[560px] max-w-[92vw] rounded-lg bg-card shadow-lg dark:ring-1 dark:ring-foreground/10"
         onClick={(e) => e.stopPropagation()}
         data-testid="share-modal"
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-          <h3 className="min-w-0 truncate text-base font-semibold text-gray-900">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h3 className="min-w-0 truncate text-base font-semibold text-foreground">
             {displayName ?? node.name} 공유
           </h3>
           <button
             onClick={onClose}
             data-testid="share-modal-close"
-            className="rounded p-1 text-gray-500 hover:bg-gray-100"
+            className="rounded p-1 text-muted-foreground hover:bg-muted"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="border-b border-gray-200 px-5">
+        <div className="border-b border-border px-5">
           <nav className="-mb-px flex gap-4">
             <TabButton
               active={tab === "users"}
@@ -102,8 +102,8 @@ function TabButton({
       data-testid={testId}
       className={`border-b-2 px-1 py-2 text-sm font-medium ${
         active
-          ? "border-gray-900 text-gray-900"
-          : "border-transparent text-gray-500 hover:text-gray-700"
+          ? "border-foreground text-foreground"
+          : "border-transparent text-muted-foreground hover:text-foreground/80"
       }`}
     >
       {label}
@@ -199,7 +199,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
     <div className="space-y-3">
       {vaultRootId && (
         <div
-          className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+          className="rounded-md border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
           data-testid="share-vault-hint"
         >
           🔒 상대가 <b>보안 폴더를 먼저 설정</b>해 두어야 공유됩니다.
@@ -207,7 +207,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
       )}
       <div className="flex items-end gap-2">
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-gray-600">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
             사용자
           </label>
           <UserAutocomplete
@@ -220,7 +220,7 @@ function UsersTab({ node }: { node: NodeResponse }) {
           value={permission}
           onChange={(e) => setPermission(e.target.value as SharePermission)}
           data-testid="share-permission-select"
-          className="rounded border border-gray-300 px-2 py-2 text-sm"
+          className="rounded border border-input px-2 py-2 text-sm"
         >
           <option value="read">읽기</option>
           <option value="write">쓰기</option>
@@ -230,20 +230,20 @@ function UsersTab({ node }: { node: NodeResponse }) {
           onClick={addShare}
           disabled={busy || !granteeSub.trim()}
           data-testid="share-add-button"
-          className="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           공유
         </button>
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-gray-500">불러오는 중…</div>
+        <div className="text-sm text-muted-foreground">불러오는 중…</div>
       ) : (data?.shares ?? []).length === 0 ? (
-        <div className="rounded border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
+        <div className="rounded border border-dashed border-input p-4 text-center text-sm text-muted-foreground">
           아직 공유된 사용자가 없습니다.
         </div>
       ) : (
-        <ul className="divide-y divide-gray-100 rounded border border-gray-200">
+        <ul className="divide-y divide-border/60 rounded border border-border">
           {data!.shares.map((s) => (
             <li
               key={s.id}
@@ -251,17 +251,17 @@ function UsersTab({ node }: { node: NodeResponse }) {
               className="flex items-center justify-between px-3 py-2 text-sm"
             >
               <div className="min-w-0">
-                <div className="truncate font-medium text-gray-900">
+                <div className="truncate font-medium text-foreground">
                   {s.grantee_name ?? s.grantee_email ?? s.grantee_sub}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   {s.permission} · {formatDateTime(s.granted_at)}
                 </div>
               </div>
               <button
                 onClick={() => removeShare(s)}
                 data-testid={`share-row-${s.id}-remove`}
-                className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-rose-600"
+                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-rose-600 dark:hover:text-rose-400"
                 title="해제"
               >
                 <Trash2 size={14} />
@@ -343,27 +343,27 @@ function LinksTab({ node }: { node: NodeResponse }) {
 
   return (
     <div className="space-y-3">
-      <div className="space-y-2 rounded border border-gray-200 p-3">
+      <div className="space-y-2 rounded border border-border p-3">
         <div className="flex gap-2">
-          <label className="flex-1 text-xs text-gray-600">
+          <label className="flex-1 text-xs text-muted-foreground">
             권한
             <select
               value={permission}
               onChange={(e) => setPermission(e.target.value as "read" | "write")}
               data-testid="link-permission-select"
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded border border-input px-2 py-1.5 text-sm"
             >
               <option value="read">읽기</option>
               <option value="write">쓰기</option>
             </select>
           </label>
-          <label className="flex-1 text-xs text-gray-600">
+          <label className="flex-1 text-xs text-muted-foreground">
             만료
             <select
               value={expiryDays}
               onChange={(e) => setExpiryDays(e.target.value)}
               data-testid="link-expiry-select"
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded border border-input px-2 py-1.5 text-sm"
             >
               <option value="">없음</option>
               <option value="1">1일 후</option>
@@ -390,27 +390,27 @@ function LinksTab({ node }: { node: NodeResponse }) {
             placeholder="최소 4자"
             minLength={4}
             data-testid="link-password-input"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+            className="w-full rounded border border-input px-3 py-2 text-sm focus:border-ring focus:outline-none"
           />
         )}
         <button
           onClick={createLink}
           disabled={busy || (usePassword && password.length < 4)}
           data-testid="link-create-button"
-          className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           새 링크
         </button>
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-gray-500">불러오는 중…</div>
+        <div className="text-sm text-muted-foreground">불러오는 중…</div>
       ) : (data?.links ?? []).filter((l) => !l.revoked_at).length === 0 ? (
-        <div className="rounded border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
+        <div className="rounded border border-dashed border-input p-4 text-center text-sm text-muted-foreground">
           아직 활성 링크가 없습니다.
         </div>
       ) : (
-        <ul className="divide-y divide-gray-100 rounded border border-gray-200">
+        <ul className="divide-y divide-border/60 rounded border border-border">
           {data!.links
             .filter((l) => !l.revoked_at)
             .map((l) => (
@@ -421,12 +421,12 @@ function LinksTab({ node }: { node: NodeResponse }) {
               >
                 <div className="min-w-0 flex-1">
                   <div
-                    className="truncate font-mono text-xs text-gray-700"
+                    className="truncate font-mono text-xs text-foreground/80"
                     data-testid={`link-row-${l.id}-url`}
                   >
                     {urlFor(l.token)}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {l.has_password ? "🔒 비밀번호 필요 · " : ""}
                     접근 {l.access_count}회
                     {l.expires_at && ` · 만료 ${formatDateTime(l.expires_at)}`}
@@ -438,7 +438,7 @@ function LinksTab({ node }: { node: NodeResponse }) {
                     toast.success("복사했습니다")
                   }}
                   data-testid={`link-row-${l.id}-copy`}
-                  className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                   title="URL 복사"
                 >
                   <Copy size={14} />
@@ -446,7 +446,7 @@ function LinksTab({ node }: { node: NodeResponse }) {
                 <button
                   onClick={() => revoke(l)}
                   data-testid={`link-row-${l.id}-revoke`}
-                  className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-rose-600"
+                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-rose-600 dark:hover:text-rose-400"
                   title="철회"
                 >
                   <Trash2 size={14} />

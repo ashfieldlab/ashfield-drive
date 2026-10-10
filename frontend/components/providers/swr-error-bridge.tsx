@@ -91,16 +91,16 @@ function SystemErrorBanner({
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 bg-rose-50 border-b border-rose-200 z-[150]"
+      className="fixed top-0 left-0 right-0 bg-rose-50 dark:bg-rose-950 border-b border-rose-200 dark:border-rose-900/60 z-[150]"
       role="alert"
       data-testid="system-error-banner"
     >
       <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-3">
-        <AlertTriangle size={16} className="text-rose-700 shrink-0" />
-        <p className="flex-1 text-sm text-rose-800">{message}</p>
+        <AlertTriangle size={16} className="text-rose-700 dark:text-rose-300 shrink-0" />
+        <p className="flex-1 text-sm text-rose-800 dark:text-rose-300">{message}</p>
         <button
           onClick={onDismiss}
-          className="text-rose-700 hover:text-rose-900"
+          className="text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-200"
           aria-label="닫기"
           data-testid="system-error-banner-dismiss"
         >

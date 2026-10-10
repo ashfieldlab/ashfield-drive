@@ -96,12 +96,12 @@ export function FilePreview({ node, onClose }: Props) {
       data-testid="file-preview"
     >
       <div
-        className="flex h-[90vh] w-[90vw] max-w-5xl flex-col overflow-hidden rounded-lg bg-white shadow-xl"
+        className="flex h-[90vh] w-[90vw] max-w-5xl flex-col overflow-hidden rounded-lg bg-card shadow-xl dark:ring-1 dark:ring-foreground/10"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h3
-            className="truncate text-sm font-semibold text-gray-900"
+            className="truncate text-sm font-semibold text-foreground"
             title={node.name}
           >
             {node.name}
@@ -111,7 +111,7 @@ export function FilePreview({ node, onClose }: Props) {
               onClick={downloadOriginal}
               data-testid="file-preview-download"
               title="다운로드"
-              className="rounded p-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <Download size={16} />
             </button>
@@ -119,24 +119,24 @@ export function FilePreview({ node, onClose }: Props) {
               onClick={onClose}
               data-testid="file-preview-close"
               title="닫기"
-              className="rounded p-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X size={16} />
             </button>
           </div>
         </div>
 
-        <div className="flex flex-1 items-center justify-center overflow-auto bg-gray-50">
+        <div className="flex flex-1 items-center justify-center overflow-auto bg-muted/50">
           {error && (
             <p
-              className="px-4 text-sm text-rose-600"
+              className="px-4 text-sm text-rose-600 dark:text-rose-400"
               data-testid="file-preview-error"
             >
               미리보기를 불러올 수 없습니다: {error}
             </p>
           )}
           {!error && !url && (
-            <p className="text-sm text-gray-500">불러오는 중…</p>
+            <p className="text-sm text-muted-foreground">불러오는 중…</p>
           )}
           {!error && url && kind === "image" && (
             // next/image 는 presigned URL 짧은 만료(10~30s) + 외부 도메인 프록시 와 안 맞음.
@@ -154,14 +154,14 @@ export function FilePreview({ node, onClose }: Props) {
               src={url}
               referrerPolicy="no-referrer"
               data-testid="file-preview-pdf"
-              className="h-full w-full border-0 bg-white"
+              className="h-full w-full border-0 bg-card"
               title={node.name}
             />
           )}
           {!error && url && kind === "text" && (
             <pre
               data-testid="file-preview-text"
-              className="m-0 h-full w-full overflow-auto whitespace-pre-wrap bg-white p-4 font-mono text-xs text-gray-800"
+              className="m-0 h-full w-full overflow-auto whitespace-pre-wrap bg-card p-4 font-mono text-xs text-foreground"
             >
               {text ?? "불러오는 중…"}
             </pre>

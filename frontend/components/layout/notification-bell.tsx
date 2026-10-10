@@ -73,7 +73,7 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         data-testid="notification-bell"
-        className="relative rounded p-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        className="relative rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
         aria-label="알림"
       >
         <Bell size={18} />
@@ -90,26 +90,26 @@ export function NotificationBell() {
       {open && (
         <div
           data-testid="notification-panel"
-          className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-lg border border-border bg-card shadow-lg"
         >
-          <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
-            <h3 className="text-sm font-semibold text-gray-900">알림</h3>
+          <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
+            <h3 className="text-sm font-semibold text-foreground">알림</h3>
             {unread > 0 && (
               <button
                 onClick={markAll}
                 data-testid="notification-mark-all-read"
-                className="text-xs text-gray-500 hover:text-gray-900"
+                className="text-xs text-muted-foreground hover:text-foreground"
               >
                 모두 읽음
               </button>
             )}
           </div>
           {items.length === 0 ? (
-            <div className="p-6 text-center text-sm text-gray-500">
+            <div className="p-6 text-center text-sm text-muted-foreground">
               알림이 없습니다.
             </div>
           ) : (
-            <ul className="max-h-96 divide-y divide-gray-100 overflow-y-auto">
+            <ul className="max-h-96 divide-y divide-border/60 overflow-y-auto">
               {items.map((n) => {
                 const isUnread = !n.read_at
                 const r = renderNotification(n)
@@ -117,7 +117,7 @@ export function NotificationBell() {
                   <li
                     key={n.id}
                     data-testid={`notification-row-${n.id}`}
-                    className={isUnread ? "bg-blue-50/50" : ""}
+                    className={isUnread ? "bg-blue-50/50 dark:bg-blue-950/30" : ""}
                   >
                     <Link
                       href={r.href}
@@ -126,20 +126,20 @@ export function NotificationBell() {
                         setOpen(false)
                       }}
                       data-testid={`notification-row-${n.id}-link`}
-                      className="block px-3 py-2 text-sm hover:bg-gray-50"
+                      className="block px-3 py-2 text-sm hover:bg-muted/50"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium text-gray-900">
+                          <p className="truncate font-medium text-foreground">
                             {r.title}
                           </p>
                           {r.subtitle && (
-                            <p className="mt-0.5 truncate text-xs text-gray-600">
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
                               {r.subtitle}
                             </p>
                           )}
                           <p
-                            className="mt-1 text-[11px] text-gray-400"
+                            className="mt-1 text-[11px] text-muted-foreground/70"
                             title={formatDateTime(n.created_at)}
                           >
                             {relativeTime(n.created_at)}
@@ -153,7 +153,7 @@ export function NotificationBell() {
                         ) : (
                           <Check
                             size={12}
-                            className="mt-1 shrink-0 text-gray-300"
+                            className="mt-1 shrink-0 text-muted-foreground/50"
                           />
                         )}
                       </div>
@@ -167,7 +167,7 @@ export function NotificationBell() {
             href="/notifications"
             onClick={() => setOpen(false)}
             data-testid="notification-see-all"
-            className="block border-t border-gray-100 px-3 py-2 text-center text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+            className="block border-t border-border/60 px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
             전체 보기
           </Link>

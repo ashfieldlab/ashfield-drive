@@ -42,7 +42,7 @@ export default function WorkspaceMembersPage({
   if (!isSystemAdmin) {
     return (
       <div
-        className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
+        className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 p-6 text-sm text-amber-800 dark:text-amber-200"
         data-testid="workspace-members-no-permission"
       >
         시스템 관리자만 접근할 수 있습니다.
@@ -81,13 +81,13 @@ export default function WorkspaceMembersPage({
     >
       <Link
         href="/admin/workspaces"
-        className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900"
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         data-testid="workspace-members-back"
       >
         <ArrowLeft size={12} /> 워크스페이스 목록
       </Link>
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-foreground">
           {workspaceId} 멤버 관리
         </h1>
       </header>
@@ -96,7 +96,7 @@ export default function WorkspaceMembersPage({
 
       {adminCount === 0 && data && (
         <div
-          className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800"
+          className="flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-4 py-2 text-sm text-amber-800 dark:text-amber-200"
           data-testid="workspace-members-no-admin-warning"
         >
           <AlertTriangle size={14} />
@@ -105,15 +105,15 @@ export default function WorkspaceMembersPage({
       )}
 
       {error ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <div className="rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 p-4 text-sm text-rose-700 dark:text-rose-300">
           불러오지 못했습니다. 잠시 후 다시 시도해주세요.
         </div>
       ) : isLoading ? (
-        <div className="text-sm text-gray-500">불러오는 중…</div>
+        <div className="text-sm text-muted-foreground">불러오는 중…</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full text-sm" data-testid="workspace-members-list">
-            <thead className="bg-gray-50 text-left text-xs text-gray-500">
+            <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">이름</th>
                 <th className="px-4 py-2 font-medium">이메일</th>
@@ -121,25 +121,25 @@ export default function WorkspaceMembersPage({
                 <th className="w-32 px-4 py-2 text-right font-medium">작업</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border/60">
               {data?.members.map((m) => {
                 const isAdmin = m.role === "admin"
                 return (
                   <tr
                     key={m.user_sub}
                     data-testid={`workspace-members-row-${m.user_sub}`}
-                    className="hover:bg-gray-50"
+                    className="hover:bg-muted/50"
                   >
-                    <td className="px-4 py-2 text-gray-900">
+                    <td className="px-4 py-2 text-foreground">
                       {m.name ?? m.user_sub}
                     </td>
-                    <td className="px-4 py-2 text-gray-600">{m.email ?? "-"}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{m.email ?? "-"}</td>
                     <td className="px-4 py-2">
                       <span
                         className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs ${
                           isAdmin
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-700"
+                            ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300"
+                            : "bg-muted text-foreground/80"
                         }`}
                       >
                         {isAdmin ? (
@@ -156,7 +156,7 @@ export default function WorkspaceMembersPage({
                           onClick={() => setRole(m, "member")}
                           disabled={busy === m.user_sub}
                           data-testid={`workspace-members-row-${m.user_sub}-demote`}
-                          className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                          className="rounded border border-input px-2 py-1 text-xs text-foreground/80 hover:bg-muted disabled:opacity-50"
                         >
                           강등
                         </button>
@@ -178,7 +178,7 @@ export default function WorkspaceMembersPage({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-sm text-gray-500"
+                    className="px-4 py-8 text-center text-sm text-muted-foreground"
                   >
                     아직 이 워크스페이스로 로그인한 사용자가 없습니다.
                   </td>

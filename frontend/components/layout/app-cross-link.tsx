@@ -12,7 +12,7 @@ export function AppCrossLink() {
       href={env.calendarUrl}
       data-testid="app-cross-link"
       title="일정 앱으로 이동"
-      className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+      className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       <Calendar size={16} />
       <span className="hidden sm:inline">일정</span>

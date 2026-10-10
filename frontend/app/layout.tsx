@@ -3,6 +3,7 @@ import localFont from "next/font/local"
 
 import { AppProvider } from "@/components/providers/app-context"
 import { SwrErrorBridge } from "@/components/providers/swr-error-bridge"
+import { ThemeProvider } from "@/components/providers/theme-provider"
 import { GlobalLoadingBar } from "@/components/ui-custom/global-loading-bar"
 import { ConfirmProvider } from "@/components/ui-custom/use-confirm"
 import { Toaster } from "@/components/ui/sonner"
@@ -43,17 +44,20 @@ export default function RootLayout({
     <html
       lang="ko"
       className={`${pretendard.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="h-full font-sans">
-        <AppProvider>
-          <ConfirmProvider>
-            <SwrErrorBridge>
-              <GlobalLoadingBar />
-              {children}
-            </SwrErrorBridge>
-          </ConfirmProvider>
-          <Toaster />
-        </AppProvider>
+        <ThemeProvider>
+          <AppProvider>
+            <ConfirmProvider>
+              <SwrErrorBridge>
+                <GlobalLoadingBar />
+                {children}
+              </SwrErrorBridge>
+            </ConfirmProvider>
+            <Toaster />
+          </AppProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
