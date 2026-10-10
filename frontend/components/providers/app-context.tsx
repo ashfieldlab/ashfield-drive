@@ -32,8 +32,10 @@ export interface AppContextType {
   authUser: AuthUser | null
   bootstrapped: boolean
 
-  // 멀티테넌트 (JWT companies/groups)
+  // 멀티테넌트 (로컬 DB 소속 — /api/v1/me groups)
   companies: string[]
+  /** 회사 ID → 표시 이름 (개인 워크스페이스 등). 없으면 ID 를 그대로 표시. */
+  companyNames: Record<string, string>
   activeCompanyId: string | null
   setActiveCompany: (id: string) => void
 
@@ -44,15 +46,17 @@ export interface AppContextType {
 }
 
 /**
- * `/api/v1/me` — 신원·회사·권한의 단일 출처 (ADR-0021).
- * BFF 가 세션 쿠키를 백엔드 자격 증명으로 바꾸고, 백엔드가 검증한 claim 을 반환.
+ * `/api/v1/me` — 신원·회사·권한의 단일 출처.
+ * BFF 가 Better Auth 세션으로 JWT 를 받아 백엔드에 넘기고, 백엔드가 검증한 신원 + 로컬 DB 소속을 반환.
  * 브라우저 JS 엔 토큰이 없으므로 여기서 신원을 얻는다.
  */
 interface MeResponse {
   sub: string
   email: string
   name: string | null
+  image?: string | null
   groups: string[]
+  companies?: { id: string; name: string }[]
   roles: string[]
   is_system_admin: boolean
   company_roles: Record<string, "admin" | "member">
@@ -122,10 +126,14 @@ export function AppProvider({ children }: AppProviderProps) {
   const [bootstrapped, setBootstrapped] = useState(false)
   const channelRef = useRef<BroadcastChannel | null>(null)
 
-  // 신원·회사·권한 = 백엔드가 검증한 /me (ADR-0021).
+  // 신원·회사·권한 = 백엔드가 검증한 /me.
   const { data: me } = useApiGet<MeResponse>("/api/v1/me")
 
   const companies: string[] = useMemo(() => me?.groups ?? [], [me])
+  const companyNames: Record<string, string> = useMemo(
+    () => Object.fromEntries((me?.companies ?? []).map((c) => [c.id, c.name])),
+    [me],
+  )
 
   const authUser: AuthUser | null = useMemo(() => {
     if (!me) return null
@@ -255,6 +263,7 @@ export function AppProvider({ children }: AppProviderProps) {
       authUser,
       bootstrapped,
       companies,
+      companyNames,
       activeCompanyId,
       setActiveCompany,
       isSystemAdmin,
@@ -264,6 +273,7 @@ export function AppProvider({ children }: AppProviderProps) {
       authUser,
       bootstrapped,
       companies,
+      companyNames,
       activeCompanyId,
       setActiveCompany,
       isSystemAdmin,

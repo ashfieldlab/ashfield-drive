@@ -1,7 +1,10 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 
 import { ActiveCompanyGate } from "@/components/layout/active-company-gate"
 import { AppShell } from "@/components/layout/app-shell"
+import { getServerSession } from "@/lib/auth/session"
 
 // 모든 protected 페이지는 로그인 사용자 데이터 기반 — static prerender 의미 없음.
 // useSearchParams 같은 client hook 쓰는 페이지가 prerender 시 Suspense 필요 에러를
@@ -24,17 +27,19 @@ export const metadata: Metadata = {
   },
 }
 
-// 가드는 proxy.ts (middleware) 가 처리. 여기서 server-side auth() 호출하면
-// NextAuth 의 token refresh 가 RSC 안에서 cookie write 시도 → Next.js 16 prod
-// 차단. client-side useAppContext / useSession 이 추가 검증 담당.
+// 인증 가드: proxy.ts(세션 쿠키 존재, 복귀 주소 보존) → 여기서 Better Auth 세션 유효성 재확인
+// (만료·로그아웃된 쿠키면 /login). 앱 신원·회사는 /api/v1/me.
 //
 // ActiveCompanyGate — activeCompanyId 부트스트랩 끝나야 children 렌더. 안 그러면
 // useApiGet 가 X-Active-Company-Id 헤더 없이 발사돼 422.
-export default function ProtectedLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await getServerSession(await headers())
+  if (!session) redirect("/login")
+
   return (
     <div data-testid="protected-main">
       <AppShell>

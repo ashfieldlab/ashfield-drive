@@ -3,8 +3,7 @@
 #
 # 빌드:
 #   docker build \
-#     --build-arg NEXT_PUBLIC_API_URL=https://api.example.com \
-#     --build-arg AUTH_SECRET=$(openssl rand -base64 32) \
+#     --build-arg NEXT_PUBLIC_API_URL= \
 #     -t ashfield-drive-frontend ./frontend
 # =============================================================================
 

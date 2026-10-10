@@ -1,5 +1,5 @@
 """
-Redis 클라이언트 — revocation cache + lazy upsert throttle 용도.
+Redis 클라이언트 — 파일 이벤트 pub/sub 등 (인증 경로는 Redis 를 쓰지 않는다).
 
 앱 lifecycle:
   startup: get_redis()가 lazy 생성

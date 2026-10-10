@@ -1,21 +1,24 @@
-# Frontend 규칙 (Next.js 16 · 게이트웨이 세션 인증)
+# Frontend 규칙 (Next.js 16 · Better Auth)
 
 루트 공통 규칙은 [`../CLAUDE.md`](../CLAUDE.md), spec은 [`../SPEC.md`](../SPEC.md) §2 참조.
 
-## 인증·세션 (ADR-0021 — 게이트웨이 세션 차용)
+## 인증·세션 (Better Auth — ADR-0023)
 
-- **자격 증명 해석은 `lib/auth-session.ts` 한 곳.** 런타임 `SKIP_AUTH`(NEXT_PUBLIC 아님)로 분기:
-  - 로컬(`SKIP_AUTH=true`): `/login` dev 사용자 카드 → `/api/auth/dev-login` 이 dev 키 서명 JWT 를 `dev_token` 쿠키에. BFF 가 Bearer 로 전달.
-  - 운영: 게이트웨이가 Keycloak 로그인·세션(`ashfield_sid`) 담당. BFF 가 `ashfield_sid` 를 `X-Ashfield-Session-ID` 로 백엔드에 **직접** 전달(게이트웨이 프록시 X). 백엔드가 게이트웨이 `/auth/me` 로 신원 확인.
-- **신원은 `useAppContext()`** 로만 (내부적으로 `/api/v1/me`). NextAuth·`useSession`/`auth()` 없음, 부활 금지.
-- **`X-Forwarded-User`/`-Email` 를 보안 판단에 쓰지 말 것** — 권위는 백엔드가 검증한 신원(JWKS 또는 게이트웨이 `/auth/me`). 표시 신원도 `/me` 에서.
-- 페이지 가드 = `proxy.ts`(세션 쿠키 존재만). 로그아웃 = `lib/actions/auth.ts` 의 `signOutAction()` 이 돌려준 주소로 `window.location` 이동.
-- 외부 Bearer(데스크톱 싱크 Keycloak 토큰)는 BFF 가 그대로 통과시킨다.
+- **Better Auth 서버 설정은 `lib/auth/server.ts` 한 곳** (핸들러 `app/api/auth/[...all]/route.ts`). Better Auth CLI 가 이 파일을 직접 읽으므로 `@/` 별칭·`server-only` 를 쓰지 않는다. 테이블은 Postgres 스키마 `auth` — `make auth-migrate`.
+  - 소셜: Google·GitHub, `*_CLIENT_ID`/`*_CLIENT_SECRET` 둘 다 있을 때만 활성 → `/login` 에 버튼 노출.
+  - `ALLOWED_EMAILS`: 목록 밖 이메일은 가입·로그인 거부 (`validateUserInfo` + `session.create.before`). 비면 누구나 가입.
+  - `AUTH_DEV_PASSWORD_LOGIN=true`(비운영)만 이메일+비밀번호 DEV 로그인. E2E 가 이걸로 로그인 (`e2e/auth.ts`).
+- **BFF → 백엔드 자격 증명은 `lib/auth/session.ts` 의 `resolveBackendAuth()`** — 세션으로 5분짜리 JWT(`auth.api.getToken`)를 받아 `Authorization: Bearer`. 브라우저 JS 엔 JWT 가 없다.
+- **신원은 `useAppContext()`** 로만 (내부적으로 `/api/v1/me`). Better Auth `useSession` 으로 앱 신원·회사·권한을 판단하지 말 것.
+- **`X-Forwarded-User`/`-Email` 를 보안 판단에 쓰지 말 것** — 권위는 백엔드가 검증한 JWT. 표시 신원도 `/me` 에서.
+- 페이지 가드 = `proxy.ts`(세션 쿠키 존재만, 복귀 주소 보존) + `(protected)/layout.tsx`(서버에서 세션 유효성 재확인). 로그아웃 = `lib/actions/auth.ts` 의 `signOutAction()` 이 돌려준 주소로 `window.location` 이동.
+- 외부 Bearer(서버 간 호출·데스크톱 클라이언트의 Better Auth JWT)는 BFF 가 그대로 통과시킨다.
+- 세션 쿠키 이름은 `AUTH_COOKIE_PREFIX`(앱 이름) — 같은 localhost 의 다른 앱과 섞이지 않게.
 
 ## API 호출
 
 - **클라이언트 컴포넌트**: `lib/api-client.ts`의 `api<T>(path, opts)` (same-origin BFF → 쿠키를 자격 증명 헤더로 변환).
-- 서버 컴포넌트에서 백엔드 호출이 필요하면 `resolveAuthHeaders(await cookies())` 로 헤더를 만들어 호출하는 헬퍼를 새로 작성 (구 `lib/api.ts` apiFetch 는 NextAuth 결합이라 제거됨).
+- 서버 컴포넌트에서 백엔드 호출이 필요하면 `resolveBackendAuth(await headers())` 로 헤더를 만들어 호출하는 헬퍼를 새로 작성.
 - **SWR 훅**: `lib/hooks/use-api.ts`의 `useApiGet<T>` + `invalidateApi(prefix)`. `useSWR` 직접 호출 금지.
 - `X-Active-Company-Id` 헤더는 `api-client`가 자동 첨부 — 수동 추가 금지.
 - `fetch` 직접 호출 금지 (단, 외부 API 호출은 OK — 주석으로 사유 명시).

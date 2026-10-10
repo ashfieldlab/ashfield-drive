@@ -1,9 +1,11 @@
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { APP } from "@/lib/apps"
-import { SKIP_AUTH } from "@/lib/auth-session"
+import { getServerSession } from "@/lib/auth/session"
+import { devPasswordLoginEnabled, enabledSocialProviders } from "@/lib/auth/server"
 
-import DevLogin from "./dev-login"
+import LoginForm from "./login-form"
 
 export const dynamic = "force-dynamic"
 
@@ -12,9 +14,8 @@ interface LoginPageProps {
 }
 
 /**
- * 자체 로그인 화면 없음.
- *   - SKIP_AUTH(로컬): dev 사용자 선택 카드 → /api/auth/dev-login.
- *   - 운영: 게이트웨이 OIDC 로그인(/auth/login)으로 보내고 redirect_after 로 복귀시킨다.
+ * 로그인 — Better Auth 소셜 로그인 (Google·GitHub, 설정된 것만 버튼 노출).
+ * AUTH_DEV_PASSWORD_LOGIN=true(비운영)면 이메일+비밀번호 dev 로그인도 노출. ADR-0023.
  */
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { callbackUrl, error } = await searchParams
@@ -24,16 +25,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       ? callbackUrl
       : APP.home
 
-  if (SKIP_AUTH) return <DevLogin callbackUrl={dest} error={error} />
+  // 이미 로그인돼 있으면 바로 복귀.
+  const session = await getServerSession(await headers())
+  if (session) redirect(dest)
 
-  const gw = (process.env.GATEWAY_URL || "").replace(/\/$/, "")
-  const appBase = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "")
-  // callback_mode=gateway: OIDC code 를 게이트웨이 자기 origin 으로 받게 한다. 이 앱은
-  // /auth/callback 을 게이트웨이로 프록시하지 않으므로(인증만 차용, API 는 직결) 기본값
-  // dynamic 이면 code 가 갈 곳이 없어 로그인 가드와 무한 왕복한다.
-  const params = new URLSearchParams({
-    redirect_after: appBase ? `${appBase}${dest}` : dest,
-    callback_mode: "gateway",
-  })
-  redirect(`${gw}/auth/login?${params}`)
+  return (
+    <LoginForm
+      callbackUrl={dest}
+      error={error}
+      providers={enabledSocialProviders}
+      devPasswordLogin={devPasswordLoginEnabled}
+    />
+  )
 }

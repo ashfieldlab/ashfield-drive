@@ -4,14 +4,12 @@
  * 책임:
  *   - 자동 타임아웃 (NEXT_PUBLIC_API_TIMEOUT_MS)
  *   - X-Active-Company-Id 자동 첨부 (쿠키에서 읽음)
- *   - 401 → NextAuth signOut + /login 리다이렉트
+ *   - 401 → /login 리다이렉트 (복귀 주소 보존)
  *   - 활성 요청 카운팅 (전역 로딩바 구독)
  *   - request_id 로깅
  *
- * 자격 증명은 same-origin 쿠키로 자동 전달되고 BFF 가 서버 사이드에서 헤더로 바꾼다.
- * BFF 라우트(/api/proxy)를 거치는 경우는 그 라우트가 Bearer로 변환.
- *
- * Server Components/Actions에선 lib/api.ts를 사용.
+ * 자격 증명은 same-origin 쿠키(Better Auth 세션)로 자동 전달되고 BFF 가 서버 사이드에서
+ * 짧은 JWT 를 받아 Bearer 로 바꾼다 (app/api/v1/[...path]/route.ts).
  */
 
 import { isPublicPath } from "@/lib/public-paths"
@@ -150,7 +148,7 @@ export async function api<T = unknown>(
       })
 
       // 401 → 세션 소실. 로그인으로 보내고 원래 페이지로 복귀시킨다.
-      // 루프 가드: 방금(10초 내) 재인증했는데 또 401 = 백엔드 설정 오류(aud/issuer/게이트웨이)
+      // 루프 가드: 방금(10초 내) 재인증했는데 또 401 = 백엔드 설정 오류(AUTH_ISSUER/AUDIENCE/JWKS)
       // 신호 → 무한 왕복 방지 위해 이번엔 리다이렉트 안 하고 에러만 통과.
       if (
         response.status === 401 &&

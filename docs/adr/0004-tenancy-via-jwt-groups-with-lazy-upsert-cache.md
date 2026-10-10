@@ -1,13 +1,20 @@
-# Tenancy는 JWT groups로 결정, 백엔드 users/companies는 lazy upsert 캐시
+# Tenancy 는 로컬 DB 멤버십으로 결정한다 (구: JWT groups + lazy upsert 캐시)
 
-사용자·회사·membership의 source of truth는 외부 디렉터리(또는 다른 외부 IAM)다. 백엔드 DB가 이를 마스터로 들면 양방향 동기화 지옥에 빠진다. 따라서 권한 결정은 항상 JWT를 본다:
+## 개정 (2026-10, ADR-0023)
 
-- 활성 회사 검증: 클라이언트가 `X-Active-Company-Id` 헤더로 전달, 백엔드는 JWT `groups` 배열에 포함되어 있는지 확인 (현재 Keycloak이 회사 코드 문자열 배열로 발급)
-- 시스템 관리자: JWT `realm_access.roles`의 `admin` 클레임
-- Membership 자체는 별도 테이블로 만들지 않음
+예전 결정은 "사용자·회사·소속의 원천은 외부 IdP/디렉터리, 백엔드는 JWT `groups` 로 권한을 판단하고 `users`/`companies` 는 Redis throttle lazy upsert 캐시" 였다. 외부 IdP·디렉터리 없이 Better Auth 소셜 로그인만 쓰게 되면서 원천을 로컬 DB 로 옮겼다 (임시 설계 — 조직·초대 모델을 다시 설계할 때 바뀔 수 있다).
 
-다만 백엔드 DB에 `users`와 `companies` 테이블은 둔다 — 표시(예: Item의 owner 이름)와 외래키 join을 위해 어차피 필요하기 때문이다. 이 두 테이블은 권한 결정에 쓰이지 않고 캐시 역할만 한다.
+## 현재 결정
 
-캐시 갱신은 lazy upsert: `get_current_user` 의존성이 매 요청 호출되지만 실제 UPSERT는 Redis `SETNX sync:user:{sub} EX 300`으로 throttle하여 사용자당 5분에 1회만 일어난다. JWT 수명(=5분)과 동일한 신선도이고, Redis가 워커 간 공유 + 재시작 안전이므로 워커 메모리 dict 패턴의 단점(워커별 중복)을 피한다. 즉시 갱신이 필요하면 `DEL sync:user:{sub}`로 강제할 수 있다.
+- **신원**: 검증된 Better Auth JWT 의 `sub`·`email`·`name`·`image`. 첫 인증 요청에서 `users` 를 upsert 하고, 값이 바뀐 경우에만 다시 쓴다 (Redis throttle 없음).
+- **소속**: `user_company_memberships` 가 유일한 원천. `get_current_user` 가 매 요청 조회해 `UserContext.groups` 를 채운다.
+  - 활성 회사 검증: `X-Active-Company-Id` 헤더가 그 목록에 있어야 한다 (없으면 403).
+  - 소속이 하나도 없으면 개인 워크스페이스 `personal-{sub}` 를 만들고 role `admin` 으로 넣는다 (결정적 ID + `ON CONFLICT DO NOTHING` → 멱등·동시 요청 안전).
+  - 추가·제거는 회사 admin 이 이메일로 (`POST/DELETE /api/v1/companies/{id}/members`). 대상은 한 번 이상 로그인해 `users` 행이 있어야 한다.
+- **회사 내 역할**: `user_company_memberships.role` (ADR-0010).
+- **System Admin**: `users.is_system_admin` OR `SYSTEM_ADMIN_EMAILS`.
 
-회사 정보 변경이 즉시 반영되어야 하는 시나리오(예: 권한 박탈)는 본 스켈레톤 범위에 없고, 필요한 프로젝트는 webhook 또는 짧은 JWT TTL로 별도 해결한다.
+## 결과
+
+- 소속 변경이 다음 요청에 바로 반영된다 (JWT 재발급을 기다리지 않음). 요청마다 SELECT 2회(사용자·멤버십).
+- 가입 전 초대, 초대 메일, 조직 디렉터리 연동은 없다.

@@ -4,7 +4,8 @@ import { defineConfig, devices } from "@playwright/test"
  * Playwright config — SPEC §2.10.
  *
  * 전제:
- *   - backend 가 SKIP_AUTH=true 로 미리 떠 있어야 함 (`make backend`). 로그인은 dev-login.
+ *   - backend 가 미리 떠 있어야 함 (`make backend`). 로그인은 Better Auth dev 비밀번호 로그인
+ *     (frontend .env 에 AUTH_DEV_PASSWORD_LOGIN=true, `make auth-migrate` 완료) — e2e/auth.ts.
  *   - PW_CHROMIUM_PATH: Playwright 가 OS 용 브라우저를 못 받는 환경(예: 최신 Ubuntu)에서
  *     이미 설치된 Chromium 실행 파일 경로를 지정. 없으면 Playwright 기본 브라우저.
  *   - infra(redis + postgres)도 미리 띄움 (`make infra`)

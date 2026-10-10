@@ -2,38 +2,39 @@
  * BFF Proxy — `/api/v1/*` → 백엔드로 서버 사이드 forward.
  *
  *   - 같은 오리진이라 CORS 없음.
- *   - 자격 증명은 서버 사이드에서만 읽는다: 브라우저 JS 에 노출 X.
- *     로컬=dev_token 쿠키 → Bearer / 운영=ashfield_sid 쿠키 → X-Ashfield-Session-ID.
+ *   - 자격 증명은 서버 사이드에서만 만든다: 브라우저 JS 에 노출 X.
+ *     Better Auth 세션 쿠키 → 짧은 JWT → `Authorization: Bearer` (ADR-0023).
  *   - X-Active-Company-Id 헤더는 클라이언트가 보낸 그대로 전달, 없으면 쿠키에서 보강.
- *
- * ADR-0021 (게이트웨이 세션 인증).
  */
 
 import { NextRequest, NextResponse } from "next/server"
 
-import { resolveAuthHeaders } from "@/lib/auth-session"
+import { resolveBackendAuth } from "@/lib/auth/session"
 import { COOKIES } from "@/lib/cookies"
+import { authEnv } from "@/lib/env"
 
-// 백엔드 도달 주소 — frontend/.env.local 의 BACKEND_INTERNAL_URL 명시.
-// 빈 문자열도 fallback 되도록 `||` (`??` 는 null/undefined 만 잡음).
-// 운영 (컨테이너/k8s 등) 에서는 진짜 backend 서비스 host 로 설정.
-const BACKEND_URL = (
-  process.env.BACKEND_INTERNAL_URL || "http://localhost:8000"
-).replace(/\/$/, "")
+// 백엔드 도달 주소 — BACKEND_INTERNAL_URL. 운영(컨테이너/k8s 등)에서는 backend 서비스 host.
+const BACKEND_URL = authEnv.backendURL
 
 async function proxy(
   req: NextRequest,
   ctx: { params: Promise<{ path: string[] }> },
 ): Promise<Response> {
-  // 외부 Bearer(데스크톱 싱크의 Keycloak 토큰)가 오면 그대로, 없으면 세션 쿠키에서 해석.
-  // 어느 쪽이든 백엔드가 검증하므로 외부 Bearer 를 받아도 위조는 무의미하다.
+  // 외부 Bearer(서버 간 호출·데스크톱 클라이언트의 Better Auth JWT)가 오면 그대로, 없으면
+  // 세션 쿠키로 JWT 를 받는다. 어느 쪽이든 백엔드가 JWKS 로 검증하므로 위조는 무의미하다.
   const externalAuth = req.headers.get("authorization")
-  const authHeaders =
-    externalAuth && /^Bearer\s+/i.test(externalAuth)
-      ? { Authorization: externalAuth }
-      : resolveAuthHeaders(req.cookies)
-  if (!authHeaders) {
-    return NextResponse.json({ detail: "Not authenticated" }, { status: 401 })
+  let authHeaders: Record<string, string>
+  if (externalAuth && /^Bearer\s+/i.test(externalAuth)) {
+    authHeaders = { Authorization: externalAuth }
+  } else {
+    const resolved = await resolveBackendAuth(req.headers)
+    if (!resolved.ok) {
+      return NextResponse.json(
+        { detail: resolved.status === 401 ? "Not authenticated" : "Auth unavailable" },
+        { status: resolved.status, headers: { "Cache-Control": "no-store" } },
+      )
+    }
+    authHeaders = resolved.headers
   }
 
   const { path } = await ctx.params

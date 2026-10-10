@@ -79,7 +79,7 @@ services:
       # presigned URL 유효기간 — 대용량 다운로드/미리보기 시작 여유 (기본 30s 는 빠듯)
       PRESIGN_DOWNLOAD_TTL_SECONDS: ${PRESIGN_DOWNLOAD_TTL_SECONDS:-300}
       PRESIGN_PREVIEW_TTL_SECONDS: ${PRESIGN_PREVIEW_TTL_SECONDS:-300}
-      # SMTP / OIDC / 기타 — .env.prod 에서 docker 가 자동 전달
+      # SMTP / 인증 / 기타 — .env.prod 에서 docker 가 자동 전달
       SMTP_ENABLED: ${SMTP_ENABLED:-false}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -89,12 +89,12 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Ashfield}
       SMTP_ENCRYPTION_KEY: ${SMTP_ENCRYPTION_KEY:-}
-      OIDC_ISSUER: ${OIDC_ISSUER:-}
-      OIDC_JWKS_URL: ${OIDC_JWKS_URL:-}
-      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-}
-      SKIP_AUTH: ${SKIP_AUTH:-false}
-      GATEWAY_URL: ${GATEWAY_URL}
-      DIRECTORY_URL: ${DIRECTORY_URL:-}
+      # 인증 — Better Auth JWT 검증 (ADR-0023). JWKS 는 컨테이너 내부 주소, iss/aud 는 공개 주소.
+      AUTH_JWKS_URL: http://frontend:3000/api/auth/jwks
+      AUTH_ISSUER: ${BETTER_AUTH_URL}
+      AUTH_AUDIENCE: ${BETTER_AUTH_URL}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
+      SYSTEM_ADMIN_EMAILS: ${SYSTEM_ADMIN_EMAILS:-}
       TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
       LOG_CATEGORIES: ${LOG_CATEGORIES:-}
     ports:
@@ -162,7 +162,6 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-}
         NEXT_PUBLIC_CALENDAR_URL: ${NEXT_PUBLIC_CALENDAR_URL:-}
         NEXT_PUBLIC_API_TIMEOUT_MS: ${NEXT_PUBLIC_API_TIMEOUT_MS:-10000}
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Ashfield}
@@ -170,16 +169,42 @@ services:
         NEXT_PUBLIC_COOKIE_DOMAIN: ${NEXT_PUBLIC_COOKIE_DOMAIN:-}
     <<: *restart_policy
     environment:
-      # 인증 모드·게이트웨이 (ADR-0021). 런타임 서버 변수라 빌드 arg 아님.
-      SKIP_AUTH: ${SKIP_AUTH:-false}
-      GATEWAY_URL: ${GATEWAY_URL}
+      # 인증 (Better Auth, ADR-0023). 런타임 서버 변수라 빌드 arg 아님.
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET 필요}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL 필요}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
       BACKEND_INTERNAL_URL: http://backend:8000
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
     ports:
       - "127.0.0.1:${FRONTEND_HOST_PORT:-3000}:3000"
     depends_on:
-      - backend
+      - postgres
       - redis
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 3s
+      start_period: 20s
+      retries: 3
+
+  # Better Auth 테이블 생성·갱신 (스키마 auth) — 일회성. `make prod-auth-migrate`.
+  # 런타임 이미지엔 CLI 가 없어 builder 단계 이미지(전체 node_modules + 소스)로 실행.
+  auth-migrate:
+    build:
+      context: ./frontend
+      target: builder
+    profiles: ["tools"]
+    command: ["npx", "auth", "migrate", "--config", "lib/auth/server.ts", "--yes"]
+    environment:
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
       interval: 30s

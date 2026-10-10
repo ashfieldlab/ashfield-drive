@@ -2,7 +2,7 @@
 
 vaults 와 평행한 구조: shared scope 폴더에 binding 을 걸어, effective_permission 이
 "회사 전원 write" 대신 "그 부서(+하위)만" ACL 로 오버라이드한다. 주인 없는 회사 공용 자산.
-멤버십은 디렉터리 부서를 동적으로 따라감 (접근집합 매칭).
+멤버십은 부서를 동적으로 따라감 (접근집합 매칭). 부서 소스가 없어 현재 비활성 — services/departments.py.
 """
 
 from datetime import datetime

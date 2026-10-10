@@ -1,5 +1,12 @@
+import {
+  E2E_USERS,
+  addMember,
+  me,
+  personalCompanyId,
+  setActiveCompany,
+  signOut,
+} from "./auth"
 import { test, expect } from "./fixtures"
-import { DEV_USERS } from "../lib/dev-users"
 
 test.describe("file sharing", () => {
   test("Alice 가 Bob 에게 공유 → Bob 의 '공유받음' 에서 확인", async ({
@@ -7,11 +14,15 @@ test.describe("file sharing", () => {
     loginAs,
   }) => {
     // member_a 가 콤보박스 후보로 잡히려면 한 번 /me 호출되어 캐시에 등록되어야 함
+    // member_a 첫 로그인 (로컬 사용자 행 생성) → admin 의 워크스페이스에 멤버로 추가
     await loginAs("member_a")
-    await page.goto("/dashboard")
-    await page.context().clearCookies()
+    const memberSub = (await me(page)).sub
+    await signOut(page)
 
-    await loginAs("admin") // companies=tenant-a,tenant-b 공유 가능
+    await loginAs("admin")
+    const companyId = await personalCompanyId(page)
+    await addMember(page, companyId, E2E_USERS.member_a.email)
+    await setActiveCompany(page, companyId)
     await page.goto("/files")
     const name = `공유-${Date.now()}`
 
@@ -28,10 +39,8 @@ test.describe("file sharing", () => {
     await expect(page.getByTestId("share-modal")).toBeVisible()
     await page
       .getByTestId("share-grantee-input")
-      .fill(DEV_USERS.member_a.email.split("@")[0])
-    await page
-      .getByTestId(`user-autocomplete-option-${DEV_USERS.member_a.id}`)
-      .click()
+      .fill(E2E_USERS.member_a.email.split("@")[0])
+    await page.getByTestId(`user-autocomplete-option-${memberSub}`).click()
     await page.getByTestId("share-add-button").click()
     // 공유 row 노출
     await expect(
@@ -40,7 +49,8 @@ test.describe("file sharing", () => {
     await page.getByTestId("share-modal-close").click()
 
     // member_a 로 전환 후 공유받음 확인
-    await page.context().clearCookies()
+    await signOut(page)
+    await setActiveCompany(page, companyId)
     await loginAs("member_a")
     await page.goto("/files?view=shared-with-me")
     await expect(

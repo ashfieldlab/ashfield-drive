@@ -7,7 +7,8 @@ import { useToast } from "@/components/ui-custom/use-toast"
 
 import { useAppContext } from "@/components/providers/app-context"
 import { QuotaCard } from "@/components/quota/quota-card"
-import { api } from "@/lib/api-client"
+import { useConfirm } from "@/components/ui-custom/use-confirm"
+import { ApiError, api } from "@/lib/api-client"
 import { invalidateApi, useApiGet } from "@/lib/hooks/use-api"
 import { formatBytes } from "@/lib/utils/format"
 
@@ -35,9 +36,11 @@ export default function CompanyMembersSettingsPage({
 }) {
   const { id: companyIdRaw } = use(params)
   const companyId = decodeURIComponent(companyIdRaw)
-  const { isCompanyAdmin } = useAppContext()
+  const { isCompanyAdmin, companyNames, authUser } = useAppContext()
   const { toast } = useToast()
+  const confirm = useConfirm()
   const [busy, setBusy] = useState<string | null>(null)
+  const [newEmail, setNewEmail] = useState("")
   // 한도 설정 모달 — 대상 멤버 + GB 입력(빈값 = 무제한).
   const [quotaFor, setQuotaFor] = useState<MemberItem | null>(null)
   const [quotaGb, setQuotaGb] = useState("")
@@ -116,6 +119,53 @@ export default function CompanyMembersSettingsPage({
     }
   }
 
+  async function addMember(e: React.FormEvent) {
+    e.preventDefault()
+    const email = newEmail.trim()
+    if (!email) return
+    setBusy("__add__")
+    try {
+      await api(`/api/v1/companies/${encodeURIComponent(companyId)}/members`, {
+        method: "POST",
+        body: { email },
+      })
+      toast.success(`${email} 님을 멤버로 추가했습니다`)
+      setNewEmail("")
+      invalidateApi(url!)
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError && err.status === 404
+          ? "해당 이메일로 로그인한 사용자가 없습니다. 먼저 한 번 로그인해야 합니다."
+          : `추가 실패: ${(err as Error).message}`,
+      )
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function removeMember(member: MemberItem) {
+    const ok = await confirm({
+      title: "멤버 제거",
+      description: `${member.name ?? member.email ?? member.user_sub} 님을 이 회사에서 제거할까요?`,
+      confirmText: "제거",
+      variant: "destructive",
+    })
+    if (!ok) return
+    setBusy(member.user_sub)
+    try {
+      await api(
+        `/api/v1/companies/${encodeURIComponent(companyId)}/members/${encodeURIComponent(member.user_sub)}`,
+        { method: "DELETE" },
+      )
+      toast.success("멤버를 제거했습니다")
+      invalidateApi(url!)
+    } catch (err) {
+      toast.error(`제거 실패: ${(err as Error).message}`)
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <div
       className="h-full overflow-y-auto space-y-4 px-4 py-8 sm:px-6 lg:px-8"
@@ -130,9 +180,33 @@ export default function CompanyMembersSettingsPage({
       </Link>
       <header>
         <h1 className="text-2xl font-bold text-gray-900">
-          {companyId} 멤버 관리
+          {companyNames[companyId] ?? companyId} 멤버 관리
         </h1>
       </header>
+
+      <form
+        onSubmit={addMember}
+        className="flex flex-wrap items-center gap-2"
+        data-testid="company-members-add-form"
+      >
+        <input
+          type="email"
+          required
+          placeholder="추가할 멤버 이메일 (한 번 이상 로그인한 사용자)"
+          value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+          className="h-8 w-80 max-w-full rounded border border-gray-300 px-2 text-sm"
+          data-testid="company-members-add-email-input"
+        />
+        <button
+          type="submit"
+          disabled={busy === "__add__"}
+          className="h-8 rounded bg-gray-900 px-3 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          data-testid="company-members-add-button"
+        >
+          멤버 추가
+        </button>
+      </form>
 
       <QuotaCard companyId={companyId} mode="view" />
 
@@ -231,6 +305,16 @@ export default function CompanyMembersSettingsPage({
                             className="rounded bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                           >
                             관리자 임명
+                          </button>
+                        )}
+                        {m.user_sub !== authUser?.id && (
+                          <button
+                            onClick={() => void removeMember(m)}
+                            disabled={busy === m.user_sub}
+                            data-testid={`company-members-settings-row-${m.user_sub}-remove`}
+                            className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                          >
+                            제거
                           </button>
                         )}
                       </div>

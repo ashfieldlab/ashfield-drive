@@ -28,6 +28,23 @@ config.set_main_option("sqlalchemy.url", settings.database_url)
 
 target_metadata = Base.metadata
 
+# Better Auth(프론트)가 자기 테이블을 별도 스키마 `auth` 에 둔다 (ADR-0023). 그 스키마는
+# Better Auth CLI(`make auth-migrate`)가 관리하므로 Alembic 은 보지도 건드리지도 않는다.
+# include_schemas 기본값(False)이라 autogenerate 는 기본 스키마만 반사하지만, 명시적으로도 거른다.
+EXCLUDED_SCHEMAS = {"auth"}
+
+
+def include_name(name, type_, parent_names) -> bool:
+    if type_ == "schema":
+        return name not in EXCLUDED_SCHEMAS
+    if type_ == "table":
+        return parent_names.get("schema_name") not in EXCLUDED_SCHEMAS
+    return True
+
+
+def include_object(obj, name, type_, reflected, compare_to) -> bool:
+    return getattr(obj, "schema", None) not in EXCLUDED_SCHEMAS
+
 
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")
@@ -36,6 +53,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_name=include_name,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -43,7 +62,12 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_name=include_name,
+        include_object=include_object,
+    )
 
     with context.begin_transaction():
         context.run_migrations()

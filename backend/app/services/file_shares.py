@@ -88,7 +88,7 @@ async def upsert_group_share(
     granted_by_sub: str,
     expires_at: datetime | None,
 ) -> FileShare:
-    """그룹(= 디렉터리 부서) 공유. group_id 는 directory department_id (외부 참조)."""
+    """그룹(= 부서) 공유. group_id 는 department_id (외부 참조). 현재 생성 비활성 — services/departments.py."""
     stmt = select(FileShare).where(
         and_(
             FileShare.node_id == node.id,

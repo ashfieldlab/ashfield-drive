@@ -15,6 +15,14 @@ export default defineConfig({
   test: {
     projects: [
       {
+        // 순수 로직 단위 테스트 (node). 예: lib/auth/allowlist.test.ts
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['lib/**/*.test.ts'],
+        },
+      },
+      {
         extends: true,
         plugins: [
           // The plugin will run tests for the stories defined in your Storybook config

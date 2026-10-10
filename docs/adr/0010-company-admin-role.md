@@ -1,5 +1,7 @@
 # 회사 admin role — 우리 DB 의 `user_company_memberships.role`
 
+> 개정 (2026-10, ADR-0023): 이제 System Admin 은 `users.is_system_admin` OR `SYSTEM_ADMIN_EMAILS`, 회사 멤버십 자체도 로컬 DB 가 원천이다 (ADR-0004). 첫 로그인 사용자의 **개인 워크스페이스**에서는 본인이 `admin` 으로 들어간다 (아래 "자동 admin 부여 안 함" 의 유일한 예외 — 그 회사의 유일한 멤버이므로). 아래 본문의 Keycloak·JWT groups 언급은 결정 당시 맥락이다.
+
 ## 컨텍스트
 
 지금까지 권한 모델은 두 단(段):
@@ -34,7 +36,7 @@ require_company_admin(company_id):
     else                                              → 403
 ```
 
-**자동 admin 부여 안 함**. lazy upsert (`maybe_sync_user_cache`) 는 기존대로 `on_conflict_do_nothing` — 새 row 는 default `'member'` 로 생성. System Admin 이 명시적 임명 UI 에서 승격.
+**자동 admin 부여 안 함** (개인 워크스페이스 제외). 회사 admin 이 이메일로 추가한 멤버는 default `'member'`. System Admin·회사 admin 이 명시적 임명 UI 에서 승격.
 
 이 결정으로 `user_company_memberships` 의 의미가 확장됨:
 - (기존) JWT.groups 의 캐시 — 검색·자동완성용 표시 목적
@@ -75,6 +77,6 @@ require_company_admin(company_id):
 
 ## 참고
 
-- ADR-0001 — NextAuth + JWT only (회사 admin role 은 우리 DB)
-- ADR-0004 — JWT.groups 기반 멀티테넌트 + lazy upsert (확장 사용)
+- ADR-0023 — Better Auth + JWKS (ADR-0001 대체)
+- ADR-0004 — 로컬 DB 멤버십 기반 멀티테넌트 (구: JWT.groups + lazy upsert)
 - ADR-0008 — scope-then-share 권한 모델 (회사 admin 은 별개 축)

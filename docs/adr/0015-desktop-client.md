@@ -2,9 +2,18 @@
 
 - **상태**: 결정 (2026-06-12)
 - **컨텍스트 ADR**:
-  - [0001](0001-nextauth-only-auth.md) NextAuth + Keycloak SSO 만
+  - [0001](0001-nextauth-only-auth.md) NextAuth + Keycloak SSO 만 (→ [0023](0023-better-auth-jwks.md) 으로 대체)
   - [0005](0005-storage-s3-compatible-presigned.md) S3 presigned URL
   - [0008](0008-permission-model-scope-then-share.md) Scope + FileShare 권한 모델
+
+> **개정 (2026-10, ADR-0023)**: Keycloak 을 없애고 웹 로그인을 Better Auth 로 옮겼다. 데스크톱 클라이언트(ashfield-sync)는 아직 옛 Keycloak Bearer 를 쓰므로 **지금은 백엔드 인증이 실패한다** — 이전 작업이 필요하다. 백엔드 쪽 계약은 그대로다: `Authorization: Bearer <JWT>` + `X-Active-Company-Id`, API 경로 불변. 바뀌는 것은 토큰 발급처뿐:
+>
+> 1. 로그인: 시스템 브라우저로 Better Auth 로그인. 네이티브 앱으로 자격 증명을 넘기는 흐름은 Better Auth `deviceAuthorization` 플러그인(RFC 8628 — `/api/auth/device/code`, `/api/auth/device/token`) 또는 앱 전용 콜백 + `bearer` 플러그인(세션 토큰을 Bearer 로) 중 택1 — 둘 다 아직 켜지 않았다.
+> 2. 세션 토큰을 Windows Credential Manager 에 보관 (아래 3절의 refresh token 자리).
+> 3. API 호출 전 `GET ${BETTER_AUTH_URL}/api/auth/token` (세션 토큰으로 인증) → 5분짜리 RS256 JWT. 만료되면 다시 받는다.
+> 4. 그 JWT 로 `/api/v1/*` 호출 (프론트 BFF 는 외부 Bearer 를 그대로 통과, 또는 백엔드 직접). 백엔드는 `AUTH_JWKS_URL`(`/api/auth/jwks`)로 검증.
+>
+> 아래 3절의 Keycloak OAuth+PKCE 설명은 결정 당시 기록이다.
 
 ## 컨텍스트
 

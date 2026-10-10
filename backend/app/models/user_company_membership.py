@@ -1,12 +1,12 @@
-"""UserCompanyMembership — 회사 멤버십 + 회사 내 역할 (ADR-0010).
+"""UserCompanyMembership — 회사 멤버십 + 회사 내 역할 (ADR-0004, ADR-0010).
 
-두 축의 진실:
-  - 회사 가입 자체 (row 존재): JWT.groups 의 lazy 캐시 — 검색/자동완성용.
-    JWT 에서 빠진 회사는 cleanup 안 함 (Phase 4 단순화 — 잠시 노출 가능).
-  - role 컬럼: 우리 DB 가 진실. JWT 변경과 무관. 기본 'member'.
-    'admin' 은 System Admin 의 명시 임명으로만 부여.
+로컬 DB 가 소속의 유일한 원천이다:
+  - 첫 로그인 시 소속이 하나도 없으면 개인 워크스페이스(회사)를 만들고 admin 으로 넣는다.
+  - 그 외 소속은 회사 admin 이 이메일로 추가/제거 (/api/v1/companies/{id}/members).
+  - role: 'admin' | 'member'. 기본 'member'.
 
 권한 결정:
+  require_active_company → 이 테이블의 행 존재.
   require_company_admin → is_system_admin OR role == 'admin'.
 """
 
@@ -29,8 +29,6 @@ class UserCompanyMembership(Base):
     company_id: Mapped[str] = mapped_column(
         String(128), ForeignKey("companies.id"), primary_key=True
     )
-    # 회사 내 역할 — System Admin 의 명시 임명으로만 'admin'.
-    # lazy upsert 가 새 row 만들 땐 server_default='member' 적용.
     role: Mapped[CompanyRole] = mapped_column(
         String(16), nullable=False, server_default="member"
     )

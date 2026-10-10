@@ -10,7 +10,6 @@ from fastapi import FastAPI
 
 from app.api.external import router as external_router
 from app.api.router import api_router
-from app.auth.backchannel import router as backchannel_router
 from app.core.logging import logger, setup_logging
 from app.core.redis import close_redis
 from app.core.storage import ensure_bucket
@@ -42,8 +41,8 @@ ashfield-drive 백엔드 — 회사 파일 저장·공유 SaaS.
 
 | 헤더 | 값 | 비고 |
 |------|----|------|
-| `Authorization` | `Bearer <JWT>` | Keycloak 발급. JWKS 로 서명 검증. |
-| `X-Active-Company-Id` | JWT `groups[i]` 중 하나 | 멀티 테넌트. 헤더가 JWT groups 에 없으면 403. |
+| `Authorization` | `Bearer <JWT>` | Better Auth(JWT 플러그인) 발급. `AUTH_JWKS_URL` 로 서명·iss·aud 검증. |
+| `X-Active-Company-Id` | 소속 회사 ID 중 하나 | 멀티 테넌트. `/api/v1/me` 의 `groups`. 소속이 아니면 403. |
 | `X-Request-ID` | UUID 등 trace id | 로그/응답 헤더에 echo. 없으면 자동 발급. |
 
 ## 권한 모델 요약 (ADR-0008)
@@ -61,7 +60,7 @@ ashfield-drive 백엔드 — 회사 파일 저장·공유 SaaS.
 | 201 | 생성됨. body 에 새 리소스. |
 | 204 | OK, body 없음 |
 | 400 | 요청 자체가 잘못됨 (예: 폴더를 자손 아래로 이동) |
-| 401 | 인증 실패 (토큰 없음·만료·서명 불일치·revoke) |
+| 401 | 인증 실패 (토큰 없음·만료·서명·iss·aud 불일치) |
 | 403 | 인증은 됐지만 권한 없음 |
 | 404 | 리소스 없음 — 다른 회사 리소스도 404 로 마스킹 |
 | 409 | 상태 충돌 (예: 업로드 미완료 파일 다운로드 시도) |
@@ -76,14 +75,14 @@ ashfield-drive 백엔드 — 회사 파일 저장·공유 SaaS.
 """
 
 _TAGS_METADATA = [
-    {"name": "auth", "description": "현재 사용자(JWT) 정보."},
+    {"name": "auth", "description": "현재 사용자 정보 (첫 호출 시 개인 워크스페이스 생성)."},
     {"name": "nodes", "description": "파일·폴더 트리. 업로드·다운로드는 S3 presigned URL 로 클라이언트 직접 통신."},
     {"name": "notifications", "description": "in-app 알림 목록·읽음 처리·이메일 수신 설정."},
     {"name": "webhooks", "description": "회사 admin 전용. 외부 시스템에 알림 fan-out."},
     {"name": "audit", "description": "관리자 전용. 회사 mutation 감사 로그."},
     {"name": "activity", "description": "본인 관련 변경 타임라인 (audit_logs 중 본인 행동/본인 관련 entity)."},
     {"name": "search", "description": "파일 검색. 권한 모델 그대로 적용."},
-    {"name": "company", "description": "회사 멤버 자동완성용 캐시 조회."},
+    {"name": "company", "description": "회사 멤버 자동완성·멤버 관리."},
     {"name": "external", "description": "공개 토큰 (`/s/{token}`) 으로 접근. 인증 헤더 없음."},
 ]
 
@@ -105,7 +104,6 @@ register_error_handlers(app)
 
 # 라우터
 app.include_router(api_router)
-app.include_router(backchannel_router, prefix="/api/v1")
 app.include_router(external_router)
 
 

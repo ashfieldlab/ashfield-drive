@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://ashfield:ashfield_dev@localhost:15532/ashfield_drive"
 
-    # Redis (revocation + lazy upsert throttle)
+    # Redis (파일 이벤트 pub/sub 등)
     redis_url: str = "redis://localhost:16479"
 
     # dev frontend 포트 — presigned URL 의 same-origin host derive 에 사용 (BACKEND_PORT 와 동일 패턴).
@@ -87,38 +87,44 @@ class Settings(BaseSettings):
     # JobRun 원장 보관 — N일 지난 cron 실행 기록은 일 1회 자동 삭제.
     job_run_retention_days: int = 14
 
-    # 외부 디렉터리(조직도) 연동 — 그룹 공유 (docs/group-sharing.html).
-    # 유저 access token 을 그대로 포워딩(B·리소스서버). 빈 값이면 그룹 기능 비활성.
-    # 예: 클러스터 내부 서비스 주소 또는 https://directory.example.com
-    directory_url: str = ""
+    # 인증 — Better Auth(프론트 Next.js)가 발급한 JWT 를 JWKS 로 검증한다 (ADR-0023).
+    # 예: http://localhost:3000/api/auth/jwks. 비어 있으면 모든 인증 요청이 503.
+    auth_jwks_url: str = ""
+    # JWT iss / aud — Better Auth 의 BETTER_AUTH_URL 과 같은 값 (예: http://localhost:3000).
+    # 둘 다 필수: 비어 있으면 인증 요청이 503 (검증 생략 모드 없음).
+    auth_issuer: str = ""
+    auth_audience: str = ""
 
-    # 인증 게이트웨이 주소. 운영 웹 로그인·세션(ashfield_sid)을 담당한다.
-    # 백엔드는 BFF 가 넘긴 sid 로 `/auth/me` 에 신원을 묻고, 외부 디렉터리 호출도 이 주소 경유.
-    # 예: https://auth.example.com. 빈 값이면 세션 인증 비활성(503).
-    gateway_url: str = ""
+    # 허용 이메일 (쉼표 구분, 대소문자 무시). 비어 있으면 누구나 가입·사용 가능.
+    # 프론트(Better Auth hook)가 가입·로그인을 막고, 백엔드도 같은 목록으로 한 번 더 막는다.
+    allowed_emails: str = ""
+    # System Admin 이메일 (쉼표 구분). users.is_system_admin 과 OR.
+    system_admin_emails: str = ""
 
-    # OIDC (Keycloak) — 운영 환경
-    oidc_issuer: str = ""
-    oidc_jwks_url: str = ""
-    oidc_audience: str = ""
+    @property
+    def allowed_email_set(self) -> frozenset[str]:
+        return _email_set(self.allowed_emails)
 
-    # JWT
-    access_token_max_lifetime: int = 300  # revoked_sid TTL = AT 수명
-
-    # SKIP_AUTH (dev JWT 신뢰)
-    skip_auth: bool = False
-    dev_public_key_path: str = "../dev-keys/public.pem"
+    @property
+    def system_admin_email_set(self) -> frozenset[str]:
+        return _email_set(self.system_admin_emails)
 
     # 로깅
     log_categories: str = ""  # ""=info만, "auth,api"=특정 카테고리 debug, "*"=전부
 
     @model_validator(mode="after")
-    def _guard_skip_auth_in_production(self) -> Settings:
-        if self.environment == "production" and self.skip_auth:
+    def _guard_auth_in_production(self) -> Settings:
+        if self.environment == "production" and not (
+            self.auth_jwks_url and self.auth_issuer and self.auth_audience
+        ):
             raise RuntimeError(
-                "SKIP_AUTH cannot be enabled in production (ADR-0001 안전 가드)"
+                "AUTH_JWKS_URL·AUTH_ISSUER·AUTH_AUDIENCE 는 운영에서 필수입니다 (안전 가드)"
             )
         return self
+
+
+def _email_set(raw: str) -> frozenset[str]:
+    return frozenset(e.strip().lower() for e in raw.split(",") if e.strip())
 
 
 settings = Settings()

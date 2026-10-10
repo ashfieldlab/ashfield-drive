@@ -8,7 +8,7 @@
 - `personal`: owner == me
 - `shared`: company 멤버 모두
 
-회사 admin이 다른 멤버의 personal 폴더에 접근 — **불가**. 필요 시 Keycloak impersonate로 (감사 기록 Keycloak 측).
+회사 admin이 다른 멤버의 personal 폴더에 접근 — **불가**. impersonate 기능은 없다 (예전엔 Keycloak impersonate 를 상정했으나 ADR-0023 으로 Keycloak 을 없앴다).
 
 → Phase 1은 이게 전부. 코드 단순, 권한 체크 = `scope` + `owner_id` + `company_id` 검사.
 

@@ -9,6 +9,10 @@ import { useAppContext } from "@/components/providers/app-context"
 import { CreateTeamFolderModal } from "@/components/team-folders/create-team-folder-modal"
 import type { TeamFolderItem } from "@/lib/types/api"
 
+// 부서 소스(외부 디렉터리)를 없애 새 부서 폴더를 만들 수 없다 (ADR-0023,
+// backend/app/services/departments.py). 메뉴에서도 숨김. 로컬 그룹 모델이 생기면 true.
+const TEAM_FOLDERS_ENABLED = false
+
 export default function TeamFoldersPage() {
   const { isCompanyAdmin } = useAppContext()
   const { data, error, isLoading } = useApiGet<TeamFolderItem[]>(
@@ -26,7 +30,7 @@ export default function TeamFoldersPage() {
       <section className="min-w-0 flex-1 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900">부서 폴더</h1>
-          {isCompanyAdmin && (
+          {TEAM_FOLDERS_ENABLED && isCompanyAdmin && (
             <button
               onClick={() => setCreating(true)}
               data-testid="team-folders-create-button"
@@ -36,6 +40,15 @@ export default function TeamFoldersPage() {
             </button>
           )}
         </div>
+
+        {!TEAM_FOLDERS_ENABLED && (
+          <div
+            className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800"
+            data-testid="team-folders-disabled-notice"
+          >
+            부서 폴더는 현재 지원하지 않습니다 (조직도 연동이 없습니다).
+          </div>
+        )}
 
         {error ? (
           <div
@@ -52,7 +65,7 @@ export default function TeamFoldersPage() {
             data-testid="team-folders-empty"
           >
             소속된 부서 폴더가 없습니다.
-            {isCompanyAdmin && " 우측 상단에서 만들어 보세요."}
+            {TEAM_FOLDERS_ENABLED && isCompanyAdmin && " 우측 상단에서 만들어 보세요."}
           </div>
         ) : (
           <div

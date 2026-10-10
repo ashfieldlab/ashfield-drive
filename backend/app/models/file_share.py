@@ -5,7 +5,7 @@ scope 기반 접근(personal 본인/shared 회사)을 1차로 보고, 그 외 �
 
 grantee 는 둘 중 하나 (ADR-0016 그룹 공유, docs/group-sharing.html):
   - grantee_sub        : 개인 (users.id)
-  - grantee_group_id   : 그룹 = directory department_id (외부 참조, FK 아님)
+  - grantee_group_id   : 그룹 = department_id (외부 참조, FK 아님). 현재 생성 비활성 (services/departments.py)
 """
 
 from datetime import datetime

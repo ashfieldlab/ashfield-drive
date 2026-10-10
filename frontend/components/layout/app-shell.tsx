@@ -6,7 +6,6 @@ import Link from "next/link"
 import {
   Activity,
   Folder,
-  FolderTree,
   Settings,
   Share2,
   Trash2,
@@ -30,7 +29,7 @@ import { signOutAction } from "@/lib/actions/auth"
 import { APP } from "@/lib/apps"
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { authUser, companies, activeCompanyId, setActiveCompany, isSystemAdmin } =
+  const { authUser, companies, companyNames, activeCompanyId, setActiveCompany, isSystemAdmin } =
     useAppContext()
   const pathname = usePathname() ?? ""
   const sp = useSearchParams()
@@ -54,10 +53,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, sp])
 
-  const teamFoldersActive =
-    pathname.startsWith("/team-folders") ||
-    (pathname.startsWith("/files") && !!filesActive?.fromTeam)
-
   // 사이드바 = 파일 기능 + 하단 공통(활동·설정). 일정 앱 링크는 헤더 우측 AppCrossLink.
   const sidebarItems: NavItem[] = useMemo(() => {
     const common: NavItem[] = [
@@ -68,15 +63,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       { id: "files-personal", label: "내 파일", href: "/files?scope=personal", icon: <Folder size={16} />, active: filesActive?.personal },
       { id: "files-shared", label: "회사 공유", href: "/files?scope=shared", icon: <Users size={16} />, active: filesActive?.shared },
       { id: "files-shared-with-me", label: "공유받음", href: "/files?view=shared-with-me", icon: <Share2 size={16} />, active: filesActive?.sharedWithMe },
-      { id: "team-folders", label: "부서 폴더", href: "/team-folders", icon: <FolderTree size={16} />, active: teamFoldersActive },
+      // "부서 폴더" 메뉴는 부서 소스(외부 디렉터리) 제거로 숨김 (ADR-0023, backend/app/services/departments.py).
       { id: "files-trash", label: "휴지통", href: "/files?trash=1", icon: <Trash2 size={16} />, active: filesActive?.trash },
       ...common,
     ]
-  }, [filesActive, teamFoldersActive, pathname])
+  }, [filesActive, pathname])
 
   const companyOptions: CompanyOption[] = useMemo(
-    () => companies.map((c) => ({ id: c, name: c })),
-    [companies],
+    () => companies.map((c) => ({ id: c, name: companyNames[c] ?? c })),
+    [companies, companyNames],
   )
 
   const sidebarRenderLink = (
@@ -104,7 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         user={{ name: authUser.name ?? authUser.email ?? undefined }}
         isServiceAdmin={isSystemAdmin}
         onLogout={async () => {
-          // 게이트웨이 세션·Keycloak SSO 종료 주소를 받아 하드 이동 (외부 URL 이라 router X).
+          // Better Auth 세션 종료 후 받은 주소로 하드 이동 (가드·AppContext 를 새로 태움).
           window.location.href = await signOutAction()
         }}
         onBasicSettings={() => router.push("/settings")}

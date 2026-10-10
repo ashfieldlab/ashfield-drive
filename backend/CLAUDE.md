@@ -7,8 +7,9 @@
 - **모든 보호 라우트는 `get_current_user` dependency 사용.** 직접 `request.headers["Authorization"]` 파싱 금지.
 - **회사 컨텍스트 필요한 라우트는 `require_active_company`.** 직접 `X-Active-Company-Id` 헤더 읽기 금지.
 - **System Admin 전용은 `require_admin`.**
-- `X-Forwarded-User` 같은 게이트웨이 신원 헤더 신뢰 금지. 자격 증명은 둘뿐 (ADR-0021): `Authorization: Bearer`(JWKS 검증) 또는 `X-Ashfield-Session-ID`(게이트웨이 `/auth/me` 로 검증, `app/auth/gateway_session.py`).
-- Revocation 체크는 `get_current_user`가 이미 함 — 라우트에서 또 호출 X.
+- `X-Forwarded-User` 같은 프록시 신원 헤더 신뢰 금지. 자격 증명은 `Authorization: Bearer <Better Auth JWT>` 하나 — `AUTH_JWKS_URL` 로 서명, `AUTH_ISSUER`·`AUTH_AUDIENCE` 로 iss/aud 검증 (ADR-0023). 검증 생략·dev 우회 모드 없음.
+- `get_current_user` 가 첫 요청에 `users` upsert + (소속이 없으면) 개인 워크스페이스 생성까지 한다 (`app/auth/provisioning.py`). 라우트에서 따로 하지 말 것.
+- `ALLOWED_EMAILS` 가 있으면 목록 밖 이메일은 `get_current_user` 가 403.
 
 ## DB / Alembic
 
@@ -17,7 +18,8 @@
 - `make migration msg="..."` 으로 autogenerate, 결과 검토 후 `make migrate`.
 - 모델 추가 시 `app/models/__init__.py` 의 `__all__`에 등록 (alembic autogenerate 인식).
 - 세션은 `Depends(get_db)`로 받음. 라우트가 commit 책임 안 짐 (`get_db`가 yield 후 commit).
-- `users` / `companies` 테이블은 lazy upsert 캐시. 직접 INSERT/UPDATE 금지 (ADR-0004).
+- `users` / `companies` / `user_company_memberships` 는 로컬 원천 (ADR-0004). 사용자 행은 `app/auth/provisioning.py`, 멤버 추가·제거는 `company_members.py` API 로만.
+- Better Auth 테이블(스키마 `auth`)은 Alembic 관리 밖 — `alembic/env.py` 가 무시. 건드리지 말 것.
 
 ## 멀티테넌트 격리
 
@@ -30,7 +32,7 @@
 
 - 읽기/쓰기는 active company 범위.
 - 본인 소유 데이터 vs 다른 사람 데이터 — `owner_id == user.sub` 또는 `user.is_system_admin`.
-- Company 내부 admin은 표준에 없음 ([`../CONTEXT.md`](../CONTEXT.md) Flagged ambiguities 참조).
+- 회사 admin = `user_company_memberships.role == 'admin'` (ADR-0010). System Admin = `users.is_system_admin` OR `SYSTEM_ADMIN_EMAILS`.
 
 ## 로깅
 
@@ -66,13 +68,13 @@ logger.info("item_created", extra={"category": "biz", "id": item.id})
 
 ## Tests
 
-- `make pytest` — 12개 예제 통과 상태 유지.
+- `make pytest` — 전부 통과 상태 유지. 네트워크 불필요: 테스트가 RSA 키를 만들어 JWT 를 서명하고 JWKS 조회만 대체 (`tests/conftest.py`).
 - 새 라우트 추가 시 `tests/test_{feature}.py` 최소 1개 + 권한 검증 1개.
-- `auth_headers(sub, groups=..., roles=..., active_company=...)` 헬퍼 사용 — 직접 JWT 만들지 말 것.
+- `auth_headers(sub, groups=..., roles=..., active_company=...)` 헬퍼 사용 — 직접 JWT 만들지 말 것. groups·roles 는 테스트 전용 `_test_seed` claim 으로 요청 직전에 DB 에 심긴다 (운영 코드는 모름). 실제 첫 로그인을 흉내내려면 `make_jwt(sub, seed=False)`.
 - 멀티테넌트 격리 테스트는 도메인 라우트마다 권장.
 
 ## Redis 사용
 
-- 현재 용도: revocation cache + lazy upsert throttle + 게이트웨이 `/auth/me` 30초 캐시(`gw_me:`). 캐시 추가 시 키 prefix 명확히.
+- 현재 용도: 파일 이벤트 pub/sub 등. 인증 경로는 Redis 를 쓰지 않는다. 캐시 추가 시 키 prefix 명확히.
 - `app.core.redis.get_redis()` 사용. 직접 클라이언트 생성 금지.
-- 운영에선 Redis 다운이 부분 장애여야 함 — 로그아웃 즉시성/upsert 최신성 영향만, 인증 자체는 동작.
+- 운영에선 Redis 다운이 부분 장애여야 함 — 인증 자체는 동작.

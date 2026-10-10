@@ -6,14 +6,15 @@
 ## 모노레포
 
 ```
-frontend/  ← Next.js 16 (게이트웨이 세션 인증 — 규칙: frontend/CLAUDE.md)
+frontend/  ← Next.js 16 + Better Auth (규칙: frontend/CLAUDE.md)
 backend/   ← FastAPI + SQLAlchemy + Alembic (규칙: backend/CLAUDE.md)
 ```
 
 ## 절대 규칙
 
-- **인증 = 게이트웨이 세션 차용** — ADR-0021. 운영 웹은 인증 게이트웨이가 로그인·세션(`ashfield_sid`) 담당, BFF 가 sid 를 `X-Ashfield-Session-ID` 로 백엔드에 직접 전달, 백엔드가 게이트웨이 `/auth/me` 로 신원 확인. Bearer JWT(JWKS) 경로는 데스크톱 싱크·로컬 dev 용으로 유지. 로컬은 `SKIP_AUTH=true` dev 로그인. (게이트웨이 경로는 Auth.js + Google/GitHub IdP 로 교체 예정 — 그 전까지 임의로 NextAuth 를 되살리지 말 것.)
-- **게이트웨이가 붙이는 신원 헤더(`X-Forwarded-User` 등)를 보안 판단에 쓰지 말 것** — 권위는 백엔드가 검증한 신원(JWKS 또는 `/auth/me`). `X-Ashfield-Session-ID` 는 신원이 아니라 게이트웨이에 검증을 묻는 자격 증명이다.
+- **인증 = Better Auth (Google·GitHub)** (ADR-0023). 프론트 `app/api/auth/[...all]` 가 로그인·세션 담당(테이블은 Postgres 스키마 `auth`, `make auth-migrate`). BFF 가 세션으로 짧은 JWT 를 받아 `Authorization: Bearer` 로 백엔드에 전달, 백엔드는 `AUTH_JWKS_URL` 로 검증. 로컬·E2E 는 `AUTH_DEV_PASSWORD_LOGIN=true` 이메일+비밀번호 로그인 (운영 무시). 인증 우회 모드 없음.
+- **회사 소속은 로컬 DB 가 원천** (ADR-0004) — 첫 로그인 시 개인 워크스페이스 자동 생성, 회사 admin 이 이메일로 멤버 추가.
+- **프록시가 붙이는 신원 헤더(`X-Forwarded-User` 등)를 보안 판단에 쓰지 말 것** — 권위는 백엔드가 JWKS 로 검증한 JWT.
 - **Alembic 마이그레이션 파일 직접 수정 금지** — fix-forward (새 revision으로만 변경).
 - **Alembic 마이그레이션 파일 손으로 작성 금지** — 모델 수정 후 항상 `make migration msg="..."` (= `alembic revision --autogenerate`) 사용. `op.create_table`/`op.add_column` 등을 손으로 적어 내려가지 말 것. 의도와 다르면 모델 수정 후 재생성.
 - **GitHub Actions 사용 금지** — Makefile + `.githooks/pre-push`로 통일. push 전 `make ci-local`.

@@ -161,16 +161,14 @@ async def _group_share_rank(
     있으면 유저 접근집합(부서+조상, 캐시)에 그 share 대상 부서가 들면 그 role.
     자격 증명 없는 경로(백그라운드 등)는 그룹 해석 skip.
     """
-    if not user.has_directory_credential:
-        return 0
     rows = (
         await db.execute(_ANCESTOR_GROUP_SHARE_SQL, {"node_id": node_id})
     ).all()
     if not rows:
         return 0
-    from app.services import external_directory
+    from app.services import departments
 
-    access = await external_directory.access_department_ids(user, company_id)
+    access = await departments.access_department_ids(user, company_id)
     best = 0
     for perm, group_id in rows:
         if group_id in access:
@@ -206,11 +204,9 @@ async def effective_permission(
             department_id, tf_creator = team
             if user.sub == tf_creator or user.is_system_admin:
                 return _PERM_RANK["manage"]
-            if not user.has_directory_credential:
-                return 0
-            from app.services import external_directory
+            from app.services import departments
 
-            access = await external_directory.access_department_ids(user, company_id)
+            access = await departments.access_department_ids(user, company_id)
             return _PERM_RANK["write"] if department_id in access else 0
         return _PERM_RANK["write"]
 
@@ -466,14 +462,11 @@ async def list_subtree(
         await db.execute(_COMPANY_TEAM_FOLDERS_SQL, {"company_id": company_id})
     ).all()
     team_denied: set[str] = set()
-    if team_rows and user.has_directory_credential:
-        from app.services import external_directory
+    if team_rows:
+        from app.services import departments
 
-        access = await external_directory.access_department_ids(user, company_id)
+        access = await departments.access_department_ids(user, company_id)
         team_denied = {nid for nid, dept in team_rows if dept not in access}
-    elif team_rows:
-        # 자격 증명 없으면 부서 판정 불가 → 안전하게 전부 제외.
-        team_denied = {nid for nid, _ in team_rows}
 
     if not vault_denied and not team_denied:
         return nodes

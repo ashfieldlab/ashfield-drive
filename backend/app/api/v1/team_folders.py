@@ -1,5 +1,8 @@
 """팀 폴더 (Team folders) — 부서 전용 공용 폴더 (docs/group-sharing.html 4단계).
 
+현재 비활성: 부서 소스(외부 디렉터리)가 없어 새로 만들 수 없고 목록은 비어 있다
+(app/services/departments.py, ADR-0023). 이미 있는 팀 폴더는 회사 admin 이 삭제할 수 있다.
+
 생성/삭제는 회사 admin. 목록은 본인 접근집합(부서+조상)에 바인딩 부서가 드는 것만.
 접근 권한 자체는 effective_permission 의 팀폴더 ACL 오버라이드가 처리.
 """
@@ -14,7 +17,7 @@ from app.auth.dependencies import get_current_user, require_active_company
 from app.core.db import get_db
 from app.models.user_company_membership import UserCompanyMembership
 from app.schemas.team_folder import TeamFolderCreate, TeamFolderResponse
-from app.services import external_directory, team_folders
+from app.services import departments, team_folders
 from app.services.audit import write_audit
 from app.services.nodes import get_node_or_404
 
@@ -40,10 +43,10 @@ async def list_my_team_folders(
     rows = await team_folders.list_company_team_folders(db, company_id=company_id)
     if not rows:
         return []
-    access = await external_directory.access_department_ids(user, company_id)
+    access = await departments.access_department_ids(user, company_id)
     name_of = {
         d["department_id"]: d["department"]
-        for d in await external_directory.list_departments(user, company_id)
+        for d in await departments.list_departments(user, company_id)
     }
     return [
         TeamFolderResponse(
@@ -73,8 +76,10 @@ async def create_team_folder(
     db: AsyncSession = Depends(get_db),
 ) -> TeamFolderResponse:
     await _require_company_admin(db, user, company_id)
+    if not departments.groups_enabled():
+        raise HTTPException(400, departments.GROUPS_DISABLED_DETAIL)
     # 부서가 이 회사에 실재하는지 검증 + 표시명 확보.
-    depts = await external_directory.list_departments(user, company_id)
+    depts = await departments.list_departments(user, company_id)
     match = next(
         (
             d

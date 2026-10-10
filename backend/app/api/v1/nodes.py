@@ -66,7 +66,7 @@ from app.schemas.node import (
     UploadUrlRequest,
     UploadUrlResponse,
 )
-from app.services import external_directory, file_versions
+from app.services import departments, file_versions
 from app.services.audit import record_file_access, write_audit
 from app.services.external_links import (
     hash_password,
@@ -1283,10 +1283,12 @@ async def create_node_share(
     # 개인 공유처럼 owner/manage 면 가능 (scope 제한 없음). shared 는 이미 회사 전원이
     # 접근하므로 그룹 공유 의미가 없고, 의미 있는 건 personal 폴더를 부서에 여는 것 = 팀 폴더.
     if body.grantee_group_id:
+        if not departments.groups_enabled():
+            raise HTTPException(400, departments.GROUPS_DISABLED_DETAIL)
         if await is_vault_content(db, node.id):
             raise HTTPException(400, "보안 폴더는 그룹 공유를 지원하지 않습니다.")
-        # 부서가 이 회사에 실재하는지 검증 (유저 토큰으로 외부 디렉터리 조회) + 표시명 확보.
-        depts = await external_directory.list_departments(user, company_id)
+        # 부서가 이 회사에 실재하는지 검증 + 표시명 확보.
+        depts = await departments.list_departments(user, company_id)
         match = next(
             (
                 d

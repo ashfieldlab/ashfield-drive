@@ -27,6 +27,7 @@
 
 <div class="wrap">
 <h1>그룹 공유 — 설계 (디렉터리 부서 기반)</h1>
+<p style="padding:10px 14px;border:1px solid #b07a00;background:#fdf6e3;border-radius:8px"><b>현재 비활성 (2026-10, ADR-0023).</b> 외부 디렉터리 연동을 제거해 부서 소스가 없다. 그룹 공유·부서 폴더 생성은 400, 부서 목록·접근집합은 비어 있다 (<code>backend/app/services/departments.py</code>). 기존 그룹 share 는 권한을 주지 않고, 기존 부서 폴더는 생성자·System Admin 만 접근한다. 아래는 원래 설계 기록이다.</p>
 <p class="lead">일반 공유 폴더를 <b>디렉터리 조직도의 부서</b>에 공유해, 그 부서 + 하위 산하 전원이 자동 접근. workspace는 부서를 만들지 않고 <b>실제 조직도를 그대로</b> 쓴다.</p>
 <span class="status">확정 — 인증(B 리소스서버) 검증 완료 (2026-06-23) · 구현 전</span>
 

@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["ioredis"],
 
   // dev: LAN IP(모바일 테스트) + localhost.
-  // prod: NEXT_PUBLIC_APP_URL 호스트도 허용 — reverse proxy 뒤에서 nginx 가
+  // prod: BETTER_AUTH_URL(이 앱의 공개 주소) 호스트도 허용 — reverse proxy 뒤에서 nginx 가
   //   x-forwarded-host 를 upstream alias 로 잘못 set 할 때 server action 거부
   //   방지. nginx 설정에서 'proxy_set_header X-Forwarded-Host $host;' 명시도
   //   같이 권장.
@@ -22,8 +22,8 @@ const nextConfig: NextConfig = {
         "192.168.*.*:3000",
         "10.*.*.*:3000",
         "172.16.*.*:3000",
-        ...(process.env.NEXT_PUBLIC_APP_URL
-          ? [new URL(process.env.NEXT_PUBLIC_APP_URL).host]
+        ...(process.env.BETTER_AUTH_URL
+          ? [new URL(process.env.BETTER_AUTH_URL).host]
           : []),
       ],
     },

@@ -1,24 +1,20 @@
 /**
  * E2E 공통 fixtures.
  *
- *   - loginAs(page, "admin" | "member_a" | ...): /api/auth/dev-login 으로 dev 로그인 (ADR-0021)
- *   - cleanup(page): 로그아웃
- *
- * SKIP_AUTH=true 환경에서만 동작. 백엔드도 동일 모드로 떠 있어야 dev JWT가 검증됨.
+ *   - loginAs("admin" | "member_a" | "member_b"): Better Auth dev 비밀번호 로그인 후 앱 첫 화면
+ *     (e2e/auth.ts — 프론트가 AUTH_DEV_PASSWORD_LOGIN=true 로 떠 있어야 함)
  */
 
 import { test as base, expect, type Page } from "@playwright/test"
 
 import { APP } from "../lib/apps"
-import { DEV_USERS } from "../lib/dev-users"
-
-type DevUserKey = keyof typeof DEV_USERS
+import { E2E_USERS, signIn, type E2EUserKey } from "./auth"
 
 export const test = base.extend<{
-  loginAs: (key: DevUserKey) => Promise<void>
+  loginAs: (key: E2EUserKey) => Promise<void>
 }>({
   loginAs: async ({ page }, use) => {
-    const fn = async (key: DevUserKey) => {
+    const fn = async (key: E2EUserKey) => {
       await loginAs(page, key)
     }
     await use(fn)
@@ -27,12 +23,10 @@ export const test = base.extend<{
 
 export { expect }
 
-
-/**
- * dev 사용자 로그인 (SKIP_AUTH 모드). dev-login 이 dev_token 쿠키를 심고 앱 첫 화면으로 보낸다.
- */
-export async function loginAs(page: Page, key: DevUserKey): Promise<void> {
-  await page.goto(`/api/auth/dev-login?u=${key}&redirect=${encodeURIComponent(APP.home)}`)
+/** E2E 사용자로 로그인하고 앱 첫 화면으로 이동. */
+export async function loginAs(page: Page, key: E2EUserKey): Promise<void> {
+  await signIn(page, E2E_USERS[key])
+  await page.goto(APP.home)
   await page.waitForLoadState("networkidle")
 }
 

@@ -4,27 +4,36 @@ pytest 공통 fixtures.
 전략:
   - 테스트 전용 DB(ashfield_drive_test) — 동일 컨테이너의 별도 DB
   - 각 테스트는 자기 트랜잭션 안에서 실행 → 끝나면 롤백 (테스트 간 격리)
-  - 인증은 mocking 없이 진짜 JWT 발급 (dev 키로 RS256 서명) → validator 코드 경로 동일
+  - 인증은 mocking 없이 진짜 JWT (테스트 프로세스가 만든 RSA 키로 RS256 서명) → validator
+    코드 경로 동일. JWKS 는 네트워크 대신 그 키의 공개 JWK 를 돌려주도록 `_fetch_jwks` 만 바꾼다.
+  - 소속·System Admin 은 로컬 DB 가 원천이므로, 테스트 토큰의 `_test_seed` claim(테스트 전용)을
+    테스트 transport 가 요청 직전에 DB 에 반영한다. 운영 코드는 이 claim 을 모른다.
 """
 
 from __future__ import annotations
 
 import os
 
-# 단위 테스트는 항상 skip-auth 시맨틱으로 실행한다 — dev .env(샌드박스 issuer·skip_auth
-# off)와 무관하게 validator 가 테스트의 dev-issuer JWT(dev-keys 서명)를 받게 하기 위함.
-# app.core.config(=settings 로드) import 전에 설정해야 반영된다. 이 테스트 프로세스의
-# env 에만 영향 — 운영/dev 런타임과 무관하다. (SKIP_AUTH=true 를 수동으로 붙일 필요 제거)
-os.environ["SKIP_AUTH"] = "true"
+# 인증 설정은 app.core.config(settings 로드) import 전에 고정한다 — 개발 .env 값과 무관하게
+# 테스트 issuer/audience 로 검증. 이 테스트 프로세스의 env 에만 영향.
+os.environ["AUTH_JWKS_URL"] = "http://auth.test/api/auth/jwks"
+os.environ["AUTH_ISSUER"] = "http://auth.test"
+os.environ["AUTH_AUDIENCE"] = "http://auth.test"
+os.environ["ALLOWED_EMAILS"] = ""
+os.environ["SYSTEM_ADMIN_EMAILS"] = ""
 
+import base64
 import time
 from collections.abc import AsyncIterator
-from uuid import uuid4
 
 import pytest
 import pytest_asyncio
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from httpx import ASGITransport, AsyncClient
 from jose import jwt
+from sqlalchemy import delete
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -35,6 +44,46 @@ from app.core.config import settings
 from app.core.db import get_db
 from app.main import app
 from app.models import Base
+from app.models.company import Company
+from app.models.user import User
+from app.models.user_company_membership import UserCompanyMembership
+
+# ---------------------------------------------------------------------------
+# 테스트 서명 키 — 프로세스마다 새로 만든다 (저장소에 개인키를 두지 않음)
+# ---------------------------------------------------------------------------
+
+TEST_ISSUER = os.environ["AUTH_ISSUER"]
+TEST_AUDIENCE = os.environ["AUTH_AUDIENCE"]
+TEST_KID = "test-key-1"
+
+
+def _b64url_uint(value: int) -> str:
+    raw = value.to_bytes((value.bit_length() + 7) // 8, "big")
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def _make_rsa_key(kid: str) -> tuple[str, dict]:
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    pem = key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ).decode()
+    pub = key.public_key().public_numbers()
+    jwk = {
+        "kty": "RSA",
+        "use": "sig",
+        "alg": "RS256",
+        "kid": kid,
+        "n": _b64url_uint(pub.n),
+        "e": _b64url_uint(pub.e),
+    }
+    return pem, jwk
+
+
+TEST_PRIVATE_PEM, TEST_PUBLIC_JWK = _make_rsa_key(TEST_KID)
+# 서명은 맞지만 JWKS 에 없는 키 — 위조 토큰 테스트용
+OTHER_PRIVATE_PEM, _ = _make_rsa_key("other-key")
 
 # ---------------------------------------------------------------------------
 # DB 셋업 — 테스트 전용 별도 DB
@@ -84,7 +133,7 @@ async def _setup_test_db():
 
 @pytest_asyncio.fixture(autouse=True)
 async def _clear_redis_per_test():
-    """매 테스트 시작 시 Redis throttle/revocation 캐시 비움.
+    """매 테스트 시작 시 Redis rate limit 키 비움.
 
     싱글톤은 session loop 안에서 살아있으므로 리셋 안 함.
     사용 후 키만 청소 — 테스트 간 격리.
@@ -92,11 +141,81 @@ async def _clear_redis_per_test():
     from app.core.redis import get_redis
 
     redis = get_redis()
-    for prefix in ("sync:*", "revoked_sid:*", "rl:public:*", "gw_me:*"):
+    for prefix in ("rl:public:*",):
         keys = await redis.keys(prefix)
         if keys:
             await redis.delete(*keys)
     yield
+
+
+@pytest.fixture(autouse=True)
+def test_jwks(monkeypatch):
+    """JWKS 조회를 네트워크 대신 테스트 공개키로. 리스트를 바꾸면 키 회전 흉내."""
+    import app.auth.jwks as jwks_mod
+
+    keys = [TEST_PUBLIC_JWK]
+    calls: list[str] = []
+
+    async def fake_fetch(url: str) -> list[dict]:
+        calls.append(url)
+        return list(keys)
+
+    monkeypatch.setattr(jwks_mod, "_fetch_jwks", fake_fetch)
+    jwks_mod.invalidate_jwks_cache()
+    yield {"keys": keys, "calls": calls}
+    jwks_mod.invalidate_jwks_cache()
+
+
+async def _apply_test_seed(db: AsyncSession, authorization: str | None) -> None:
+    """테스트 토큰의 `_test_seed`(groups·roles)를 로컬 DB 에 반영.
+
+    예전 IdP groups 클레임 시맨틱을 테스트에서 재현: 사용자 행을 만들고, 소속을 정확히
+    groups 로 맞추며(role 은 보존), roles 에 admin 이 있으면 System Admin.
+    """
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return
+    try:
+        claims = jwt.get_unverified_claims(authorization.split(" ", 1)[1])
+    except Exception:
+        return
+    seed = claims.get("_test_seed")
+    if not isinstance(seed, dict) or not claims.get("sub"):
+        return
+    sub = claims["sub"]
+    groups: list[str] = list(seed.get("groups") or [])
+    is_admin = "admin" in (seed.get("roles") or [])
+    await db.execute(
+        pg_insert(User)
+        .values(id=sub, email=claims.get("email", ""), name=claims.get("name"),
+                is_system_admin=is_admin)
+        .on_conflict_do_update(
+            index_elements=[User.id], set_={"is_system_admin": is_admin}
+        )
+    )
+    for g in groups:
+        await db.execute(
+            pg_insert(Company).values(id=g, name=g).on_conflict_do_nothing()
+        )
+        await db.execute(
+            pg_insert(UserCompanyMembership)
+            .values(user_sub=sub, company_id=g)
+            .on_conflict_do_nothing()
+        )
+    cond = [UserCompanyMembership.user_sub == sub]
+    if groups:
+        cond.append(UserCompanyMembership.company_id.notin_(groups))
+    await db.execute(delete(UserCompanyMembership).where(*cond))
+    await db.flush()
+
+
+class _SeedingTransport(ASGITransport):
+    def __init__(self, *, db: AsyncSession, **kw):
+        super().__init__(**kw)
+        self._db = db
+
+    async def handle_async_request(self, request):
+        await _apply_test_seed(self._db, request.headers.get("authorization"))
+        return await super().handle_async_request(request)
 
 
 @pytest_asyncio.fixture
@@ -167,51 +286,55 @@ async def client(db_session: AsyncSession, monkeypatch) -> AsyncIterator[AsyncCl
     monkeypatch.setattr(wh, "dispatch_async", _sync_dispatch)
     monkeypatch.setattr(notif_mod.PendingDispatch, "fire", _sync_fire)
 
-    transport = ASGITransport(app=app)
+    transport = _SeedingTransport(app=app, db=db_session)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.pop(get_db, None)
 
 
 # ---------------------------------------------------------------------------
-# JWT 발급 헬퍼 — dev 키로 서명 (production code path 동일)
+# JWT 발급 헬퍼 — 테스트 키로 서명 (Better Auth JWT 와 같은 모양)
 # ---------------------------------------------------------------------------
+
+
+def mint_jwt(
+    sub: str,
+    *,
+    email: str | None = None,
+    name: str | None = None,
+    image: str | None = None,
+    groups: list[str] | None = None,
+    roles: list[str] | None = None,
+    seed: bool = True,
+    exp_delta: int = 3600,
+    iss: str = TEST_ISSUER,
+    aud: str = TEST_AUDIENCE,
+    private_pem: str = TEST_PRIVATE_PEM,
+    kid: str = TEST_KID,
+) -> str:
+    """seed=True 면 `_test_seed` 로 groups·roles 를 DB 에 심는다 (테스트 transport).
+    seed=False 는 실제 첫 로그인처럼 아무 소속 없이 들어오는 토큰."""
+    now = int(time.time())
+    claims: dict = {
+        "sub": sub,
+        "email": email or f"{sub}@test.local",
+        "name": name if name is not None else f"{sub} (test)",
+        "iss": iss,
+        "aud": aud,
+        "iat": now,
+        "exp": now + exp_delta,
+    }
+    if image:
+        claims["image"] = image
+    if seed:
+        claims["_test_seed"] = {"groups": groups or [], "roles": roles or []}
+    return jwt.encode(claims, private_pem, algorithm="RS256", headers={"kid": kid})
 
 
 @pytest.fixture
 def make_jwt():
-    """make_jwt(sub, groups=[...], roles=[...]) → Bearer 값."""
-    from pathlib import Path
-
-    key_path = Path(__file__).resolve().parents[2] / "dev-keys" / "private.pem"
-    private_key = key_path.read_text()
-
-    def _make(
-        sub: str,
-        *,
-        email: str | None = None,
-        groups: list[str] | None = None,
-        roles: list[str] | None = None,
-        sid: str | None = None,
-    ) -> str:
-        now = int(time.time())
-        claims = {
-            "sub": sub,
-            "email": email or f"{sub}@test.local",
-            "name": f"{sub} (test)",
-            "groups": groups or [],
-            "realm_access": {"roles": roles or []},
-            "sid": sid or str(uuid4()),
-            "iss": "dev-issuer",
-            "aud": settings.oidc_audience or "ashfield",
-            "iat": now,
-            "exp": now + 3600,
-        }
-        return jwt.encode(
-            claims, private_key, algorithm="RS256", headers={"kid": "dev-key-2026"}
-        )
-
-    return _make
+    """make_jwt(sub, groups=[...], roles=[...], ...) → JWT 문자열."""
+    return mint_jwt
 
 
 @pytest.fixture
