@@ -27,13 +27,14 @@ fi
 
 mkdir -p "$DIR"
 cd "$DIR"
-if [ ! -d .git ]; then
-  git init -q -b main
-  git remote add origin "git@github.com:$SLUG.git"
-fi
-if ! git fetch -q origin main 2>/dev/null; then
-  echo "! GitHub 에서 받지 못했습니다. 아래 서버 공개 키를 ${SLUG%%/*} 계정 Settings > SSH keys 에"
-  echo "  등록한 뒤 다시 실행하세요."
+[ -d .git ] || git init -q -b main
+# 원격은 매번 맞춘다 (이전 설정이 남아 있어도)
+git remote remove origin 2>/dev/null || true
+git remote add origin "git@github.com:$SLUG.git"
+if ! git fetch -q origin main; then
+  echo
+  echo "! GitHub 에서 받지 못했습니다. 위가 publickey 오류면 아래 서버 공개 키를"
+  echo "  ${SLUG%%/*} 계정 Settings > SSH keys 에 등록한 뒤 다시 실행하세요."
   echo
   cat "$KEY.pub"
   exit 1
