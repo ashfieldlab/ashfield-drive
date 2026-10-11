@@ -131,8 +131,13 @@ services:
       redis: { condition: service_healthy }
       minio: { condition: service_healthy }
     # 이미지 HEALTHCHECK 는 uvicorn :8000 용이라 worker 엔 맞지 않는다. arq 가 죽으면 컨테이너가 끝나고 재시작된다.
+    # slim 이미지에 pgrep 이 없어 /proc 에서 arq 프로세스를 찾는다 (up --wait 가 헬스체크를 요구).
     healthcheck:
-      disable: true
+      test: ["CMD", "python", "-c", "import os,sys; sys.exit(0 if any(b'arq' in open('/proc/'+p+'/cmdline','rb').read() for p in os.listdir('/proc') if p.isdigit()) else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
 
   frontend:
     build:
