@@ -154,12 +154,12 @@ smoke:  ## docker로 풀스택 띄우고 smoke 호출 (TODO: Phase 5)
 
 DEPLOY_HOST ?= ovm
 DEPLOY_DIR ?= ashfield/drive
-# 서버는 레포 전용 읽기 전용 deploy key (ssh 별칭 github-<repo>) 로 GitHub 에서 직접 받는다.
+# 서버는 자기 ssh 키(레포 소유 GitHub 계정에 등록)로 GitHub 에서 직접 받는다.
 # 추적하지 않는 서버 전용 파일(.env.prod, backups/ 등)은 그대로 남는다.
 DEPLOY_SLUG := $(shell git remote get-url origin | sed -E 's#\.git$$##; s#^.*[:/]([^/]+/[^/]+)$$#\1#')
 DEPLOY_PULL := git -C $(DEPLOY_DIR) fetch -q origin main && git -C $(DEPLOY_DIR) checkout -q -f -B main origin/main && git -C $(DEPLOY_DIR) log -1 --format="→ %h %s"
 
-deploy-git-init:  ## 처음 한 번: 서버에 deploy key 를 만들고 배포 디렉터리를 GitHub 체크아웃으로 (키 등록 안내가 나오면 등록 후 다시 실행)
+deploy-git-init:  ## 처음 한 번: 서버 배포 디렉터리를 GitHub 체크아웃으로 (서버 키 등록 안내가 나오면 등록 후 다시 실행)
 	ssh $(DEPLOY_HOST) 'sh -s -- $(DEPLOY_SLUG) $(DEPLOY_DIR)' < scripts/server-git-init.sh
 
 
