@@ -23,7 +23,7 @@
 - **파일과 폴더**: 대용량 업로드, 휴지통, 버전 기록, 검색
 - **공유**: 멤버와 공유하거나 만료, 비밀번호가 있는 외부 링크로
 - **잠긴 폴더**: 서버도 열어볼 수 없는 종단간 암호화 폴더
-- **데스크톱 동기화**: [Ashfield Sync](https://github.com/ashfieldlab/ashfield-sync) 로 Windows 탐색기에서 바로
+- **데스크톱 동기화**: [Ashfield Sync](https://github.com/ashfieldlab/ashfield-sync) 로 Windows 탐색기, Linux 파일 관리자에서 바로
 
 ## 시작하기
 
@@ -47,7 +47,7 @@ make dev     # http://localhost:3200
 | [Account](https://github.com/ashfieldlab/ashfield-account) | 계정, 워크스페이스 |
 | [Calendar](https://github.com/ashfieldlab/ashfield-calendar) | 일정, 회의실, 예약 |
 | [Drive](https://github.com/ashfieldlab/ashfield-drive) | 파일 저장, 공유 |
-| [Sync](https://github.com/ashfieldlab/ashfield-sync) | Drive 데스크톱 동기화 (Windows) |
+| [Sync](https://github.com/ashfieldlab/ashfield-sync) | Drive 데스크톱 동기화 (Windows, Linux) |
 
 ## 라이선스
 
