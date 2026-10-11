@@ -31,9 +31,8 @@ chore(deps): Pretendard 1.4 업데이트
 
 ## 브랜치 / Push
 
-- push는 dev 브랜치로 (없으면 main 허용)
+- main 에 바로 push (PR, dev 브랜치 없음)
 - 커밋 전 `git pull` 필수
-- main에 직접 push 금지 (PR로만)
 
 ## 새 ADR을 만들 때
 
