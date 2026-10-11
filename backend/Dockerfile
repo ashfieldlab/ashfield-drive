@@ -21,7 +21,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml ./
 COPY app ./app
 
-RUN pip install --target=/install ".[dev]"
+# 운영 의존성만 (dev extra 의 pytest, ruff 등은 넣지 않는다)
+RUN pip install --target=/install .
 
 
 # -----------------------------------------------------------------------------

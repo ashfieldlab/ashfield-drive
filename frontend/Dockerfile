@@ -10,7 +10,7 @@
 # -----------------------------------------------------------------------------
 # Deps
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN npm ci
 # -----------------------------------------------------------------------------
 # Builder
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -30,11 +30,16 @@ ARG NEXT_PUBLIC_API_URL=
 ARG NEXT_PUBLIC_API_TIMEOUT_MS=10000
 ARG NEXT_PUBLIC_APP_NAME=Ashfield
 ARG NEXT_PUBLIC_CALENDAR_URL=
+# next.config.ts 의 /_minio/* rewrite 대상 (빌드 때 굳는다, compose 서비스 이름 minio).
+# 운영은 앞단 프록시가 /_minio 를 MinIO 로 바로 넘겨야 한다: 이 rewrite 는 Next 프록시 본문 제한(10MB)
+# 때문에 작은 파일만 통과한다.
+ARG MINIO_PROXY_TARGET=http://minio:9000
 
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_API_TIMEOUT_MS=$NEXT_PUBLIC_API_TIMEOUT_MS \
     NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME \
     NEXT_PUBLIC_CALENDAR_URL=$NEXT_PUBLIC_CALENDAR_URL \
+    MINIO_PROXY_TARGET=$MINIO_PROXY_TARGET \
     NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -46,7 +51,7 @@ RUN npm run build
 # -----------------------------------------------------------------------------
 # Runtime
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS runtime
+FROM node:24-alpine AS runtime
 
 WORKDIR /app
 
@@ -69,6 +74,6 @@ USER nextjs
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-    CMD wget --spider -q http://localhost:3000/ || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1:3000/login || exit 1
 
 CMD ["node", "server.js"]

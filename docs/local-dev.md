@@ -72,7 +72,7 @@ make worker      # arq 백그라운드 워커 (선택, compose 의 worker 와 �
 | frontend | `NEXT_PUBLIC_CALENDAR_URL` | 헤더의 일정 앱 링크 (dev 기본 `http://localhost:3100`) |
 | frontend | `MINIO_PROXY_TARGET` | dev 의 `/_minio/*` 프록시 대상 (기본 `http://localhost:19200`) |
 
-로그인 수단(Google, GitHub), 허용 이메일, DEV 비밀번호 로그인은 계정 서버 설정이다. 운영은 `.env.prod.example` 의 `ACCOUNT_URL`, `ASHFIELD_CLIENT_SECRET` 을 채운다.
+로그인 수단(Google, GitHub), 허용 이메일, DEV 비밀번호 로그인은 계정 서버 설정이다. 운영 배포는 [deploy.md](deploy.md).
 
 ## E2E
 

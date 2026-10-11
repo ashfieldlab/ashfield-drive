@@ -18,7 +18,8 @@ FRONTEND_PORT ?= 3200
         pytest typecheck lint \
         e2e e2e-ui storybook \
         ci-local hooks smoke \
-        clean install
+        clean install \
+        deploy-upload deploy-init deploy deploy-ps deploy-logs deploy-backup
 
 
 help:  ## 사용 가능한 명령 목록
@@ -148,67 +149,32 @@ smoke:  ## docker로 풀스택 띄우고 smoke 호출 (TODO: Phase 5)
 
 
 # -----------------------------------------------------------------------------
-# 운영 배포 (docker-compose.prod.yml)
+# 운영 배포 (docs/deploy.md): HEAD 를 git archive 로 서버에 올리고 서버의 scripts/prod.sh 실행
 # -----------------------------------------------------------------------------
 
-# 모든 prod 명령은 .env.prod 강제: 없으면 stop. 운영 secret 누락 사고 방지.
-PROD_COMPOSE := docker compose -f docker-compose.prod.yml --env-file .env.prod
+DEPLOY_HOST ?= ovm
+DEPLOY_DIR ?= ashfield/drive
+# 서버 디렉터리를 비우고 다시 풀 때 남길 것 (서버 전용 비밀값, 백업)
+DEPLOY_KEEP := ! -name .env.prod ! -name backups
 
-prod-check-env:
-	@test -f .env.prod || { echo "✗ .env.prod 없음. cp .env.prod.example .env.prod 후 채우세요."; exit 1; }
+deploy-upload:
+	@git diff --quiet HEAD || echo "! 커밋하지 않은 변경은 올라가지 않습니다 (git archive HEAD)"
+	git archive --format=tar HEAD | ssh $(DEPLOY_HOST) 'set -e; test -n "$(DEPLOY_DIR)"; mkdir -p $(DEPLOY_DIR); find $(DEPLOY_DIR) -mindepth 1 -maxdepth 1 $(DEPLOY_KEEP) -exec rm -rf {} +; tar -x -C $(DEPLOY_DIR)'
 
-prod-build: prod-check-env  ## 운영 이미지 빌드
-	$(PROD_COMPOSE) build --pull
+deploy-init: deploy-upload  ## 처음 한 번 (계정 서버 배포 후): 서버에 .env.prod 생성, 비밀값 채움 (ADMIN_EMAIL=관리자 이메일)
+	ssh $(DEPLOY_HOST) 'ADMIN_EMAIL="$(ADMIN_EMAIL)" sh $(DEPLOY_DIR)/scripts/prod.sh init-env'
 
-prod-up: prod-check-env  ## 운영 스택 기동 (build + up -d + migrate)
-	$(PROD_COMPOSE) build
-	$(PROD_COMPOSE) up -d
-	@echo "→ 마이그레이션 적용 중…"
-	$(PROD_COMPOSE) exec -T backend python -m alembic upgrade head
-	$(PROD_COMPOSE) run --rm auth-migrate
-	@echo "✓ 운영 스택 기동 완료. status: make prod-status"
+deploy: deploy-upload  ## 운영 배포: 업로드, 빌드, 마이그레이션(Alembic, Better Auth), 재시작
+	ssh $(DEPLOY_HOST) 'sh $(DEPLOY_DIR)/scripts/prod.sh up'
 
-prod-down: prod-check-env  ## 운영 스택 정지
-	$(PROD_COMPOSE) down
+deploy-ps:  ## 운영 컨테이너 상태
+	ssh $(DEPLOY_HOST) 'sh $(DEPLOY_DIR)/scripts/prod.sh ps'
 
-prod-restart: prod-check-env  ## 무중단 재시작 (이미지 재빌드 X)
-	$(PROD_COMPOSE) restart
+deploy-logs:  ## 운영 로그 follow
+	ssh -t $(DEPLOY_HOST) 'sh $(DEPLOY_DIR)/scripts/prod.sh logs'
 
-prod-rebuild: prod-check-env  ## 특정 서비스만 재빌드+재기동 (사용: make prod-rebuild SVC=backend)
-	@test -n "$(SVC)" || { echo "✗ SVC=<service-name> 지정 필요"; exit 1; }
-	$(PROD_COMPOSE) build $(SVC)
-	$(PROD_COMPOSE) up -d $(SVC)
-
-prod-dc: prod-check-env  ## 임의 docker compose 명령 (escape hatch, 사용: make prod-dc ARGS='ps')
-	@test -n "$(ARGS)" || { echo "✗ ARGS='<command>' 지정 필요"; exit 1; }
-	$(PROD_COMPOSE) $(ARGS)
-
-prod-migrate: prod-check-env  ## alembic upgrade head
-	$(PROD_COMPOSE) exec -T backend python -m alembic upgrade head
-
-prod-auth-migrate: prod-check-env  ## Better Auth 테이블 생성과 갱신 (스키마 auth)
-	$(PROD_COMPOSE) run --rm auth-migrate
-
-prod-logs: prod-check-env  ## 전체 로그 follow
-	$(PROD_COMPOSE) logs -f --tail=100
-
-prod-logs-backend: prod-check-env  ## 백엔드 로그만
-	$(PROD_COMPOSE) logs -f --tail=100 backend
-
-prod-logs-worker: prod-check-env  ## 워커 로그만 (알림과 PII 마스킹 cron 추적)
-	$(PROD_COMPOSE) logs -f --tail=100 worker
-
-prod-status: prod-check-env  ## 컨테이너 상태 + 헬스
-	$(PROD_COMPOSE) ps
-
-prod-shell-backend: prod-check-env  ## 백엔드 컨테이너 shell
-	$(PROD_COMPOSE) exec backend bash
-
-prod-backup: prod-check-env  ## Postgres dump → backups/ashfield-drive-YYYYMMDD-HHMM.sql.gz
-	@mkdir -p backups
-	@FNAME=backups/ashfield-drive-$$(date +%Y%m%d-%H%M).sql.gz; \
-	$(PROD_COMPOSE) exec -T postgres pg_dump -U "$$(grep ^POSTGRES_USER .env.prod | cut -d= -f2)" "$$(grep ^POSTGRES_DB .env.prod | cut -d= -f2)" | gzip > $$FNAME; \
-	echo "✓ 백업 완료: $$FNAME"
+deploy-backup:  ## 운영 Postgres 덤프 (서버의 backups/)
+	ssh $(DEPLOY_HOST) 'sh $(DEPLOY_DIR)/scripts/prod.sh backup'
 
 
 # -----------------------------------------------------------------------------
