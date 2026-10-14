@@ -14,8 +14,8 @@ interface LoginPageProps {
 }
 
 /**
- * 로그인: Ashfield 계정 서버(OIDC)로 보내는 버튼 하나 (ADR-0024).
- * 계정 서버에 이미 로그인돼 있으면 화면 없이 돌아온다(SSO). 오류(`?error=`)도 여기서 보여 준다.
+ * 로그인: 열리자마자 Ashfield 계정 서버(OIDC)로 보낸다 (ADR-0024).
+ * 계정 서버에 이미 로그인돼 있으면 화면 없이 돌아온다(SSO). 오류(`?error=`)가 있으면 자동으로 가지 않고 버튼과 함께 보여 준다.
  */
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { callbackUrl, error } = await searchParams

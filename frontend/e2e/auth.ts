@@ -61,9 +61,7 @@ export async function fillAccountSignIn(page: Page, user: E2EUser): Promise<void
 export async function signIn(page: Page, user: E2EUser): Promise<boolean> {
   await page.goto("/login")
   if (onApp(new URL(page.url()))) return false // 이미 앱 세션 있음
-  await expect(page.getByTestId("login-ashfield-button"), "계정 서버 연결 (ACCOUNT_URL)").toBeVisible()
-  await page.getByTestId("login-ashfield-button").click()
-  // dev 서버 첫 컴파일이 느릴 수 있어 넉넉히.
+  // /login 이 바로 계정 서버로 보낸다. dev 서버 첫 컴파일이 느릴 수 있어 넉넉히.
   await page.waitForURL((u) => onApp(u) || onAccountSignIn(u), { timeout: 30_000 })
   let usedPassword = false
   if (onAccountSignIn(new URL(page.url()))) {

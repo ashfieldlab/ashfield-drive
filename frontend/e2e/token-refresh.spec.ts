@@ -68,10 +68,7 @@ test("갱신 실패면 401 + 앱 세션 삭제 → 다시 로그인", async ({ p
   const res = await page.request.get("/api/v1/me")
   expect(res.status()).toBe(401)
 
-  // 세션이 지워졌으므로 /login 이 로그인 버튼을 보여 준다 (리다이렉트 루프 없음).
-  await page.goto("/login")
-  await expect(page.getByTestId("login-ashfield-button")).toBeVisible()
-  // 계정 서버 세션은 살아 있어 SSO 로 바로 복귀
+  // 앱 세션은 지워졌지만 계정 서버 세션은 살아 있어 /login 이 SSO 로 바로 복귀 (리다이렉트 루프 없음)
   expect(await signIn(page, user)).toBe(false)
   expect((await page.request.get("/api/v1/me")).status()).toBe(200)
 })

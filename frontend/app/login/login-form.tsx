@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ArrowRight, Loader2 } from "lucide-react"
 
 import { AppIcon } from "@/components/ui-custom/app-icon"
@@ -32,8 +32,11 @@ function errorText(code?: string): string | null {
 }
 
 export default function LoginForm({ callbackUrl, error, accountReady }: Props) {
-  const [pending, setPending] = useState(false)
+  // 오류 없이 왔으면 바로 계정 서버로: 이미 로그인돼 있으면 화면 없이 돌아온다(SSO).
+  const auto = accountReady && !error
+  const [pending, setPending] = useState(auto)
   const [message, setMessage] = useState<string | null>(errorText(error))
+  const started = useRef(false)
 
   async function signIn() {
     setPending(true)
@@ -49,6 +52,13 @@ export default function LoginForm({ callbackUrl, error, accountReady }: Props) {
       setPending(false)
     }
   }
+
+  useEffect(() => {
+    if (!auto || started.current) return
+    started.current = true
+    void signIn()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 첫 렌더에 한 번만
+  }, [])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 dark:bg-background">
