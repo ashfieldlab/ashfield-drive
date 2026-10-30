@@ -65,7 +65,7 @@ init_env() {
 up() {
   [ -f .env.prod ] || { echo "! .env.prod 없음: make deploy-init 먼저"; exit 1; }
   check_env
-  dc --profile tools build
+  dc --profile tools build --pull
   dc up -d --wait postgres redis minio
   echo "→ Alembic 마이그레이션"
   dc run --rm --no-deps backend python -m alembic upgrade head
